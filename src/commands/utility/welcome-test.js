@@ -9,11 +9,13 @@ module.exports = {
     .setDescription('Xem trước tin nhắn chào mừng (không cần out/join)')
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
   async execute(interaction) {
-    // Dùng chính member của bạn để xem trước — sửa .env rồi gọi lại lệnh để so sánh
-    const msg = await interaction.channel.send({ embeds: [buildWelcome(interaction.member)] });
-    for (const e of config.welcomeReactions.slice(0, 5)) {
+    // Dùng chính member của bạn để xem trước — ưu tiên setting từ /welcome setup
+    const s = await require('../../utils/welcomeSettings').getWelcomeSettings(interaction.guildId).catch(() => null);
+    const reactions = s?.reactions || config.welcomeReactions;
+    const msg = await interaction.channel.send({ embeds: [buildWelcome(interaction.member, s)] });
+    for (const e of reactions.slice(0, 5)) {
       await msg.react(e).catch(() => {});
     }
-    await interaction.reply({ content: '✅ Đã gửi bản xem trước ở trên. Muốn gửi vào kênh chào mừng thật thì thêm `WELCOME_CHANNEL_ID` rồi test member mới join.', ephemeral: true });
+    await interaction.reply({ content: '✅ Đã gửi bản xem trước ở trên. Muốn đổi thì dùng `/welcome setup` (chỉ Admin).', ephemeral: true });
   },
 };

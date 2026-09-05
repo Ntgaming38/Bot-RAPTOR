@@ -69,4 +69,20 @@ const ratingSchema = new mongoose.Schema({
 });
 const TicketRating = mongoose.models.TicketRating || mongoose.model('TicketRating', ratingSchema);
 
-module.exports = { mongoose, connectDB, isMongo, Level, Giveaway, Ticket, TicketRating };
+// === Welcome settings theo server (setup bằng /welcome setup trong Discord) ===
+const welcomeSettingsSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, unique: true },
+  channelId: { type: String, default: null },
+  title: { type: String, default: null },
+  roleChannelId: { type: String, default: null },
+  rulesChannelId: { type: String, default: null },
+  announceChannelId: { type: String, default: null },
+  chatChannelId: { type: String, default: null },
+  imageUrl: { type: String, default: null },
+  color: { type: String, default: null },
+  reactions: { type: [String], default: undefined },
+  autoRoleId: { type: String, default: null },
+});
+const WelcomeSettings = mongoose.models.WelcomeSettings || mongoose.model('WelcomeSettings', welcomeSettingsSchema);
+
+module.exports = { mongoose, connectDB, isMongo, Level, Giveaway, Ticket, TicketRating, WelcomeSettings };
