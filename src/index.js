@@ -108,7 +108,17 @@ async function main() {
     console.warn('[giveaway restore]', e.message);
   }
 
-  await client.login(config.token);
+  console.log(`[login] thử đăng nhập... token length=${config.token?.length || 0}, clientId=${config.token ? 'có' : 'thiếu'}`);
+  try {
+    await client.login(config.token);
+    console.log('[login] login promise xong, đợi event ready...');
+  } catch (e) {
+    console.error('[login FAILED]', e?.message, e?.code, e?.status);
+    process.exit(1);
+  }
 }
 
-main();
+main().catch(e => {
+  console.error('[main FAILED]', e?.message);
+  process.exit(1);
+});

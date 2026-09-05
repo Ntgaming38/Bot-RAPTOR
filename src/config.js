@@ -1,9 +1,9 @@
 require('dotenv').config();
 
 module.exports = {
-  token: process.env.DISCORD_TOKEN,
-  clientId: process.env.CLIENT_ID,
-  guildId: process.env.GUILD_ID || null,
+  token: (process.env.DISCORD_TOKEN || '').trim() || null,
+  clientId: (process.env.CLIENT_ID || '').trim() || null,
+  guildId: (process.env.GUILD_ID || '').trim() || null,
 
   welcomeChannelId: process.env.WELCOME_CHANNEL_ID || null,
   goodbyeChannelId: process.env.GOODBYE_CHANNEL_ID || null,
