@@ -24,7 +24,7 @@ module.exports = {
 
     // 2) Cộng XP level
     try {
-      const res = addXp(message.guild.id, message.author.id);
+      const res = await addXp(message.guild.id, message.author.id);
       if (res?.leveled && config.levelUpMessage) {
         await message.channel.send(`🎉 ${message.author} đã lên **level ${res.level}**!`).catch(() => {});
       }

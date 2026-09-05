@@ -54,6 +54,19 @@ async function deploy() {
   }
 }
 
-if (require.main === module) deploy();
+async function clearGuildCommands() {
+  if (!config.token || !config.clientId || !config.guildId) {
+    console.error('❌ Cần DISCORD_TOKEN, CLIENT_ID, GUILD_ID trong .env để xóa lệnh guild cũ.');
+    process.exit(1);
+  }
+  const rest = new REST({ version: '10' }).setToken(config.token);
+  await rest.put(Routes.applicationGuildCommands(config.clientId, config.guildId), { body: [] });
+  console.log(`🧹 Đã xóa toàn bộ lệnh guild ${config.guildId} (để tránh trùng sau khi lên global).`);
+}
 
-module.exports = { loadCommands, deploy };
+if (require.main === module) {
+  if (process.argv.includes('--clear-guild')) clearGuildCommands().catch(e => console.error('❌ Xóa lệnh guild thất bại:', e));
+  else deploy();
+}
+
+module.exports = { loadCommands, deploy, clearGuildCommands };

@@ -28,6 +28,13 @@ async function main() {
     if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
   }
 
+  // Kết nối MongoDB Atlas nếu có MONGODB_URI (giữ XP vĩnh viễn trên Render free)
+  try {
+    await require('./db').connectDB();
+  } catch (e) {
+    console.warn('[mongo] bỏ qua, dùng JSON:', e.message);
+  }
+
   const client = new Client({
     intents: [
       GatewayIntentBits.Guilds,

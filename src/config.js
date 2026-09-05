@@ -45,4 +45,8 @@ module.exports = {
   ticketCategoryId: process.env.TICKET_CATEGORY_ID || null,
   ticketStaffRoleId: process.env.TICKET_STAFF_ROLE_ID || null,
   ticketPanelImageUrl: process.env.TICKET_PANEL_IMAGE_URL || null, // ảnh góc phải của panel (kiểu hình gấu trong mẫu)
+
+  // === DATABASE (giữ XP/giveaway/ticket khi Render restart) ===
+  // Để trống = dùng file JSON cũ trong data/. Có MONGODB_URI = dùng MongoDB Atlas.
+  mongodbUri: process.env.MONGODB_URI || null,
 };

@@ -8,7 +8,7 @@ module.exports = {
     .setName('leaderboard')
     .setDescription('Bảng xếp hạng level server'),
   async execute(interaction) {
-    const top = getLeaderboard(interaction.guildId, 10);
+    const top = await getLeaderboard(interaction.guildId, 10);
     if (!top.length) {
       return interaction.reply({ content: '📭 Chưa có ai có XP. Hãy chat để lên level!', ephemeral: true });
     }

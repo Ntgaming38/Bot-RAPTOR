@@ -10,7 +10,7 @@ module.exports = {
     .addUserOption(o => o.setName('user').setDescription('Người muốn xem')),
   async execute(interaction) {
     const user = interaction.options.getUser('user') || interaction.user;
-    const r = getRank(interaction.guildId, user.id);
+    const r = await getRank(interaction.guildId, user.id);
     const progress = Math.floor((r.xp / r.needed) * 20);
     const bar = '█'.repeat(progress) + '░'.repeat(20 - progress);
     await interaction.reply({

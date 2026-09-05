@@ -8,6 +8,8 @@
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "deploy": "node src/deploy-commands.js",
+    "deploy:clear-guild": "node src/deploy-commands.js --clear-guild",
+    "migrate": "node src/migrate-mongo.js",
     "keepalive": "node src/keepAlive.js"
   },
   "keywords": [
@@ -27,6 +29,7 @@
     "express": "^4.19.2",
     "ffmpeg-static": "^5.3.0",
     "libsodium-wrappers": "^0.8.4",
+    "mongoose": "^8.24.4",
     "opusscript": "^0.1.1",
     "youtube-dl-exec": "^3.1.14"
   },
