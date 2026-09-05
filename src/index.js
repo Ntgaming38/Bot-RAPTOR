@@ -101,6 +101,13 @@ async function main() {
     }
   }
 
+  // Log lỗi gateway để không bị treo mù như trước
+  client.on('error', (e) => console.error('[discord error]', e?.message));
+  client.on('shardError', (e) => console.error('[shardError]', e?.message));
+  client.on('shardDisconnect', (e) => console.warn('[shardDisconnect]', e?.code, e?.reason));
+  client.on('shardReconnecting', () => console.log('[shardReconnecting] đang nối lại Discord...'));
+  client.on('warn', (m) => console.warn('[discord warn]', m));
+
   // Khôi phục giveaway đang dở sau khi restart (24/24)
   try {
     require('./utils/giveaways').restoreAll(client);
@@ -109,12 +116,29 @@ async function main() {
   }
 
   console.log(`[login] thử đăng nhập... token length=${config.token?.length || 0}, clientId=${config.token ? 'có' : 'thiếu'}`);
-  try {
-    await client.login(config.token);
-    console.log('[login] login promise xong, đợi event ready...');
-  } catch (e) {
-    console.error('[login FAILED]', e?.message, e?.code, e?.status);
-    process.exit(1);
+  // Retry login: Render free đôi khi kẹt handshake, treo 30p không xong cũng không fail.
+  // Timeout 45s/lần, thử 5 lần, fail hết thì exit để Render restart sạch.
+  let loggedIn = false;
+  for (let attempt = 1; attempt <= 5 && !loggedIn; attempt++) {
+    try {
+      console.log(`[login] lần ${attempt}/5...`);
+      await Promise.race([
+        client.login(config.token),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout 45s')), 45000)),
+      ]);
+      loggedIn = true;
+      console.log('[login] login promise xong, đợi event ready...');
+    } catch (e) {
+      console.error(`[login FAILED lần ${attempt}]`, e?.message, e?.code, e?.status);
+      try { await client.destroy(); } catch {}
+      if (attempt < 5) {
+        console.log('[login] đợi 10s thử lại...');
+        await new Promise(r => setTimeout(r, 10000));
+      } else {
+        console.error('[login] thua 5 lần, exit để Render restart.');
+        process.exit(1);
+      }
+    }
   }
 }
 
