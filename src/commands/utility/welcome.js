@@ -29,6 +29,11 @@ module.exports = {
     const sub = interaction.options.getSubcommand();
     const guildId = interaction.guildId;
 
+    // Defer trước để không bị "Ứng dụng không phản hồi" khi Mongo/send lâu quá 3s
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferReply({ ephemeral: sub !== 'setup' }).catch(() => {});
+    }
+
     if (sub === 'setup') {
       const channel = interaction.options.getChannel('channel');
       const patch = {
@@ -55,20 +60,20 @@ module.exports = {
       if (preview && s.reactions?.length) {
         for (const e of s.reactions.slice(0, 5)) await preview.react(e).catch(() => {});
       }
-      return interaction.reply({ embeds: [successEmbed(`Đã lưu welcome → ${channel}\nGửi thử ở trên, member mới join sẽ nhận y hệt.`)] });
+      return interaction.editReply({ embeds: [successEmbed(`Đã lưu welcome → ${channel}\nGửi thử ở trên, member mới join sẽ nhận y hệt.`)] });
     }
 
     if (sub === 'test') {
       const s = await getWelcomeSettings(guildId);
-      if (!s.channelId) return interaction.reply({ embeds: [errorEmbed('Chưa setup kênh. Chạy `/welcome setup` trước.')], ephemeral: true });
+      if (!s.channelId) return interaction.editReply({ embeds: [errorEmbed('Chưa setup kênh. Chạy `/welcome setup` trước.')] });
       const msg = await interaction.channel.send({ embeds: [buildWelcome(interaction.member, s)] });
       for (const e of (s.reactions || []).slice(0, 5)) await msg.react(e).catch(() => {});
-      return interaction.reply({ content: '✅ Đã gửi bản xem trước ở trên.', ephemeral: true });
+      return interaction.editReply({ content: '✅ Đã gửi bản xem trước ở trên.' });
     }
 
     if (sub === 'status') {
       const s = await getWelcomeSettings(guildId);
-      return interaction.reply({
+      return interaction.editReply({
         embeds: [embed({
           title: '⚙️ Cấu hình welcome',
           description: [
@@ -81,13 +86,12 @@ module.exports = {
             `Auto-role: ${s.autoRoleId ? `<@&${s.autoRoleId}>` : '—'}`,
           ].join('\n'),
         })],
-        ephemeral: true,
       });
     }
 
     if (sub === 'disable') {
       await clearWelcomeSettings(guildId);
-      return interaction.reply({ embeds: [successEmbed('Đã tắt welcome setup trong Discord, bot quay về đọc `.env`.')] });
+      return interaction.editReply({ embeds: [successEmbed('Đã tắt welcome setup trong Discord, bot quay về đọc `.env`.')] });
     }
   },
 };
