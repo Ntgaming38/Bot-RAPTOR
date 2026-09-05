@@ -1,0 +1,17 @@
+// MẪU để bạn copy khi muốn thêm lệnh mới.
+// Cách dùng:
+//   1. Copy file này thành src/commands/fun/tenlenh.js (hoặc nhóm khác)
+//   2. Đổi name + description + code trong execute
+//   3. Chạy: npm run deploy
+//   4. Restart bot: npm start
+const { SlashCommandBuilder } = require('discord.js');
+
+module.exports = {
+  group: 'mau', // đổi thành tên nhóm của bạn: utility / moderation / fun / ...
+  data: new SlashCommandBuilder()
+    .setName('mau')
+    .setDescription('Lệnh mẫu - copy để tạo lệnh mới'),
+  async execute(interaction) {
+    await interaction.reply('👋 Đây là lệnh mẫu! Copy file này để tạo lệnh mới.');
+  },
+};
