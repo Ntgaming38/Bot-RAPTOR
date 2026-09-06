@@ -48,7 +48,62 @@ async function main() {
     partials: [Partials.GuildMember, Partials.Message, Partials.Channel, Partials.Reaction],
   });
 
-  // === PLAYER NHẠC ===
+  client.commands = new Collection();
+  const commands = await loadCommands();
+  for (const cmd of commands) {
+    client.commands.set(cmd.data.name, cmd);
+  }
+  console.log(`📦 Đã load ${commands.length} lệnh: ${commands.map(c => c.data.name).join(', ')}`);
+
+  // Load events: src/events/<tenEvent>.js — mỗi file export { name, once, execute }
+  const eventsPath = path.join(__dirname, 'events');
+  if (fs.existsSync(eventsPath)) {
+    for (const file of fs.readdirSync(eventsPath).filter(f => f.endsWith('.js'))) {
+      const event = require(path.join(eventsPath, file));
+      if (!event?.name || !event?.execute) {
+        console.warn(`[WARN] Event ${file} thiếu "name" hoặc "execute".`);
+        continue;
+      }
+      if (event.once) client.once(event.name, (...args) => event.execute(...args, client));
+      else client.on(event.name, (...args) => event.execute(...args, client));
+      console.log(`🎧 Đã load event: ${event.name} (${file})`);
+    }
+  }
+
+  // Log lỗi gateway để không bị treo mù như trước
+  client.on('error', (e) => console.error('[discord error]', e?.message));
+  client.on('shardError', (e) => console.error('[shardError]', e?.message));
+  client.on('shardDisconnect', (e) => console.warn('[shardDisconnect]', e?.code, e?.reason));
+  client.on('shardReconnecting', () => console.log('[shardReconnecting] đang nối lại Discord...'));
+  client.on('warn', (m) => console.warn('[discord warn]', m));
+
+  // LOGIN TRƯỚC — Render free handshake rất chậm (lần trước mất ~5p mới xong),
+  // nên timeout 180s/lần, thử 3 lần. Đừng để ngắn quá sẽ kill oan.
+  console.log(`[login] thử đăng nhập... token length=${config.token?.length || 0}`);
+  let loggedIn = false;
+  for (let attempt = 1; attempt <= 3 && !loggedIn; attempt++) {
+    try {
+      console.log(`[login] lần ${attempt}/3 (timeout 180s)...`);
+      await Promise.race([
+        client.login(config.token),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout 180s')), 180000)),
+      ]);
+      loggedIn = true;
+      console.log('[login] login promise xong, đợi event ready...');
+    } catch (e) {
+      console.error(`[login FAILED lần ${attempt}]`, e?.message, e?.code, e?.status);
+      try { await client.destroy(); } catch {}
+      if (attempt < 3) {
+        console.log('[login] đợi 15s thử lại...');
+        await new Promise(r => setTimeout(r, 15000));
+      } else {
+        console.error('[login] thua 3 lần, exit để Render restart.');
+        process.exit(1);
+      }
+    }
+  }
+
+  // === PLAYER NHẠC (load SAU login để không chặn handshake Discord) ===
   const player = new Player(client, {
     skipFFmpeg: false,
     ffmpegPath,
@@ -79,66 +134,11 @@ async function main() {
     queue.metadata?.channel?.send('📭 Hết nhạc trong hàng chờ, bot sẽ ở lại 60s rồi out.').catch(() => {});
   });
 
-  client.commands = new Collection();
-  const commands = await loadCommands();
-  for (const cmd of commands) {
-    client.commands.set(cmd.data.name, cmd);
-  }
-  console.log(`📦 Đã load ${commands.length} lệnh: ${commands.map(c => c.data.name).join(', ')}`);
-
-  // Load events: src/events/<tenEvent>.js — mỗi file export { name, once, execute }
-  const eventsPath = path.join(__dirname, 'events');
-  if (fs.existsSync(eventsPath)) {
-    for (const file of fs.readdirSync(eventsPath).filter(f => f.endsWith('.js'))) {
-      const event = require(path.join(eventsPath, file));
-      if (!event?.name || !event?.execute) {
-        console.warn(`[WARN] Event ${file} thiếu "name" hoặc "execute".`);
-        continue;
-      }
-      if (event.once) client.once(event.name, (...args) => event.execute(...args, client));
-      else client.on(event.name, (...args) => event.execute(...args, client));
-      console.log(`🎧 Đã load event: ${event.name} (${file})`);
-    }
-  }
-
-  // Log lỗi gateway để không bị treo mù như trước
-  client.on('error', (e) => console.error('[discord error]', e?.message));
-  client.on('shardError', (e) => console.error('[shardError]', e?.message));
-  client.on('shardDisconnect', (e) => console.warn('[shardDisconnect]', e?.code, e?.reason));
-  client.on('shardReconnecting', () => console.log('[shardReconnecting] đang nối lại Discord...'));
-  client.on('warn', (m) => console.warn('[discord warn]', m));
-
   // Khôi phục giveaway đang dở sau khi restart (24/24)
   try {
     require('./utils/giveaways').restoreAll(client);
   } catch (e) {
     console.warn('[giveaway restore]', e.message);
-  }
-
-  console.log(`[login] thử đăng nhập... token length=${config.token?.length || 0}, clientId=${config.token ? 'có' : 'thiếu'}`);
-  // Retry login: Render free đôi khi kẹt handshake, treo 30p không xong cũng không fail.
-  // Timeout 45s/lần, thử 5 lần, fail hết thì exit để Render restart sạch.
-  let loggedIn = false;
-  for (let attempt = 1; attempt <= 5 && !loggedIn; attempt++) {
-    try {
-      console.log(`[login] lần ${attempt}/5...`);
-      await Promise.race([
-        client.login(config.token),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout 45s')), 45000)),
-      ]);
-      loggedIn = true;
-      console.log('[login] login promise xong, đợi event ready...');
-    } catch (e) {
-      console.error(`[login FAILED lần ${attempt}]`, e?.message, e?.code, e?.status);
-      try { await client.destroy(); } catch {}
-      if (attempt < 5) {
-        console.log('[login] đợi 10s thử lại...');
-        await new Promise(r => setTimeout(r, 10000));
-      } else {
-        console.error('[login] thua 5 lần, exit để Render restart.');
-        process.exit(1);
-      }
-    }
   }
 }
 
