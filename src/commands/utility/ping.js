@@ -7,7 +7,8 @@ module.exports = {
     .setName('ping')
     .setDescription('Kiểm tra độ trễ của bot'),
   async execute(interaction) {
-    const sent = await interaction.reply({ content: '🏓 Pong...', fetchReply: true });
+    const response = await interaction.reply({ content: '🏓 Pong...', withResponse: true });
+    const sent = response.resource.message;
     const latency = sent.createdTimestamp - interaction.createdTimestamp;
     await interaction.editReply({
       content: '',
