@@ -140,6 +140,18 @@ async function main() {
   } catch (e) {
     console.warn('[giveaway restore]', e.message);
   }
+
+  // Tự cập nhật BXH ở kênh riêng mỗi 10 phút
+  const refreshBoards = async () => {
+    try {
+      const { listLeaderboardGuilds, updateLeaderboardChannel } = require('./utils/leaderboardSettings');
+      for (const gid of await listLeaderboardGuilds()) {
+        await updateLeaderboardChannel(client, gid).catch(() => null);
+      }
+    } catch {}
+  };
+  setTimeout(refreshBoards, 60_000);
+  setInterval(refreshBoards, 10 * 60_000);
 }
 
 main().catch(e => {

@@ -85,4 +85,13 @@ const welcomeSettingsSchema = new mongoose.Schema({
 });
 const WelcomeSettings = mongoose.models.WelcomeSettings || mongoose.model('WelcomeSettings', welcomeSettingsSchema);
 
-module.exports = { mongoose, connectDB, isMongo, Level, Giveaway, Ticket, TicketRating, WelcomeSettings };
+// === Leaderboard channel riêng (tự cập nhật BXH vào 1 kênh) ===
+const leaderboardSettingsSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, unique: true },
+  channelId: { type: String, default: null },
+  messageId: { type: String, default: null },
+  limit: { type: Number, default: 10 },
+});
+const LeaderboardSettings = mongoose.models.LeaderboardSettings || mongoose.model('LeaderboardSettings', leaderboardSettingsSchema);
+
+module.exports = { mongoose, connectDB, isMongo, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings };
