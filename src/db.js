@@ -106,6 +106,9 @@ const guildSettingsSchema = new mongoose.Schema({
   ticketCategoryId: { type: String, default: null },
   ticketStaffRoleId: { type: String, default: null },
   ticketPanelImageUrl: { type: String, default: null },
+  giveawayChannelId: { type: String, default: null },
+  giveawayWinners: Number,
+  giveawayDuration: { type: String, default: null },
 });
 const GuildSettings = mongoose.models.GuildSettings || mongoose.model('GuildSettings', guildSettingsSchema);
 
@@ -156,6 +159,19 @@ const goodbyeSettingsSchema = new mongoose.Schema({
 });
 const GoodbyeSettings = mongoose.models.GoodbyeSettings || mongoose.model('GoodbyeSettings', goodbyeSettingsSchema);
 
+// === Nhiều bảng chọn role kiểu ProBot (mỗi bảng tên riêng: Game, Color...) ===
+const roleBoardSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  name: { type: String, required: true },
+  channelId: { type: String, default: null },
+  messageId: { type: String, default: null },
+  title: { type: String, default: null },
+  description: { type: String, default: null },
+  items: { type: [{ roleId: String, label: String, emoji: String }], default: [] },
+});
+roleBoardSchema.index({ guildId: 1, name: 1 }, { unique: true });
+const RoleBoard = mongoose.models.RoleBoard || mongoose.model('RoleBoard', roleBoardSchema);
+
 // === Log kiểu ProBot: kênh + bật/tắt từng loại ===
 const logSettingsSchema = new mongoose.Schema({
   guildId: { type: String, required: true, unique: true },
@@ -173,4 +189,4 @@ const warnSchema = new mongoose.Schema({
 warnSchema.index({ guildId: 1, userId: 1 }, { unique: true });
 const Warn = mongoose.models.Warn || mongoose.model('Warn', warnSchema);
 
-module.exports = { mongoose, connectDB, isMongo, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings, GuildSettings, AnnounceSettings, StatsSettings, RolePanel, GoodbyeSettings, LogSettings, Warn };
+module.exports = { mongoose, connectDB, isMongo, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings, GuildSettings, AnnounceSettings, StatsSettings, RolePanel, GoodbyeSettings, LogSettings, Warn, RoleBoard };

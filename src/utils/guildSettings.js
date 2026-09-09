@@ -35,6 +35,9 @@ function baseFromEnv() {
     ticketCategoryId: config.ticketCategoryId,
     ticketStaffRoleId: config.ticketStaffRoleId,
     ticketPanelImageUrl: config.ticketPanelImageUrl,
+    giveawayChannelId: null,
+    giveawayWinners: 1,
+    giveawayDuration: '10m',
   };
 }
 

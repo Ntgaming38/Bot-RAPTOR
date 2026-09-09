@@ -172,6 +172,12 @@ function mount(app) {
     }
     for (const k of ['logChannelId', 'ticketCategoryId', 'ticketStaffRoleId']) patch[k] = idOrNull(b[k]);
     if (b.ticketPanelImageUrl !== undefined) patch.ticketPanelImageUrl = String(b.ticketPanelImageUrl || '') || null;
+    if (b.giveawayChannelId !== undefined) patch.giveawayChannelId = String(b.giveawayChannelId || '') || null;
+    if (b.giveawayWinners !== undefined) {
+      const n = parseInt(b.giveawayWinners, 10);
+      if (Number.isFinite(n)) patch.giveawayWinners = Math.min(20, Math.max(1, n));
+    }
+    if (b.giveawayDuration !== undefined) patch.giveawayDuration = String(b.giveawayDuration || '').slice(0, 20) || null;
     // Bỏ key undefined (giữ giá trị cũ)
     for (const k of Object.keys(patch)) if (patch[k] === undefined) delete patch[k];
     const s = await require('../utils/guildSettings').saveGuildSettings(req.params.gid, patch);
