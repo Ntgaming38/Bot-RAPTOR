@@ -130,6 +130,7 @@ const statsSettingsSchema = new mongoose.Schema({
   mode: { type: String, default: 'single' },
   categoryId: { type: String, default: null },
   multi: { type: Object, default: undefined },
+  multiNames: { type: Object, default: undefined },
 });
 const StatsSettings = mongoose.models.StatsSettings || mongoose.model('StatsSettings', statsSettingsSchema);
 

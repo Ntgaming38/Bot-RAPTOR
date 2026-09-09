@@ -3,6 +3,13 @@ const path = require('node:path');
 
 const FILE = path.join(__dirname, '..', '..', 'data', 'stats.json');
 const DEFAULT_TEMPLATE = '🟢 ONLINE • 👥 {members} MEMBERS • 🎮 {voice} ONLINE';
+const DEFAULT_MULTI_NAMES = {
+  all: '🔊 All Members: {n}',
+  members: '🔊 Members: {n}',
+  bots: '🔊 Bots: {n}',
+  channels: '🔊 Channels: {n}',
+  roles: '🔊 Roles: {n}',
+};
 
 function loadAll() {
   try {
@@ -83,22 +90,31 @@ async function updateStatsChannel(client, guildId) {
   // Chế độ multi: 5 kênh riêng như hình (All Members / Members / Bots / Channels / Roles)
   if (s.mode === 'multi' && s.multi?.all) {
     const all = guild.memberCount ?? 0;
-    let humans = null, bots = null;
+    let humans = null, bots = null, online = null;
     try {
       const members = await guild.members.fetch();
       bots = members.filter((m) => m.user.bot).size;
       humans = members.size - bots;
+      online = members.filter((m) => !m.user.bot && m.presence?.status && m.presence.status !== 'offline').size;
     } catch (e) {
       console.warn('[stats] không đếm members/bots được:', e?.message);
     }
     const channels = (await guild.channels.fetch().catch(() => guild.channels.cache))?.size ?? 0;
     const roles = (await guild.roles.fetch().catch(() => guild.roles.cache))?.size ?? 0;
+    const nm = { ...DEFAULT_MULTI_NAMES, ...(s.multiNames || {}) };
+    const fill = (tpl, n) => String(tpl)
+      .replaceAll('{n}', String(n ?? '?'))
+      .replaceAll('{server}', guild.name)
+      .replaceAll('{members}', String(all))
+      .replaceAll('{online}', String(online ?? '?'))
+      .replaceAll('{voice}', String(guild.voiceStates?.cache?.size ?? '?'))
+      .slice(0, 100);
     const targets = [
-      [s.multi.all, `🔊 All Members: ${all}`],
-      [s.multi.members, humans !== null ? `🔊 Members: ${humans}` : null],
-      [s.multi.bots, bots !== null ? `🔊 Bots: ${bots}` : null],
-      [s.multi.channels, `🔊 Channels: ${channels}`],
-      [s.multi.roles, `🔊 Roles: ${roles}`],
+      [s.multi.all, fill(nm.all, all)],
+      [s.multi.members, humans !== null ? fill(nm.members, humans) : null],
+      [s.multi.bots, bots !== null ? fill(nm.bots, bots) : null],
+      [s.multi.channels, fill(nm.channels, channels)],
+      [s.multi.roles, fill(nm.roles, roles)],
     ];
     for (const [id, name] of targets) {
       if (!id || !name) continue;
@@ -166,4 +182,4 @@ async function setupMultiChannels(client, guildId, categoryName) {
   return updateStatsChannel(client, guildId);
 }
 
-module.exports = { getStats, saveStats, clearStats, listStatsGuilds, updateStatsChannel, setupMultiChannels, DEFAULT_TEMPLATE };
+module.exports = { getStats, saveStats, clearStats, listStatsGuilds, updateStatsChannel, setupMultiChannels, DEFAULT_TEMPLATE, DEFAULT_MULTI_NAMES };

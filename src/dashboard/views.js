@@ -73,6 +73,10 @@ function guild(gid) {
 <div id="p-s" class="card" style="display:none"><h2>Trạng thái server</h2>
 <div><label>Kênh voice làm bảng trạng thái (để trống = chưa bật)</label><select id="s-voice"></select></div>
 <div><label>Mẫu tên kênh (biến {members} {online} {voice} {server})</label><input id="s-tpl" placeholder="🟢 ONLINE • 👥 {members} MEMBERS • 🎮 {voice} ONLINE"></div>
+<div><label>Mẫu tên 5 kênh riêng — biến {n} là con số (VD: 👥・Tổng: {n})</label></div>
+<div class="grid"><div><label>All Members</label><input id="s-n-all"></div><div><label>Members</label><input id="s-n-members"></div>
+<div><label>Bots</label><input id="s-n-bots"></div><div><label>Channels</label><input id="s-n-channels"></div>
+<div><label>Roles</label><input id="s-n-roles"></div></div>
 <button id="s-save">Lưu</button><button class="ghost" id="s-refresh">Cập nhật ngay</button><button class="ghost" id="s-multi">Dựng 5 kênh kiểu mẫu</button><p class="mut">Chế độ 1 kênh: tự đổi tên mỗi 15 phút. Chế độ 5 kênh: All Members / Members / Bots / Channels / Roles riêng. Muốn đếm {online} thì bật <b>Presence Intent</b> trong Developer Portal.</p></div>
 <div id="p-r" class="card" style="display:none"><h2>Bảng chọn role</h2>
 <div><label>Kênh đặt bảng</label><select id="r-channel"></select></div>
@@ -111,6 +115,8 @@ async function api(m,url,body){const r=await fetch(url,{method:m,headers:{'Conte
     opt('a-channel',txt,an.channelId,true);$('a-title').value=an.title||'';$('a-text').value=an.text||'';$('a-min').value=an.intervalMin||0;
     const ss=await api('GET','/dashboard/api/guilds/'+G+'/stats');
     opt('s-voice',[{id:'',name:'— chưa bật —'}].concat(META.voice||[]),ss.voiceChannelId,true);$('s-tpl').value=ss.template||'';
+    const dmn={all:'🔊 All Members: {n}',members:'🔊 Members: {n}',bots:'🔊 Bots: {n}',channels:'🔊 Channels: {n}',roles:'🔊 Roles: {n}',...(ss.multiNames||{})};
+    $('s-n-all').value=dmn.all||'';$('s-n-members').value=dmn.members||'';$('s-n-bots').value=dmn.bots||'';$('s-n-channels').value=dmn.channels||'';$('s-n-roles').value=dmn.roles||'';
     const rp=await api('GET','/dashboard/api/guilds/'+G+'/roles');
     opt('r-channel',txt,rp.channelId,true);$('r-title').value=rp.title||'';$('r-desc').value=rp.description||'';
     RITEMS=(rp.items||[]).map(i=>({roleId:i.roleId,label:i.label||'',emoji:i.emoji||''}));
@@ -125,7 +131,7 @@ function curSettings(){return{xpMin:parseInt($('x-min').value||'15',10),xpMax:pa
 $('x-save').onclick=$('m-save').onclick=$('k-save').onclick=async()=>{try{await api('PUT','/dashboard/api/guilds/'+G+'/settings',curSettings());toast('Đã lưu')}catch(e){toast('Lỗi: '+e.message)}};
 $('a-save').onclick=async()=>{try{await api('PUT','/dashboard/api/guilds/'+G+'/announce',{channelId:$('a-channel').value||null,title:$('a-title').value||null,text:$('a-text').value,intervalMin:parseInt($('a-min').value||'0',10)});toast('Đã lưu bảng tin')}catch(e){toast('Lỗi: '+e.message)}};
 $('a-test').onclick=async()=>{try{const d=await api('POST','/dashboard/api/guilds/'+G+'/announce/test');toast('Đã đăng bảng! Mở Discord xem');if(d.url)window.open(d.url,'_blank')}catch(e){toast('Lỗi: '+e.message+' (cần setup kênh + nội dung trước)')}};
-$('s-save').onclick=async()=>{try{await api('PUT','/dashboard/api/guilds/'+G+'/stats',{voiceChannelId:$('s-voice').value||null,template:$('s-tpl').value||null});toast('Đã lưu trạng thái')}catch(e){toast('Lỗi: '+e.message)}};
+$('s-save').onclick=async()=>{try{await api('PUT','/dashboard/api/guilds/'+G+'/stats',{voiceChannelId:$('s-voice').value||null,template:$('s-tpl').value||null,multiNames:{all:$('s-n-all').value||null,members:$('s-n-members').value||null,bots:$('s-n-bots').value||null,channels:$('s-n-channels').value||null,roles:$('s-n-roles').value||null}});toast('Đã lưu trạng thái')}catch(e){toast('Lỗi: '+e.message)}};
 $('s-refresh').onclick=async()=>{try{const d=await api('POST','/dashboard/api/guilds/'+G+'/stats/refresh');toast('Đã cập nhật: '+d.name)}catch(e){toast('Lỗi: '+e.message+' (cần setup trước)')}};
 $('s-multi').onclick=async()=>{try{const d=await api('POST','/dashboard/api/guilds/'+G+'/stats/setup-multi',{});toast('Đã dựng 5 kênh: '+d.line)}catch(e){toast('Lỗi: '+e.message+' (bot cần quyền Manage Channels)')}};
 let RITEMS=[];

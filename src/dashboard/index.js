@@ -277,6 +277,13 @@ function mount(app) {
     const patch = {};
     if (b.voiceChannelId !== undefined) patch.voiceChannelId = String(b.voiceChannelId || '') || null;
     if (b.template !== undefined) patch.template = String(b.template || '').slice(0, 100) || null;
+    if (b.multiNames !== undefined && b.multiNames && typeof b.multiNames === 'object') {
+      const mn = {};
+      for (const k of ['all', 'members', 'bots', 'channels', 'roles']) {
+        if (b.multiNames[k] !== undefined) mn[k] = String(b.multiNames[k] || '').slice(0, 100) || null;
+      }
+      patch.multiNames = mn;
+    }
     const s = await require('../utils/statsSettings').saveStats(req.params.gid, patch);
     res.json({ ok: true, settings: s });
   });
