@@ -127,6 +127,9 @@ const statsSettingsSchema = new mongoose.Schema({
   guildId: { type: String, required: true, unique: true },
   voiceChannelId: { type: String, default: null },
   template: { type: String, default: null },
+  mode: { type: String, default: 'single' },
+  categoryId: { type: String, default: null },
+  multi: { type: Object, default: undefined },
 });
 const StatsSettings = mongoose.models.StatsSettings || mongoose.model('StatsSettings', statsSettingsSchema);
 

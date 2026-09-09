@@ -73,7 +73,7 @@ function guild(gid) {
 <div id="p-s" class="card" style="display:none"><h2>Trạng thái server</h2>
 <div><label>Kênh voice làm bảng trạng thái (để trống = chưa bật)</label><select id="s-voice"></select></div>
 <div><label>Mẫu tên kênh (biến {members} {online} {voice} {server})</label><input id="s-tpl" placeholder="🟢 ONLINE • 👥 {members} MEMBERS • 🎮 {voice} ONLINE"></div>
-<button id="s-save">Lưu</button><button class="ghost" id="s-refresh">Cập nhật ngay</button><p class="mut">Tự đổi tên mỗi 15 phút (Discord giới hạn). Muốn đếm {online} thì bật <b>Presence Intent</b> trong Developer Portal.</p></div>
+<button id="s-save">Lưu</button><button class="ghost" id="s-refresh">Cập nhật ngay</button><button class="ghost" id="s-multi">Dựng 5 kênh kiểu mẫu</button><p class="mut">Chế độ 1 kênh: tự đổi tên mỗi 15 phút. Chế độ 5 kênh: All Members / Members / Bots / Channels / Roles riêng. Muốn đếm {online} thì bật <b>Presence Intent</b> trong Developer Portal.</p></div>
 <div id="p-r" class="card" style="display:none"><h2>Bảng chọn role</h2>
 <div><label>Kênh đặt bảng</label><select id="r-channel"></select></div>
 <div class="grid"><div><label>Tiêu đề</label><input id="r-title" placeholder="🎮 CHỌN ROLE"></div><div><label>Dòng hướng dẫn</label><input id="r-desc" placeholder="Bấm nút bên dưới để nhận / bỏ role"></div></div>
@@ -126,7 +126,8 @@ $('x-save').onclick=$('m-save').onclick=$('k-save').onclick=async()=>{try{await 
 $('a-save').onclick=async()=>{try{await api('PUT','/dashboard/api/guilds/'+G+'/announce',{channelId:$('a-channel').value||null,title:$('a-title').value||null,text:$('a-text').value,intervalMin:parseInt($('a-min').value||'0',10)});toast('Đã lưu bảng tin')}catch(e){toast('Lỗi: '+e.message)}};
 $('a-test').onclick=async()=>{try{const d=await api('POST','/dashboard/api/guilds/'+G+'/announce/test');toast('Đã đăng bảng! Mở Discord xem');if(d.url)window.open(d.url,'_blank')}catch(e){toast('Lỗi: '+e.message+' (cần setup kênh + nội dung trước)')}};
 $('s-save').onclick=async()=>{try{await api('PUT','/dashboard/api/guilds/'+G+'/stats',{voiceChannelId:$('s-voice').value||null,template:$('s-tpl').value||null});toast('Đã lưu trạng thái')}catch(e){toast('Lỗi: '+e.message)}};
-$('s-refresh').onclick=async()=>{try{const d=await api('POST','/dashboard/api/guilds/'+G+'/stats/refresh');toast('Đã cập nhật: '+d.name)}catch(e){toast('Lỗi: '+e.message+' (cần chọn kênh voice trước)')}};
+$('s-refresh').onclick=async()=>{try{const d=await api('POST','/dashboard/api/guilds/'+G+'/stats/refresh');toast('Đã cập nhật: '+d.name)}catch(e){toast('Lỗi: '+e.message+' (cần setup trước)')}};
+$('s-multi').onclick=async()=>{try{const d=await api('POST','/dashboard/api/guilds/'+G+'/stats/setup-multi',{});toast('Đã dựng 5 kênh: '+d.line)}catch(e){toast('Lỗi: '+e.message+' (bot cần quyền Manage Channels)')}};
 let RITEMS=[];
 function rName(id){const r=(META.roles||[]).find(x=>x.id===id);return r?r.name:id}
 function renderItems(){$('r-count').textContent=RITEMS.length;$('r-items').innerHTML=RITEMS.length?RITEMS.map((i,n)=>'<div class=row style="padding:6px 0;border-bottom:1px solid #222"><span style="flex:1">'+(n+1)+'. <b>'+rName(i.roleId).replace(/</g,'&lt;')+'</b> '+(i.emoji||'')+' — nút: <b>'+(i.label||rName(i.roleId)).replace(/</g,'&lt;')+'</b></span><button class=ghost data-n="'+n+'" style="margin:0;padding:4px 10px">Xóa</button></div>').join(''):'<p class=mut>Chưa có role nào.</p>';document.querySelectorAll('#r-items button').forEach(b=>b.onclick=()=>{RITEMS.splice(parseInt(b.dataset.n,10),1);renderItems()})}

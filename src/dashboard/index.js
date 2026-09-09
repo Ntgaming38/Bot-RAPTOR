@@ -288,6 +288,16 @@ function mount(app) {
     res.json({ ok: true, name });
   });
 
+  app.post('/dashboard/api/guilds/:gid/stats/setup-multi', guard, async (req, res) => {
+    try {
+      const { setupMultiChannels } = require('../utils/statsSettings');
+      const line = await setupMultiChannels(client, req.params.gid, (req.body || {}).categoryName);
+      res.json({ ok: true, line });
+    } catch (e) {
+      res.status(400).json({ error: e?.message === 'no-perm' ? 'Bot cần quyền Manage Channels.' : (e?.message || 'failed') });
+    }
+  });
+
   // Bảng chọn role (button role)
   app.get('/dashboard/api/guilds/:gid/roles', guard, async (req, res) => {
     res.json(await require('../utils/rolePanels').getPanel(req.params.gid));
