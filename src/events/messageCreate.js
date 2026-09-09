@@ -7,10 +7,12 @@ module.exports = {
   async execute(message) {
     if (message.author.bot || !message.guild) return;
 
-    // 1) Lọc từ cấm
-    if (config.bannedWords.length) {
+    // 1) Lọc từ cấm (theo server, dashboard chỉnh được)
+    const st = await require('../utils/guildSettings').getGuildSettings(message.guild.id).catch(() => null);
+    const banned = st?.bannedWords ?? config.bannedWords;
+    if (banned.length) {
       const content = message.content.toLowerCase();
-      const found = config.bannedWords.find(w => content.includes(w));
+      const found = banned.find(w => content.includes(w));
       if (found) {
         await message.delete().catch(() => {});
         const warn = await message.channel.send(`⚠️ ${message.author}, tin nhắn của bạn chứa từ cấm, đã bị xóa.`).catch(() => null);
@@ -25,7 +27,8 @@ module.exports = {
     // 2) Cộng XP level
     try {
       const res = await addXp(message.guild.id, message.author.id);
-      if (res?.leveled && config.levelUpMessage) {
+      const lvlMsg = st?.levelUpMessage ?? config.levelUpMessage;
+      if (res?.leveled && lvlMsg) {
         await message.channel.send(`🎉 ${message.author} đã lên **level ${res.level}**!`).catch(() => {});
       }
     } catch {}

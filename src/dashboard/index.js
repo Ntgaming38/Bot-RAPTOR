@@ -123,18 +123,56 @@ function mount(app) {
     if (!guild) return res.status(404).json({ error: 'bot-not-in-guild' });
     const channels = await guild.channels.fetch().catch(() => guild.channels.cache);
     const list = [];
+    const cats = [];
     for (const ch of channels.values()) {
-      if (!ch || (ch.type !== 0 && ch.type !== 5)) continue;
-      list.push({ id: ch.id, name: ch.name, type: ch.type });
+      if (!ch) continue;
+      if (ch.type === 0 || ch.type === 5) list.push({ id: ch.id, name: ch.name, type: ch.type });
+      else if (ch.type === 4) cats.push({ id: ch.id, name: ch.name });
     }
     list.sort((a, b) => a.name.localeCompare(b.name));
+    cats.sort((a, b) => a.name.localeCompare(b.name));
     const roles = (await guild.roles.fetch().catch(() => null)) || guild.roles.cache;
     const roleList = [];
     for (const r of roles.values()) {
       if (!r || r.id === guild.id) continue; // bỏ @everyone
       roleList.push({ id: r.id, name: r.name });
     }
-    res.json({ guild: { id: guild.id, name: guild.name }, channels: list, roles: roleList });
+    res.json({ guild: { id: guild.id, name: guild.name }, channels: list, categories: cats, roles: roleList });
+  });
+
+  // Cài đặt chung theo server: Level/XP, kiểm duyệt, log, ticket
+  app.get('/dashboard/api/guilds/:gid/settings', guard, async (req, res) => {
+    const s = await require('../utils/guildSettings').getGuildSettings(req.params.gid);
+    res.json({ ...s, bannedWords: (s.bannedWords || []).join(', ') });
+  });
+
+  app.put('/dashboard/api/guilds/:gid/settings', guard, async (req, res) => {
+    const b = req.body || {};
+    const patch = {};
+    const num = (v, min, max) => {
+      const n = parseInt(v, 10);
+      return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : undefined;
+    };
+    const idOrNull = (v) => (v === undefined ? undefined : (String(v || '') || null));
+    const xmin = num(b.xpMin, 1, 100);
+    const xmax = num(b.xpMax, 1, 100);
+    if (xmin !== undefined) patch.xpMin = xmin;
+    if (xmax !== undefined) patch.xpMax = xmax;
+    if (patch.xpMin !== undefined && patch.xpMax !== undefined && patch.xpMin > patch.xpMax) {
+      return res.status(400).json({ error: 'xp-min-max' });
+    }
+    const cd = num(b.xpCooldownSec, 0, 3600);
+    if (cd !== undefined) patch.xpCooldownSec = cd;
+    if (b.levelUpMessage !== undefined) patch.levelUpMessage = !!b.levelUpMessage;
+    if (b.bannedWords !== undefined) {
+      patch.bannedWords = String(b.bannedWords || '').split(/[,\\n]/).map((w) => w.trim().toLowerCase()).filter(Boolean);
+    }
+    for (const k of ['logChannelId', 'ticketCategoryId', 'ticketStaffRoleId']) patch[k] = idOrNull(b[k]);
+    if (b.ticketPanelImageUrl !== undefined) patch.ticketPanelImageUrl = String(b.ticketPanelImageUrl || '') || null;
+    // Bỏ key undefined (giữ giá trị cũ)
+    for (const k of Object.keys(patch)) if (patch[k] === undefined) delete patch[k];
+    const s = await require('../utils/guildSettings').saveGuildSettings(req.params.gid, patch);
+    res.json({ ok: true, settings: s });
   });
 
   app.get('/dashboard/api/guilds/:gid/welcome', guard, async (req, res) => {

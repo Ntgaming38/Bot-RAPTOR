@@ -8,6 +8,15 @@ const {
 const { embed, errorEmbed } = require('./embeds');
 const config = require('../config');
 
+// Setting ticket theo server (dashboard chỉnh), fallback .env
+async function getT(guildId) {
+  try {
+    return await require('./guildSettings').getGuildSettings(guildId);
+  } catch {
+    return config;
+  }
+}
+
 const FILE = path.join(__dirname, '..', '..', 'data', 'tickets.json');
 const RATINGS_FILE = path.join(__dirname, '..', '..', 'data', 'ticket-ratings.json');
 
@@ -38,7 +47,8 @@ function setupComponents() {
   )];
 }
 
-function setupEmbed() {
+function setupEmbed(st) {
+  const thumb = (st?.ticketPanelImageUrl) ?? config.ticketPanelImageUrl;
   return embed({
     title: '🎫 Bạn cần hỗ trợ - hãy mở ticket!',
     description: [
@@ -63,7 +73,7 @@ function setupEmbed() {
       '',
       '💡 **Lưu ý:** Ticket được tạo để hỗ trợ thành viên. Vui lòng không sử dụng Ticket để spam hoặc làm phiền Admin.',
     ].join('\n'),
-    thumbnail: config.ticketPanelImageUrl || undefined,
+    thumbnail: thumb || undefined,
     footer: 'Mỗi người chỉ có 1 ticket mở cùng lúc',
   });
 }
@@ -142,21 +152,22 @@ async function handleModal(interaction) {
 
 async function createTicket(interaction, type, reason) {
   await interaction.deferReply({ ephemeral: true });
+  const st = await getT(interaction.guildId);
 
   const overwrites = [
     { id: interaction.guild.id, deny: [PermissionFlagsBits.ViewChannel] },
     { id: interaction.user.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] },
     { id: interaction.client.user.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageChannels, PermissionFlagsBits.ReadMessageHistory] },
   ];
-  if (config.ticketStaffRoleId) {
-    overwrites.push({ id: config.ticketStaffRoleId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] });
+  if (st.ticketStaffRoleId) {
+    overwrites.push({ id: st.ticketStaffRoleId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] });
   }
 
   const safeName = interaction.user.username.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 20) || 'user';
   const channel = await interaction.guild.channels.create({
     name: `${type.id}-${safeName}`.slice(0, 90),
     type: ChannelType.GuildText,
-    parent: config.ticketCategoryId || null,
+    parent: st.ticketCategoryId || null,
     permissionOverwrites: overwrites,
     topic: `Ticket ${type.label} của ${interaction.user.tag} | Lý do: ${reason.slice(0, 200)}`,
   }).catch(() => interaction.guild.channels.create({
@@ -174,7 +185,7 @@ async function createTicket(interaction, type, reason) {
   save(db);
 
   await channel.send({
-    content: `${interaction.user} ${config.ticketStaffRoleId ? `<@&${config.ticketStaffRoleId}>` : ''}`,
+    content: `${interaction.user} ${st.ticketStaffRoleId ? `<@&${st.ticketStaffRoleId}>` : ''}`,
     embeds: [embed({
       title: `${type.emoji} ${type.label} — ${interaction.user.username}`,
       description: `**Lý do:**\n\`\`\`${reason}\`\`\`\nStaff sẽ hỗ trợ bạn sớm.\n\n✋ **Nhận** — staff nhận xử lý\n📝 **Lịch sử** — xuất transcript\n🔒 **Đóng** — đóng ticket khi xong`,
@@ -240,9 +251,10 @@ async function handleTranscript(interaction) {
 }
 
 // ===== ĐÓNG (kèm transcript + gửi DM + đánh giá) =====
-function canManageTicket(interaction, t) {
+async function canManageTicket(interaction, t) {
   if (t.ownerId === interaction.user.id) return true;
-  if (config.ticketStaffRoleId && interaction.member?.roles?.cache?.has(config.ticketStaffRoleId)) return true;
+  const st = await getT(interaction.guildId);
+  if (st.ticketStaffRoleId && interaction.member?.roles?.cache?.has(st.ticketStaffRoleId)) return true;
   return !!interaction.memberPermissions?.has(PermissionFlagsBits.ManageChannels);
 }
 
@@ -252,7 +264,7 @@ async function handleClose(interaction) {
   if (!t) {
     return interaction.reply({ embeds: [errorEmbed('Kênh này không phải ticket.')], ephemeral: true });
   }
-  if (!canManageTicket(interaction, t)) {
+  if (!(await canManageTicket(interaction, t))) {
     return interaction.reply({ embeds: [errorEmbed('Chỉ chủ ticket hoặc staff mới được đóng.')], ephemeral: true });
   }
   await interaction.reply('🔒 Đang đóng ticket, xuất lịch sử...');
@@ -266,8 +278,10 @@ async function handleClose(interaction) {
   try {
     const logger = require('./logger');
     await logger.logMod(interaction.guild, `🔒 Đóng ticket #${channel.name} (${t.typeLabel || ''}) bởi ${interaction.user.tag}`);
-    if (file && config.logChannelId) {
-      const logCh = await interaction.guild.channels.fetch(config.logChannelId).catch(() => null);
+    const st = await getT(interaction.guildId);
+    const logId = st.logChannelId || config.logChannelId;
+    if (file && logId) {
+      const logCh = await interaction.guild.channels.fetch(logId).catch(() => null);
       if (logCh?.isTextBased()) await logCh.send({ content: `📝 Transcript #${channel.name} (${t.ownerTag})`, files: [file] }).catch(() => {});
     }
   } catch {}
@@ -295,8 +309,9 @@ async function handleClaim(interaction) {
   if (!t) {
     return interaction.reply({ embeds: [errorEmbed('Kênh này không phải ticket.')], ephemeral: true });
   }
-  const isStaff = config.ticketStaffRoleId
-    ? interaction.member?.roles?.cache?.has(config.ticketStaffRoleId)
+  const st = await getT(interaction.guildId);
+  const isStaff = st.ticketStaffRoleId
+    ? interaction.member?.roles?.cache?.has(st.ticketStaffRoleId)
     : interaction.memberPermissions?.has(PermissionFlagsBits.ManageChannels);
   if (!isStaff) {
     return interaction.reply({ embeds: [errorEmbed('Chỉ staff mới nhận ticket được.')], ephemeral: true });
@@ -368,6 +383,7 @@ function isTicketChannel(channelId) {
 // ===== KÊNH PANEL RIÊNG (khóa chat, chỉ bấm nút) =====
 // Member vẫn bấm được select menu / nút khi chỉ có ViewChannel (không cần SendMessages).
 async function lockPanelChannel(channel, guild) {
+  const st = await getT(guild.id);
   const overwrites = [
     {
       id: guild.id, // @everyone: chỉ xem + bấm, không chat
@@ -379,9 +395,9 @@ async function lockPanelChannel(channel, guild) {
       allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageChannels, PermissionFlagsBits.ReadMessageHistory],
     },
   ];
-  if (config.ticketStaffRoleId) {
+  if (st.ticketStaffRoleId) {
     overwrites.push({
-      id: config.ticketStaffRoleId,
+      id: st.ticketStaffRoleId,
       allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory],
     });
   }

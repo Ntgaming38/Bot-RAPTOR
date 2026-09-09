@@ -2,9 +2,15 @@ const config = require('../config');
 const { embed } = require('./embeds');
 
 async function getLogChannel(guild) {
-  if (!config.logChannelId || !guild) return null;
+  if (!guild) return null;
+  let id = config.logChannelId;
   try {
-    const ch = await guild.channels.fetch(config.logChannelId).catch(() => null);
+    const st = await require('./guildSettings').getGuildSettings(guild.id).catch(() => null);
+    if (st?.logChannelId) id = st.logChannelId;
+  } catch {}
+  if (!id) return null;
+  try {
+    const ch = await guild.channels.fetch(id).catch(() => null);
     if (ch?.isTextBased()) return ch;
   } catch {}
   return null;

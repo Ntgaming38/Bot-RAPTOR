@@ -41,8 +41,9 @@ module.exports = {
         return interaction.editReply({ embeds: [errorEmbed('Kênh phải là kênh text.') ] });
       }
       if (lock) await tickets.lockPanelChannel(target, interaction.guild);
+      const st = await require('../../utils/guildSettings').getGuildSettings(interaction.guildId).catch(() => null);
       await target.send({
-        embeds: [tickets.setupEmbed()],
+        embeds: [tickets.setupEmbed(st)],
         components: tickets.setupComponents(),
       });
       return interaction.editReply({ embeds: [successEmbed(`✅ Đã gửi bảng ticket vào ${target}!${lock ? '\n🔒 Đã khóa chat — member chỉ xem + bấm chọn, không nhắn được.' : ''}${newName ? '\nXóa panel cũ ở kênh khác (nếu có) để tránh loạn.' : ''}`)] });
@@ -53,7 +54,8 @@ module.exports = {
       }
       await interaction.deferReply({ ephemeral: true });
       const ch = await tickets.createPanelChannel(interaction.guild, interaction.options.getString('ten') || 'mo-ticket');
-      await ch.send({ embeds: [tickets.setupEmbed()], components: tickets.setupComponents() });
+      const st = await require('../../utils/guildSettings').getGuildSettings(interaction.guildId).catch(() => null);
+      await ch.send({ embeds: [tickets.setupEmbed(st)], components: tickets.setupComponents() });
       return interaction.editReply({ embeds: [successEmbed(`✅ Đã tạo kênh ${ch}!\n🔒 Kênh đã khóa chat — member chỉ được chọn loại ticket, không nhắn linh tinh.\nXóa panel cũ ở kênh khác (nếu có) để tránh loạn.`)] });
     }
     if (sub === 'close') return tickets.handleClose(interaction);

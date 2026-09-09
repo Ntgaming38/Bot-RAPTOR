@@ -94,4 +94,19 @@ const leaderboardSettingsSchema = new mongoose.Schema({
 });
 const LeaderboardSettings = mongoose.models.LeaderboardSettings || mongoose.model('LeaderboardSettings', leaderboardSettingsSchema);
 
-module.exports = { mongoose, connectDB, isMongo, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings };
+// === Cài đặt chung theo server (dashboard chỉnh: XP, từ cấm, log, ticket) ===
+const guildSettingsSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, unique: true },
+  xpMin: Number,
+  xpMax: Number,
+  xpCooldownSec: Number,
+  levelUpMessage: Boolean,
+  bannedWords: { type: [String], default: undefined },
+  logChannelId: { type: String, default: null },
+  ticketCategoryId: { type: String, default: null },
+  ticketStaffRoleId: { type: String, default: null },
+  ticketPanelImageUrl: { type: String, default: null },
+});
+const GuildSettings = mongoose.models.GuildSettings || mongoose.model('GuildSettings', guildSettingsSchema);
+
+module.exports = { mongoose, connectDB, isMongo, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings, GuildSettings };

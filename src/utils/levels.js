@@ -34,14 +34,18 @@ function getUser(db, guildId, userId) {
 
 // Cộng XP khi nhắn tin. Trả về { leveled, level, xp } hoặc null nếu đang cooldown
 async function addXp(guildId, userId) {
+  const st = await require('./guildSettings').getGuildSettings(guildId).catch(() => null);
+  const xpMin = st?.xpMin ?? config.xpMin;
+  const xpMax = st?.xpMax ?? config.xpMax;
+  const cooldownMs = (st?.xpCooldownSec ?? config.xpCooldownSec) * 1000;
   if (useMongo()) {
     const { Level } = require('../db');
     const now = Date.now();
     let doc = await Level.findOne({ guildId, userId });
     if (!doc) doc = new Level({ guildId, userId, xp: 0, level: 0, lastMsg: 0 });
-    if (now - (doc.lastMsg || 0) < config.xpCooldownSec * 1000) return null;
+    if (now - (doc.lastMsg || 0) < cooldownMs) return null;
     doc.lastMsg = now;
-    const gain = Math.floor(Math.random() * (config.xpMax - config.xpMin + 1)) + config.xpMin;
+    const gain = Math.floor(Math.random() * (xpMax - xpMin + 1)) + xpMin;
     doc.xp += gain;
     let leveled = false;
     while (doc.xp >= xpNeeded(doc.level)) {
@@ -55,9 +59,9 @@ async function addXp(guildId, userId) {
   const db = load();
   const u = getUser(db, guildId, userId);
   const now = Date.now();
-  if (now - u.lastMsg < config.xpCooldownSec * 1000) return null;
+  if (now - u.lastMsg < cooldownMs) return null;
   u.lastMsg = now;
-  const gain = Math.floor(Math.random() * (config.xpMax - config.xpMin + 1)) + config.xpMin;
+  const gain = Math.floor(Math.random() * (xpMax - xpMin + 1)) + xpMin;
   u.xp += gain;
 
   let leveled = false;
