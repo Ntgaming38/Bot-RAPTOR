@@ -145,4 +145,15 @@ const rolePanelSchema = new mongoose.Schema({
 });
 const RolePanel = mongoose.models.RolePanel || mongoose.model('RolePanel', rolePanelSchema);
 
-module.exports = { mongoose, connectDB, isMongo, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings, GuildSettings, AnnounceSettings, StatsSettings, RolePanel };
+// === Tin nhắn tạm biệt (goodbye) theo server ===
+const goodbyeSettingsSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, unique: true },
+  channelId: { type: String, default: null },
+  title: { type: String, default: null },
+  text: { type: String, default: null },
+  imageUrl: { type: String, default: null },
+  color: { type: String, default: null },
+});
+const GoodbyeSettings = mongoose.models.GoodbyeSettings || mongoose.model('GoodbyeSettings', goodbyeSettingsSchema);
+
+module.exports = { mongoose, connectDB, isMongo, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings, GuildSettings, AnnounceSettings, StatsSettings, RolePanel, GoodbyeSettings };

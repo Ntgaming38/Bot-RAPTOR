@@ -334,6 +334,22 @@ function mount(app) {
     res.json({ ok: true, url: `https://discord.com/channels/${req.params.gid}/${msg.channelId}/${msg.id}` });
   });
 
+  // Tin nhắn tạm biệt
+  app.get('/dashboard/api/guilds/:gid/goodbye', guard, async (req, res) => {
+    res.json(await require('../utils/goodbyeSettings').getGoodbye(req.params.gid));
+  });
+
+  app.put('/dashboard/api/guilds/:gid/goodbye', guard, async (req, res) => {
+    const b = req.body || {};
+    const patch = {};
+    if (b.channelId !== undefined) patch.channelId = String(b.channelId || '') || null;
+    if (b.title !== undefined) patch.title = String(b.title || '').slice(0, 100) || null;
+    if (b.text !== undefined) patch.text = String(b.text || '').slice(0, 2000) || null;
+    if (b.imageUrl !== undefined) patch.imageUrl = String(b.imageUrl || '') || null;
+    const s = await require('../utils/goodbyeSettings').saveGoodbye(req.params.gid, patch);
+    res.json({ ok: true, settings: s });
+  });
+
   // --- Pages ---
   app.get('/dashboard', (req, res) => {
     if (!req.session?.user) return res.send(views.login());
