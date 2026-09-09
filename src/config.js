@@ -49,4 +49,9 @@ module.exports = {
   // === DATABASE (giữ XP/giveaway/ticket khi Render restart) ===
   // Để trống = dùng file JSON cũ trong data/. Có MONGODB_URI = dùng MongoDB Atlas.
   mongodbUri: process.env.MONGODB_URI || null,
+
+  // === DASHBOARD WEB (tùy chỉnh bot trên trình duyệt) ===
+  // Lấy ở Discord Developer Portal → General Information → Client Secret (Reset Secret nếu chưa có).
+  // Thêm Redirect URL trong portal (OAuth2 → Redirects): https://<domain-render-cua-ban>/dashboard/callback
+  clientSecret: (process.env.DISCORD_CLIENT_SECRET || '').trim() || null,
 };

@@ -47,6 +47,7 @@ async function main() {
     ],
     partials: [Partials.GuildMember, Partials.Message, Partials.Channel, Partials.Reaction],
   });
+  try { require('./dashboard').setClient(client); } catch {}
 
   client.commands = new Collection();
   const commands = await loadCommands();
