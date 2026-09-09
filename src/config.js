@@ -34,6 +34,9 @@ module.exports = {
   // Có thể để trống, bot vẫn phát được SoundCloud / link trực tiếp.
   youtubeCookie: process.env.YOUTUBE_COOKIE || null,
   maxVolume: parseInt(process.env.MAX_VOLUME || '100', 10),
+  // Tắt YouTube khi extractor hỏng/IP bị chặn: bot tự tìm SoundCloud thay thế.
+  // Bật lại khi đã sửa: YOUTUBE_ENABLED=true
+  youtubeEnabled: (process.env.YOUTUBE_ENABLED || 'true').toLowerCase() !== 'false',
 
   // === LEVEL ===
   levelUpMessage: process.env.LEVEL_UP_MESSAGE !== 'false', // true = báo khi lên level

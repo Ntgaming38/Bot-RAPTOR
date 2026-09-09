@@ -126,14 +126,30 @@ async function main() {
     queue.metadata?.channel?.send(`▶️ Đang phát: **${track.cleanTitle || track.title}** — yêu cầu bởi ${track.requestedBy}`).catch(() => {});
   });
   player.events.on(GuildQueueEvent.PlayerError, (queue, error) => {
+    // Lỗi audio (link chết, YouTube chặn, mạng...): báo + tự skip sang bài kế
     console.error('[PlayerError]', error?.message);
-    queue.metadata?.channel?.send('❌ Lỗi phát nhạc, bỏ qua bài này.').catch(() => {});
+    queue.metadata?.channel?.send('❌ Lỗi phát bài này, tự bỏ qua...').catch(() => {});
+    try {
+      if (queue.node?.skip) queue.node.skip();
+    } catch {}
   });
   player.events.on(GuildQueueEvent.Error, (queue, error) => {
     console.error('[QueueError]', error?.message);
   });
+  const emptyTimers = new Map();
   player.events.on(GuildQueueEvent.Empty, (queue) => {
     queue.metadata?.channel?.send('📭 Hết nhạc trong hàng chờ, bot sẽ ở lại 60s rồi out.').catch(() => {});
+    const gid = queue.guild.id;
+    if (emptyTimers.has(gid)) clearTimeout(emptyTimers.get(gid));
+    const t = setTimeout(() => {
+      emptyTimers.delete(gid);
+      try {
+        const q = client?.player?.nodes?.get(gid);
+        if (q && !(q.currentTrack || q.current)) q.delete();
+      } catch {}
+    }, 60_000);
+    if (t.unref) t.unref();
+    emptyTimers.set(gid, t);
   });
 
   // Khôi phục giveaway đang dở sau khi restart (24/24)
