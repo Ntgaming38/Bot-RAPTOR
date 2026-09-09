@@ -53,6 +53,10 @@ module.exports = {
           await require('../utils/rolePanels').handleToggle(interaction, id.split(':')[1]);
           return;
         }
+        if (id.startsWith('rpb:')) {
+          await require('../utils/rolePanels').handleToggle(interaction, id.split(':')[2]);
+          return;
+        }
         if (id.startsWith('giveaway-join:')) {
           await require('../utils/giveaways').handleJoin(interaction, id.split(':')[1]);
           return;
