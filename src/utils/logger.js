@@ -42,9 +42,33 @@ function logJoin(member) {
 
 function logLeave(member) {
   return send(member.guild, {
-    title: '📤 Thành viên rời',
-    description: `${member.user.tag} (<@${member.id}>)`,
+    title: `👋 ${member.user.tag} vừa rời.`,
+    description: `${member} (<@${member.id}>)`,
+    thumbnail: member.user.displayAvatarURL(),
     color: 0xED4245,
+  });
+}
+
+// Ai nhận/bỏ role của ai (kiểu ProBot)
+function logRoleChange(guild, user, added, removed, executor) {
+  const lines = [];
+  if (added.length) lines.push(`**Vai trò thêm:** ${added.map((r) => `${r}`).join(' ')}`);
+  if (removed.length) lines.push(`**Vai trò gỡ:** ${removed.map((r) => `${r}`).join(' ')}`);
+  if (!lines.length) return Promise.resolve(false);
+  return send(guild, {
+    title: `🎭 Đã cập nhật cho ${user.tag}`,
+    description: `${user} (<@${user.id}>)\n${lines.join('\n')}${executor ? `\n**Người thực hiện:** ${executor}` : ''}`,
+    thumbnail: user.displayAvatarURL(),
+    color: 0xFEE75C,
+  });
+}
+
+// Ai sửa kênh gì (tên cũ → mới, kiểu ProBot)
+function logChannelUpdate(guild, oldName, newName, channel, executor) {
+  return send(guild, {
+    title: `🔧 Đã cập nhật kênh: ${newName}`,
+    description: `**Kênh:** ${channel}\n**Tên cũ:** ${oldName}\n**Tên mới:** ${newName}${executor ? `\n**Quản lý trách nhiệm:** ${executor}` : ''}`,
+    color: 0xFEE75C,
   });
 }
 
@@ -89,4 +113,4 @@ function logBan(guild, user, reason, banned = true) {
   });
 }
 
-module.exports = { send, logMod, logJoin, logLeave, logMessageDelete, logMessageUpdate, logVoice, logBan };
+module.exports = { send, logMod, logJoin, logLeave, logRoleChange, logChannelUpdate, logMessageDelete, logMessageUpdate, logVoice, logBan };
