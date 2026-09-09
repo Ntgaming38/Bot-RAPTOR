@@ -45,10 +45,14 @@ module.exports = {
       return;
     }
 
-    // 4) Nút bấm (giveaway + ticket + đánh giá)
+    // 4) Nút bấm (giveaway + ticket + đánh giá + chọn role)
     if (interaction.isButton()) {
       const id = interaction.customId || '';
       try {
+        if (id.startsWith('role-toggle:')) {
+          await require('../utils/rolePanels').handleToggle(interaction, id.split(':')[1]);
+          return;
+        }
         if (id.startsWith('giveaway-join:')) {
           await require('../utils/giveaways').handleJoin(interaction, id.split(':')[1]);
           return;

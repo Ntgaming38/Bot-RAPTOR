@@ -130,4 +130,15 @@ const statsSettingsSchema = new mongoose.Schema({
 });
 const StatsSettings = mongoose.models.StatsSettings || mongoose.model('StatsSettings', statsSettingsSchema);
 
-module.exports = { mongoose, connectDB, isMongo, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings, GuildSettings, AnnounceSettings, StatsSettings };
+// === Bảng chọn role (button role, admin tự thêm role) ===
+const rolePanelSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, unique: true },
+  channelId: { type: String, default: null },
+  messageId: { type: String, default: null },
+  title: { type: String, default: null },
+  description: { type: String, default: null },
+  items: { type: [{ roleId: String, label: String, emoji: String }], default: [] },
+});
+const RolePanel = mongoose.models.RolePanel || mongoose.model('RolePanel', rolePanelSchema);
+
+module.exports = { mongoose, connectDB, isMongo, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings, GuildSettings, AnnounceSettings, StatsSettings, RolePanel };

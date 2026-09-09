@@ -41,7 +41,7 @@ fetch('/dashboard/api/me').then(r=>r.json()).then(d=>{
 }
 
 function guild(gid) {
-  return shell('Tùy chỉnh server', `<a href="/dashboard" class="mut">← Tất cả server</a><h1>⚙️ Tùy chỉnh</h1><div class="tabs"><div class="tab on" id="t-w">Welcome</div><div class="tab" id="t-l">Leaderboard</div><div class="tab" id="t-x">Level</div><div class="tab" id="t-m">Kiểm duyệt</div><div class="tab" id="t-t">Ticket</div><div class="tab" id="t-a">Thông báo</div><div class="tab" id="t-s">Trạng thái</div></div>
+  return shell('Tùy chỉnh server', `<a href="/dashboard" class="mut">← Tất cả server</a><h1>⚙️ Tùy chỉnh</h1><div class="tabs"><div class="tab on" id="t-w">Welcome</div><div class="tab" id="t-l">Leaderboard</div><div class="tab" id="t-x">Level</div><div class="tab" id="t-m">Kiểm duyệt</div><div class="tab" id="t-t">Ticket</div><div class="tab" id="t-a">Thông báo</div><div class="tab" id="t-s">Trạng thái</div><div class="tab" id="t-r">Role</div></div>
 <div id="p-w" class="card"><h2>Welcome (giống BotGhost)</h2>
 <div class="grid"><div><label>Kênh gửi welcome</label><select id="w-channel"></select></div><div><label>Tiêu đề (VD: By RAPTOR)</label><input id="w-title" placeholder="Để trống = theo tên server"></div>
 <div><label>Kênh chọn role ✅</label><select id="w-role"></select></div><div><label>Kênh luật</label><select id="w-rules"></select></div>
@@ -73,13 +73,21 @@ function guild(gid) {
 <div id="p-s" class="card" style="display:none"><h2>Trạng thái server</h2>
 <div><label>Kênh voice làm bảng trạng thái (để trống = chưa bật)</label><select id="s-voice"></select></div>
 <div><label>Mẫu tên kênh (biến {members} {online} {voice} {server})</label><input id="s-tpl" placeholder="🟢 ONLINE • 👥 {members} MEMBERS • 🎮 {voice} ONLINE"></div>
-<button id="s-save">Lưu</button><button class="ghost" id="s-refresh">Cập nhật ngay</button><p class="mut">Tự đổi tên mỗi 15 phút (Discord giới hạn). Muốn đếm {online} thì bật <b>Presence Intent</b> trong Developer Portal.</p></div>`, `<script>
+<button id="s-save">Lưu</button><button class="ghost" id="s-refresh">Cập nhật ngay</button><p class="mut">Tự đổi tên mỗi 15 phút (Discord giới hạn). Muốn đếm {online} thì bật <b>Presence Intent</b> trong Developer Portal.</p></div>
+<div id="p-r" class="card" style="display:none"><h2>Bảng chọn role</h2>
+<div><label>Kênh đặt bảng</label><select id="r-channel"></select></div>
+<div class="grid"><div><label>Tiêu đề</label><input id="r-title" placeholder="🎮 CHỌN ROLE"></div><div><label>Dòng hướng dẫn</label><input id="r-desc" placeholder="Bấm nút bên dưới để nhận / bỏ role"></div></div>
+<div><label>Role trong bảng (<span id="r-count">0</span>/25)</label><div id="r-items"></div></div>
+<div class="grid"><div><label>Thêm role</label><select id="r-add-role"></select></div><div><label>Chữ trên nút (trống = tên role)</label><input id="r-add-label" maxlength="80"></div></div>
+<div><label>Emoji trên nút (VD: 🎮, trống = không có)</label><input id="r-add-emoji" maxlength="50"></div>
+<button class="ghost" id="r-add">+ Thêm vào danh sách</button><br>
+<button id="r-save">Lưu + vẽ bảng</button><p class="mut">Member bấm nút để nhận, bấm lại để bỏ. Bot phải có quyền Manage Roles và role bot nằm trên các role này.</p></div>`, `<script>
 const G='${esc(gid)}';
 const $=id=>document.getElementById(id);
 document.getElementById('t-w').onclick=e=>{t('t-w','p-w')};document.getElementById('t-l').onclick=e=>{t('t-l','p-l')};
 document.getElementById('t-x').onclick=e=>{t('t-x','p-x')};document.getElementById('t-m').onclick=e=>{t('t-m','p-m')};document.getElementById('t-t').onclick=e=>{t('t-t','p-t')};
-document.getElementById('t-a').onclick=e=>{t('t-a','p-a')};document.getElementById('t-s').onclick=e=>{t('t-s','p-s')};
-function t(tab,page){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));document.getElementById(tab).classList.add('on');['p-w','p-l','p-x','p-m','p-t','p-a','p-s'].forEach(p=>document.getElementById(p).style.display='none');document.getElementById(page).style.display='block'}
+document.getElementById('t-a').onclick=e=>{t('t-a','p-a')};document.getElementById('t-s').onclick=e=>{t('t-s','p-s')};document.getElementById('t-r').onclick=e=>{t('t-r','p-r')};
+function t(tab,page){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));document.getElementById(tab).classList.add('on');['p-w','p-l','p-x','p-m','p-t','p-a','p-s','p-r'].forEach(p=>document.getElementById(p).style.display='none');document.getElementById(page).style.display='block'}
 function opt(sel,list,cur,allowEmpty){const s=$(sel);s.innerHTML=(allowEmpty?'<option value="">— không dùng —</option>':'')+list.map(o=>'<option value="'+o.id+'">'+o.name.replace(/</g,'&lt;')+'</option>').join('');if(cur)s.value=cur}
 let META=null;
 async function api(m,url,body){const r=await fetch(url,{method:m,headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||('Lỗi '+r.status));return d}
@@ -103,6 +111,10 @@ async function api(m,url,body){const r=await fetch(url,{method:m,headers:{'Conte
     opt('a-channel',txt,an.channelId,true);$('a-title').value=an.title||'';$('a-text').value=an.text||'';$('a-min').value=an.intervalMin||0;
     const ss=await api('GET','/dashboard/api/guilds/'+G+'/stats');
     opt('s-voice',[{id:'',name:'— chưa bật —'}].concat(META.voice||[]),ss.voiceChannelId,true);$('s-tpl').value=ss.template||'';
+    const rp=await api('GET','/dashboard/api/guilds/'+G+'/roles');
+    opt('r-channel',txt,rp.channelId,true);$('r-title').value=rp.title||'';$('r-desc').value=rp.description||'';
+    RITEMS=(rp.items||[]).map(i=>({roleId:i.roleId,label:i.label||'',emoji:i.emoji||''}));
+    opt('r-add-role',META.roles);renderItems();
   }catch(e){toast('Lỗi tải: '+e.message+' (bot phải đã vào server và bạn là admin)')}
 })();
 $('w-save').onclick=async()=>{try{await api('PUT','/dashboard/api/guilds/'+G+'/welcome',{channelId:$('w-channel').value||null,title:$('w-title').value||null,roleChannelId:$('w-role').value||null,rulesChannelId:$('w-rules').value||null,announceChannelId:$('w-ann').value||null,chatChannelId:$('w-chat').value||null,imageUrl:$('w-image').value||null,color:$('w-color').value||null,reactions:$('w-reactions').value,autoRoleId:$('w-autorole').value||null});toast('Đã lưu welcome')}catch(e){toast('Lỗi: '+e.message)}};
@@ -115,6 +127,11 @@ $('a-save').onclick=async()=>{try{await api('PUT','/dashboard/api/guilds/'+G+'/a
 $('a-test').onclick=async()=>{try{const d=await api('POST','/dashboard/api/guilds/'+G+'/announce/test');toast('Đã đăng bảng! Mở Discord xem');if(d.url)window.open(d.url,'_blank')}catch(e){toast('Lỗi: '+e.message+' (cần setup kênh + nội dung trước)')}};
 $('s-save').onclick=async()=>{try{await api('PUT','/dashboard/api/guilds/'+G+'/stats',{voiceChannelId:$('s-voice').value||null,template:$('s-tpl').value||null});toast('Đã lưu trạng thái')}catch(e){toast('Lỗi: '+e.message)}};
 $('s-refresh').onclick=async()=>{try{const d=await api('POST','/dashboard/api/guilds/'+G+'/stats/refresh');toast('Đã cập nhật: '+d.name)}catch(e){toast('Lỗi: '+e.message+' (cần chọn kênh voice trước)')}};
+let RITEMS=[];
+function rName(id){const r=(META.roles||[]).find(x=>x.id===id);return r?r.name:id}
+function renderItems(){$('r-count').textContent=RITEMS.length;$('r-items').innerHTML=RITEMS.length?RITEMS.map((i,n)=>'<div class=row style="padding:6px 0;border-bottom:1px solid #222"><span style="flex:1">'+(n+1)+'. <b>'+rName(i.roleId).replace(/</g,'&lt;')+'</b> '+(i.emoji||'')+' — nút: <b>'+(i.label||rName(i.roleId)).replace(/</g,'&lt;')+'</b></span><button class=ghost data-n="'+n+'" style="margin:0;padding:4px 10px">Xóa</button></div>').join(''):'<p class=mut>Chưa có role nào.</p>';document.querySelectorAll('#r-items button').forEach(b=>b.onclick=()=>{RITEMS.splice(parseInt(b.dataset.n,10),1);renderItems()})}
+$('r-add').onclick=()=>{const id=$('r-add-role').value;if(!id)return toast('Chọn role đã');if(RITEMS.some(i=>i.roleId===id))return toast('Role đã có trong bảng');if(RITEMS.length>=25)return toast('Tối đa 25 role');RITEMS.push({roleId:id,label:$('r-add-label').value||rName(id),emoji:$('r-add-emoji').value||''});$('r-add-label').value='';$('r-add-emoji').value='';renderItems()};
+$('r-save').onclick=async()=>{try{await api('PUT','/dashboard/api/guilds/'+G+'/roles',{channelId:$('r-channel').value||null,title:$('r-title').value||null,description:$('r-desc').value||null,items:RITEMS});const d=await api('POST','/dashboard/api/guilds/'+G+'/roles/refresh');toast('Đã vẽ bảng! Mở Discord xem');if(d.url)window.open(d.url,'_blank')}catch(e){toast('Lỗi: '+e.message+' (cần chọn kênh + ít nhất 1 role)')}};
 </script>`);
 }
 

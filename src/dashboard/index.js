@@ -288,6 +288,35 @@ function mount(app) {
     res.json({ ok: true, name });
   });
 
+  // Bảng chọn role (button role)
+  app.get('/dashboard/api/guilds/:gid/roles', guard, async (req, res) => {
+    res.json(await require('../utils/rolePanels').getPanel(req.params.gid));
+  });
+
+  app.put('/dashboard/api/guilds/:gid/roles', guard, async (req, res) => {
+    const b = req.body || {};
+    const patch = {};
+    if (b.channelId !== undefined) patch.channelId = String(b.channelId || '') || null;
+    if (b.title !== undefined) patch.title = String(b.title || '').slice(0, 100) || null;
+    if (b.description !== undefined) patch.description = String(b.description || '').slice(0, 1000) || null;
+    if (b.items !== undefined) {
+      if (!Array.isArray(b.items) || b.items.length > 25) return res.status(400).json({ error: 'items' });
+      patch.items = b.items
+        .filter((i) => i && i.roleId)
+        .slice(0, 25)
+        .map((i) => ({ roleId: String(i.roleId), label: String(i.label || '').slice(0, 80) || 'Role', emoji: String(i.emoji || '') || null }));
+    }
+    const s = await require('../utils/rolePanels').savePanel(req.params.gid, patch);
+    res.json({ ok: true, settings: s });
+  });
+
+  app.post('/dashboard/api/guilds/:gid/roles/refresh', guard, async (req, res) => {
+    const { renderPanel } = require('../utils/rolePanels');
+    const msg = await renderPanel(client, req.params.gid);
+    if (!msg) return res.status(400).json({ error: 'no-items' });
+    res.json({ ok: true, url: `https://discord.com/channels/${req.params.gid}/${msg.channelId}/${msg.id}` });
+  });
+
   // --- Pages ---
   app.get('/dashboard', (req, res) => {
     if (!req.session?.user) return res.send(views.login());
