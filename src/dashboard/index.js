@@ -350,6 +350,26 @@ function mount(app) {
     res.json({ ok: true, settings: s });
   });
 
+  // Log kiểu ProBot: kênh + bật/tắt từng loại
+  const { LOG_TYPES } = require('../utils/logSettings');
+  app.get('/dashboard/api/guilds/:gid/logs', guard, async (req, res) => {
+    res.json({ types: LOG_TYPES, ...(await require('../utils/logSettings').getLogSettings(req.params.gid)) });
+  });
+
+  app.put('/dashboard/api/guilds/:gid/logs', guard, async (req, res) => {
+    const b = req.body || {};
+    const patch = {};
+    if (b.channelId !== undefined) patch.channelId = String(b.channelId || '') || null;
+    if (b.toggles && typeof b.toggles === 'object') {
+      patch.toggles = {};
+      for (const [k] of LOG_TYPES) {
+        if (b.toggles[k] !== undefined) patch.toggles[k] = !!b.toggles[k];
+      }
+    }
+    const s = await require('../utils/logSettings').saveLogSettings(req.params.gid, patch);
+    res.json({ ok: true, settings: s });
+  });
+
   // --- Pages ---
   app.get('/dashboard', (req, res) => {
     if (!req.session?.user) return res.send(views.login());

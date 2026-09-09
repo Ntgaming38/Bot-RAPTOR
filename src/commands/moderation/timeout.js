@@ -18,7 +18,7 @@ module.exports = {
     if (!member) return interaction.reply({ embeds: [errorEmbed('Không tìm thấy người này.')], ephemeral: true });
     if (!member.moderatable) return interaction.reply({ embeds: [errorEmbed('Bot không thể timeout người này.')], ephemeral: true });
     await member.timeout(minutes * 60 * 1000, reason);
-    require('../../utils/logger').logMod(interaction.guild, `⏳ ${interaction.user.tag} timeout ${user.tag} ${minutes} phút`, `Lý do: ${reason}`).catch(() => {});
+    // Log tự ghi ở event guildMemberUpdate (kèm mod + thời gian) — không log ở đây để khỏi trùng
     await interaction.reply({ embeds: [successEmbed(`Đã timeout **${user.tag}** trong ${minutes} phút\nLý do: ${reason}`)] });
   },
 };

@@ -156,4 +156,21 @@ const goodbyeSettingsSchema = new mongoose.Schema({
 });
 const GoodbyeSettings = mongoose.models.GoodbyeSettings || mongoose.model('GoodbyeSettings', goodbyeSettingsSchema);
 
-module.exports = { mongoose, connectDB, isMongo, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings, GuildSettings, AnnounceSettings, StatsSettings, RolePanel, GoodbyeSettings };
+// === Log kiểu ProBot: kênh + bật/tắt từng loại ===
+const logSettingsSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, unique: true },
+  channelId: { type: String, default: null },
+  toggles: { type: Object, default: undefined },
+});
+const LogSettings = mongoose.models.LogSettings || mongoose.model('LogSettings', logSettingsSchema);
+
+// === Warns kiểm duyệt theo server ===
+const warnSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  userId: { type: String, required: true, index: true },
+  list: { type: [{ by: String, byTag: String, reason: String, at: Number }], default: [] },
+});
+warnSchema.index({ guildId: 1, userId: 1 }, { unique: true });
+const Warn = mongoose.models.Warn || mongoose.model('Warn', warnSchema);
+
+module.exports = { mongoose, connectDB, isMongo, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings, GuildSettings, AnnounceSettings, StatsSettings, RolePanel, GoodbyeSettings, LogSettings, Warn };

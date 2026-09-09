@@ -16,7 +16,7 @@ module.exports = {
     if (!member) return interaction.reply({ embeds: [errorEmbed('Không tìm thấy người này trong server.')], ephemeral: true });
     if (!member.bannable) return interaction.reply({ embeds: [errorEmbed('Bot không thể ban người này (role cao hơn bot?).')], ephemeral: true });
     await member.ban({ reason });
-    require('../../utils/logger').logMod(interaction.guild, `🔨 ${interaction.user.tag} banned ${user.tag}`, `Lý do: ${reason}`).catch(() => {});
+    // Log tự ghi ở event guildBanAdd (kèm mod + lý do) — không log ở đây để khỏi trùng
     await interaction.reply({ embeds: [successEmbed(`Đã ban **${user.tag}**\nLý do: ${reason}`)] });
   },
 };

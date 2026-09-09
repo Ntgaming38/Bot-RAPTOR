@@ -16,7 +16,7 @@ module.exports = {
     if (!member) return interaction.reply({ embeds: [errorEmbed('Không tìm thấy người này trong server.')], ephemeral: true });
     if (!member.kickable) return interaction.reply({ embeds: [errorEmbed('Bot không thể kick người này.')], ephemeral: true });
     await member.kick(reason);
-    require('../../utils/logger').logMod(interaction.guild, `👢 ${interaction.user.tag} kicked ${user.tag}`, `Lý do: ${reason}`).catch(() => {});
+    // Log tự ghi ở event guildMemberRemove (phát hiện kick, kèm mod) — không log ở đây để khỏi trùng
     await interaction.reply({ embeds: [successEmbed(`Đã kick **${user.tag}**\nLý do: ${reason}`)] });
   },
 };
