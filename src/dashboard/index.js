@@ -370,6 +370,124 @@ function mount(app) {
     res.json({ ok: true, settings: s });
   });
 
+  // Nhiều bảng chọn role kiểu ProBot
+  const roleBoards = require('../utils/roleBoards');
+  app.get('/dashboard/api/guilds/:gid/roleboards', guard, async (req, res) => {
+    res.json(await roleBoards.listBoards(req.params.gid));
+  });
+  app.post('/dashboard/api/guilds/:gid/roleboards', guard, async (req, res) => {
+    try {
+      const b = req.body || {};
+      const board = await roleBoards.createBoard(req.params.gid, {
+        name: b.name, channelId: b.channelId || null, title: b.title || null, description: b.description || null,
+      });
+      res.json({ ok: true, board: { id: String(board._id || board.id), name: board.name } });
+    } catch (e) {
+      const msg = e?.message === 'exists' ? 'Tên này đã có rồi.' : e?.message === 'limit' ? 'Tối đa 10 bảng.' : (e?.message === 'no-name' ? 'Nhập tên bảng.' : 'failed');
+      res.status(400).json({ error: msg });
+    }
+  });
+  // Nhập bảng đơn cũ (/roles) thành board mới
+  app.post('/dashboard/api/guilds/:gid/roleboards/import', guard, async (req, res) => {
+    const legacy = await require('../utils/rolePanels').getPanel(req.params.gid);
+    if (!legacy.items?.length) return res.status(400).json({ error: 'empty' });
+    try {
+      const board = await roleBoards.createBoard(req.params.gid, {
+        name: 'Bảng chính', channelId: legacy.channelId, title: legacy.title, description: legacy.description,
+      });
+      const { saveBoard } = roleBoards;
+      const bid = String(board._id || board.id);
+      await saveBoard(req.params.gid, bid, { items: legacy.items });
+      res.json({ ok: true, id: bid });
+    } catch (e) {
+      res.status(400).json({ error: e?.message || 'failed' });
+    }
+  });
+  app.get('/dashboard/api/guilds/:gid/roleboards/:bid', guard, async (req, res) => {
+    const b = await roleBoards.getBoard(req.params.gid, req.params.bid);
+    if (!b) return res.status(404).json({ error: 'not-found' });
+    res.json({ id: String(b._id || b.id), name: b.name, channelId: b.channelId, title: b.title, description: b.description, items: b.items || [] });
+  });
+  app.put('/dashboard/api/guilds/:gid/roleboards/:bid', guard, async (req, res) => {
+    const b = req.body || {};
+    const patch = {};
+    if (b.channelId !== undefined) patch.channelId = String(b.channelId || '') || null;
+    if (b.title !== undefined) patch.title = String(b.title || '').slice(0, 100) || null;
+    if (b.description !== undefined) patch.description = String(b.description || '').slice(0, 1000) || null;
+    if (b.items !== undefined) {
+      if (!Array.isArray(b.items) || b.items.length > 25) return res.status(400).json({ error: 'items' });
+      patch.items = b.items.filter((i) => i && i.roleId).slice(0, 25)
+        .map((i) => ({ roleId: String(i.roleId), label: String(i.label || '').slice(0, 80) || 'Role', emoji: String(i.emoji || '') || null }));
+    }
+    await roleBoards.saveBoard(req.params.gid, req.params.bid, patch);
+    res.json({ ok: true });
+  });
+  app.delete('/dashboard/api/guilds/:gid/roleboards/:bid', guard, async (req, res) => {
+    const board = await roleBoards.deleteBoard(req.params.gid, req.params.bid);
+    try {
+      if (board?.channelId && board?.messageId) {
+        const guild = await client.guilds.fetch(req.params.gid).catch(() => null);
+        const ch = guild && await guild.channels.fetch(board.channelId).catch(() => null);
+        const msg = ch && await ch.messages.fetch(board.messageId).catch(() => null);
+        if (msg) await msg.delete().catch(() => {});
+      }
+    } catch {}
+    res.json({ ok: true });
+  });
+  app.post('/dashboard/api/guilds/:gid/roleboards/:bid/refresh', guard, async (req, res) => {
+    const msg = await roleBoards.renderBoard(client, req.params.gid, req.params.bid);
+    if (!msg) return res.status(400).json({ error: 'no-items' });
+    res.json({ ok: true, url: `https://discord.com/channels/${req.params.gid}/${msg.channelId}/${msg.id}` });
+  });
+
+  // Music: xem trạng thái + điều khiển (không lưu setting)
+  function musicState(gid) {
+    const queue = client?.player?.nodes?.get(gid);
+    if (!queue) return { playing: false };
+    const cur = queue.currentTrack || queue.current || null;
+    let upcoming = [];
+    try {
+      const t = queue.tracks;
+      upcoming = Array.isArray(t) ? t : (typeof t?.toArray === 'function' ? t.toArray() : (t?.data || []));
+    } catch {}
+    let paused = false;
+    try { paused = typeof queue.node?.isPaused === 'function' ? queue.node.isPaused() : !!queue.node?.paused; } catch {}
+    let volume = null;
+    try { volume = queue.node?.volume ?? queue.volume ?? null; } catch {}
+    return {
+      playing: !!cur,
+      voice: queue.channel?.name || null,
+      current: cur ? { title: cur.cleanTitle || cur.title, author: cur.author, duration: cur.duration, thumbnail: cur.thumbnail } : null,
+      queue: upcoming.slice(0, 10).map((t) => ({ title: t.cleanTitle || t.title, author: t.author })),
+      queueCount: upcoming.length,
+      volume, paused,
+    };
+  }
+  app.get('/dashboard/api/guilds/:gid/music', guard, async (req, res) => {
+    res.json(musicState(req.params.gid));
+  });
+  app.post('/dashboard/api/guilds/:gid/music/:action', guard, async (req, res) => {
+    const queue = client?.player?.nodes?.get(req.params.gid);
+    if (!queue) return res.status(400).json({ error: 'nothing' });
+    const a = req.params.action;
+    try {
+      if (a === 'pause') queue.node?.setPaused ? queue.node.setPaused(true) : queue.node?.pause?.();
+      else if (a === 'resume') queue.node?.setPaused ? queue.node.setPaused(false) : queue.node?.resume?.();
+      else if (a === 'skip') queue.node?.skip?.();
+      else if (a === 'stop') {
+        try { queue.node?.stop?.(); } catch {}
+        try { queue.tracks?.clear?.(); } catch {}
+      } else if (a === 'volume') {
+        const v = Math.min(100, Math.max(0, parseInt((req.body || {}).volume, 10)));
+        if (!Number.isFinite(v)) return res.status(400).json({ error: 'volume' });
+        queue.node?.setVolume ? queue.node.setVolume(v) : queue.node?.setVolume?.(v);
+      } else return res.status(400).json({ error: 'action' });
+      res.json({ ok: true, state: musicState(req.params.gid) });
+    } catch (e) {
+      res.status(500).json({ error: e?.message || 'failed' });
+    }
+  });
+
   // --- Pages ---
   app.get('/dashboard', (req, res) => {
     if (!req.session?.user) return res.send(views.login());
