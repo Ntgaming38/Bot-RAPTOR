@@ -109,4 +109,25 @@ const guildSettingsSchema = new mongoose.Schema({
 });
 const GuildSettings = mongoose.models.GuildSettings || mongoose.model('GuildSettings', guildSettingsSchema);
 
-module.exports = { mongoose, connectDB, isMongo, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings, GuildSettings };
+// === Bảng thông báo ghim (xoay nhiều tin theo phút) ===
+const announceSettingsSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, unique: true },
+  channelId: { type: String, default: null },
+  messageId: { type: String, default: null },
+  title: { type: String, default: null },
+  text: { type: String, default: null },
+  intervalMin: { type: Number, default: 0 },
+  idx: { type: Number, default: 0 },
+  lastRotated: { type: Number, default: 0 },
+});
+const AnnounceSettings = mongoose.models.AnnounceSettings || mongoose.model('AnnounceSettings', announceSettingsSchema);
+
+// === Kênh trạng thái server (tự đổi tên theo số liệu) ===
+const statsSettingsSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, unique: true },
+  voiceChannelId: { type: String, default: null },
+  template: { type: String, default: null },
+});
+const StatsSettings = mongoose.models.StatsSettings || mongoose.model('StatsSettings', statsSettingsSchema);
+
+module.exports = { mongoose, connectDB, isMongo, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings, GuildSettings, AnnounceSettings, StatsSettings };

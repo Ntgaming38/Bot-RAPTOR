@@ -44,6 +44,7 @@ async function main() {
       GatewayIntentBits.GuildModeration,
       GatewayIntentBits.GuildVoiceStates, // BẮT BUỘC cho nhạc
       GatewayIntentBits.GuildMessageReactions,
+      GatewayIntentBits.GuildPresences, // Đếm số người đang online cho kênh trạng thái (bật thêm Presence Intent trên portal)
     ],
     partials: [Partials.GuildMember, Partials.Message, Partials.Channel, Partials.Reaction],
   });
@@ -153,6 +154,27 @@ async function main() {
   };
   setTimeout(refreshBoards, 60_000);
   setInterval(refreshBoards, 10 * 60_000);
+
+  // Xoay bảng thông báo (ticker) mỗi 5 phút + kênh trạng thái server mỗi 15 phút
+  const announceTick = async () => {
+    try {
+      const { listAnnounceDue, rotateAnnounce } = require('./utils/announceSettings');
+      for (const gid of await listAnnounceDue()) {
+        await rotateAnnounce(client, gid).catch(() => null);
+      }
+    } catch {}
+  };
+  const statsTick = async () => {
+    try {
+      const { listStatsGuilds, updateStatsChannel } = require('./utils/statsSettings');
+      for (const gid of await listStatsGuilds()) {
+        await updateStatsChannel(client, gid).catch(() => null);
+      }
+    } catch {}
+  };
+  setTimeout(() => { announceTick(); statsTick(); }, 90_000);
+  setInterval(announceTick, 5 * 60_000);
+  setInterval(statsTick, 15 * 60_000);
 }
 
 main().catch(e => {

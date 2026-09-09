@@ -124,20 +124,23 @@ function mount(app) {
     const channels = await guild.channels.fetch().catch(() => guild.channels.cache);
     const list = [];
     const cats = [];
+    const voice = [];
     for (const ch of channels.values()) {
       if (!ch) continue;
       if (ch.type === 0 || ch.type === 5) list.push({ id: ch.id, name: ch.name, type: ch.type });
       else if (ch.type === 4) cats.push({ id: ch.id, name: ch.name });
+      else if (ch.type === 2) voice.push({ id: ch.id, name: ch.name });
     }
     list.sort((a, b) => a.name.localeCompare(b.name));
     cats.sort((a, b) => a.name.localeCompare(b.name));
+    voice.sort((a, b) => a.name.localeCompare(b.name));
     const roles = (await guild.roles.fetch().catch(() => null)) || guild.roles.cache;
     const roleList = [];
     for (const r of roles.values()) {
       if (!r || r.id === guild.id) continue; // bỏ @everyone
       roleList.push({ id: r.id, name: r.name });
     }
-    res.json({ guild: { id: guild.id, name: guild.name }, channels: list, categories: cats, roles: roleList });
+    res.json({ guild: { id: guild.id, name: guild.name }, channels: list, categories: cats, voice, roles: roleList });
   });
 
   // Cài đặt chung theo server: Level/XP, kiểm duyệt, log, ticket
@@ -233,6 +236,56 @@ function mount(app) {
     const msg = await updateLeaderboardChannel(client, req.params.gid);
     if (!msg) return res.status(400).json({ error: 'no-channel' });
     res.json({ ok: true });
+  });
+
+  // Bảng thông báo (ticker)
+  app.get('/dashboard/api/guilds/:gid/announce', guard, async (req, res) => {
+    res.json(await require('../utils/announceSettings').getAnnounce(req.params.gid));
+  });
+
+  app.put('/dashboard/api/guilds/:gid/announce', guard, async (req, res) => {
+    const b = req.body || {};
+    const patch = {
+      channelId: b.channelId !== undefined ? (String(b.channelId || '') || null) : undefined,
+      title: b.title !== undefined ? (String(b.title || '') || null) : undefined,
+      text: b.text !== undefined ? String(b.text || '').slice(0, 2000) : undefined,
+    };
+    if (b.intervalMin !== undefined) {
+      const n = parseInt(b.intervalMin, 10);
+      patch.intervalMin = Number.isFinite(n) ? Math.min(1440, Math.max(0, n)) : 0;
+    }
+    for (const k of Object.keys(patch)) if (patch[k] === undefined) delete patch[k];
+    patch.lastRotated = Date.now();
+    const s = await require('../utils/announceSettings').saveAnnounce(req.params.gid, patch);
+    res.json({ ok: true, settings: s });
+  });
+
+  app.post('/dashboard/api/guilds/:gid/announce/test', guard, async (req, res) => {
+    const { updateBoard } = require('../utils/announceSettings');
+    const msg = await updateBoard(client, req.params.gid, 0);
+    if (!msg) return res.status(400).json({ error: 'no-channel' });
+    res.json({ ok: true, url: `https://discord.com/channels/${req.params.gid}/${msg.channelId}/${msg.id}` });
+  });
+
+  // Kênh trạng thái server
+  app.get('/dashboard/api/guilds/:gid/stats', guard, async (req, res) => {
+    res.json(await require('../utils/statsSettings').getStats(req.params.gid));
+  });
+
+  app.put('/dashboard/api/guilds/:gid/stats', guard, async (req, res) => {
+    const b = req.body || {};
+    const patch = {};
+    if (b.voiceChannelId !== undefined) patch.voiceChannelId = String(b.voiceChannelId || '') || null;
+    if (b.template !== undefined) patch.template = String(b.template || '').slice(0, 100) || null;
+    const s = await require('../utils/statsSettings').saveStats(req.params.gid, patch);
+    res.json({ ok: true, settings: s });
+  });
+
+  app.post('/dashboard/api/guilds/:gid/stats/refresh', guard, async (req, res) => {
+    const { updateStatsChannel } = require('../utils/statsSettings');
+    const name = await updateStatsChannel(client, req.params.gid);
+    if (!name) return res.status(400).json({ error: 'no-channel' });
+    res.json({ ok: true, name });
   });
 
   // --- Pages ---
