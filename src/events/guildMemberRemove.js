@@ -3,8 +3,11 @@ const config = require('../config');
 
 module.exports = {
   name: Events.GuildMemberRemove,
-  async execute(member) {
+  async execute(member, client) {
     const logger = require('../utils/logger');
+    try {
+      if (client) require('../utils/statsSettings').scheduleStatsRefresh(client, member.guild.id);
+    } catch {}
     // Bị kick (không phải tự rời)? Audit log sẽ có trong ~15s
     try {
       const { AuditLogEvent } = require('discord.js');

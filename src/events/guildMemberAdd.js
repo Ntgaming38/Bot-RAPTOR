@@ -4,8 +4,11 @@ const { buildWelcome } = require('../utils/welcome');
 
 module.exports = {
   name: Events.GuildMemberAdd,
-  async execute(member) {
+  async execute(member, client) {
     try { await require('../utils/logger').logJoin(member); } catch {}
+    try {
+      if (client) require('../utils/statsSettings').scheduleStatsRefresh(client, member.guild.id);
+    } catch {}
     console.log(`[welcome] ${member.user.tag} join ${member.guild.name} (${member.guild.id})`);
     // Setting ưu tiên từ /welcome setup, fallback về .env
     const s = await require('../utils/welcomeSettings').getWelcomeSettings(member.guild.id).catch((e) => {

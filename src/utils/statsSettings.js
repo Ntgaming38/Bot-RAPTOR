@@ -182,4 +182,18 @@ async function setupMultiChannels(client, guildId, categoryName) {
   return updateStatsChannel(client, guildId);
 }
 
-module.exports = { getStats, saveStats, clearStats, listStatsGuilds, updateStatsChannel, setupMultiChannels, DEFAULT_TEMPLATE, DEFAULT_MULTI_NAMES };
+// Hẹn cập nhật sau khi có người vào/ra (gộp nhiều event trong 60s để khỏi chạm rate-limit đổi tên)
+const pendingRefresh = new Map();
+function scheduleStatsRefresh(client, guildId, delayMs = 60000) {
+  if (pendingRefresh.has(guildId)) return;
+  pendingRefresh.set(
+    guildId,
+    setTimeout(() => {
+      pendingRefresh.delete(guildId);
+      updateStatsChannel(client, guildId).catch(() => null);
+    }, delayMs)
+  );
+  if (pendingRefresh.get(guildId)?.unref) pendingRefresh.get(guildId).unref();
+}
+
+module.exports = { getStats, saveStats, clearStats, listStatsGuilds, updateStatsChannel, setupMultiChannels, scheduleStatsRefresh, DEFAULT_TEMPLATE, DEFAULT_MULTI_NAMES };
