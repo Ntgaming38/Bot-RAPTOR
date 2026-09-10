@@ -22,8 +22,11 @@ module.exports = {
       .addStringOption(o => o.setName('color').setDescription('Màu viền, VD: #FF4D9D'))
       .addStringOption(o => o.setName('reactions').setDescription('VD: 🔥,✅ (tối đa 5)'))
       .addStringOption(o => o.setName('banner').setDescription('Link ảnh gạch ngang dưới embed (trống = cầu vồng mặc định)'))
-      .addStringOption(o => o.setName('description').setDescription('Soạn nội dung (biến {member} {server} {count} {role} {rules} {announce} {chat})').setMaxLength(2000))
+      .addStringOption(o => o.setName('description').setDescription('Soạn nội dung (biến {user} {server} {count} {membercount} {created} {mention}...)').setMaxLength(2000))
       .addBooleanOption(o => o.setName('rainbow').setDescription('Gạch cầu vồng dưới embed (mặc định: bật)'))
+      .addBooleanOption(o => o.setName('card').setDescription('Ảnh card chào mừng tự vẽ (mặc định: bật)'))
+      .addBooleanOption(o => o.setName('dm').setDescription('Gửi tin chào qua DM nữa (mặc định: tắt)'))
+      .addRoleOption(o => o.setName('accept-role').setDescription('Role cấp khi bấm nút đồng ý luật'))
       .addRoleOption(o => o.setName('auto-role').setDescription('Role tự gắn khi join')))
     .addSubcommand(s => s.setName('test').setDescription('Gửi thử welcome vào kênh hiện tại'))
     .addSubcommand(s => s.setName('status').setDescription('Xem cấu hình welcome hiện tại'))
@@ -56,6 +59,12 @@ module.exports = {
       if (desc !== null) patch.welcomeText = desc || null;
       const rainbow = interaction.options.getBoolean('rainbow');
       if (rainbow !== null) patch.bannerRainbow = rainbow;
+      const card = interaction.options.getBoolean('card');
+      if (card !== null) patch.cardEnabled = card;
+      const dm = interaction.options.getBoolean('dm');
+      if (dm !== null) patch.dmEnabled = dm;
+      const acceptRole = interaction.options.getRole('accept-role');
+      if (acceptRole !== null) patch.acceptRoleId = acceptRole?.id || null;
       const rawReactions = interaction.options.getString('reactions');
       if (rawReactions !== null) {
         patch.reactions = rawReactions.split(',').map(e => e.trim()).filter(Boolean).slice(0, 5);
@@ -65,8 +74,8 @@ module.exports = {
         if (patch[k] === null) delete patch[k];
       }
       const s = await saveWelcomeSettings(guildId, patch);
-      const { embed: em, files } = buildWelcome(interaction.member, s);
-      const preview = await interaction.channel.send({ embeds: [em], files }).catch(() => null);
+      const { embed: em, files, components } = await buildWelcome(interaction.member, s);
+      const preview = await interaction.channel.send({ embeds: [em], files, components }).catch(() => null);
       if (preview && s.reactions?.length) {
         for (const e of s.reactions.slice(0, 5)) await preview.react(e).catch(() => {});
       }
@@ -76,8 +85,8 @@ module.exports = {
     if (sub === 'test') {
       const s = await getWelcomeSettings(guildId);
       if (!s.channelId) return interaction.editReply({ embeds: [errorEmbed('Chưa setup kênh. Chạy `/welcome setup` trước.')] });
-      const { embed: em2, files: f2 } = buildWelcome(interaction.member, s);
-      const msg = await interaction.channel.send({ embeds: [em2], files: f2 });
+      const { embed: em2, files: f2, components: c2 } = await buildWelcome(interaction.member, s);
+      const msg = await interaction.channel.send({ embeds: [em2], files: f2, components: c2 });
       for (const e of (s.reactions || []).slice(0, 5)) await msg.react(e).catch(() => {});
       return interaction.editReply({ content: '✅ Đã gửi bản xem trước ở trên.' });
     }
@@ -95,6 +104,7 @@ module.exports = {
             `Ảnh: ${s.imageUrl ? `[xem](${s.imageUrl})` : 'mặc định icon server'}`,
             `Màu: \`${s.color || '#FF4D9D'}\` | Reactions: ${(s.reactions || []).join(' ') || '—'}`,
             `Banner dưới: ${s.bannerUrl ? `[xem](${s.bannerUrl})` : (s.bannerRainbow === false ? 'tắt' : 'cầu vồng 🌈')}`,
+            `Card: ${s.cardEnabled === false ? 'tắt' : 'bật'} | DM: ${s.dmEnabled ? 'bật' : 'tắt'} | Nút đồng ý: ${s.acceptRoleId ? `<@&${s.acceptRoleId}>` : '—'}`,
             `Auto-role: ${s.autoRoleId ? `<@&${s.autoRoleId}>` : '—'}`,
           ].join('\n'),
         })],

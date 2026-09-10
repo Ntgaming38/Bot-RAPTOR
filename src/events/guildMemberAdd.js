@@ -33,13 +33,17 @@ module.exports = {
     }
 
     try {
-      const { embed: em, files } = buildWelcome(member, s);
-      const msg = await welcomeCh.send({ embeds: [em], files });
+      const { embed: em, files, components } = await buildWelcome(member, s);
+      const msg = await welcomeCh.send({ embeds: [em], files, components });
       const reactions = s?.reactions || config.welcomeReactions;
       for (const e of reactions.slice(0, 5)) {
         await msg.react(e).catch(() => {});
       }
       console.log(`[welcome] đã gửi chào ${member.user.tag} vào #${welcomeCh.name}`);
+      // DM chào riêng (bật trên dashboard /welcome setup)
+      if (s?.dmEnabled) {
+        await member.send({ embeds: [em], files }).catch(() => {});
+      }
     } catch (e) {
       console.error('[welcome] gửi lỗi:', e?.message);
     }

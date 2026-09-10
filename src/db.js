@@ -90,6 +90,10 @@ const welcomeSettingsSchema = new mongoose.Schema({
   bannerUrl: { type: String, default: null },
   bannerRainbow: { type: Boolean, default: undefined },
   welcomeText: { type: String, default: null },
+  welcomeButtons: { type: Array, default: undefined },
+  dmEnabled: Boolean,
+  acceptRoleId: { type: String, default: null },
+  cardEnabled: Boolean,
 });
 const WelcomeSettings = mongoose.models.WelcomeSettings || mongoose.model('WelcomeSettings', welcomeSettingsSchema);
 

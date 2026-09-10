@@ -15,8 +15,8 @@ function ch(id, fallback) {
   return id ? `<#${id}>` : fallback;
 }
 
-// Trả về { embed, files } — files kèm ảnh gạch cầu vồng nếu bật.
-function buildWelcome(member, s) {
+// Trả về { embed, files, components } — files kèm card/banner, components gồm nút link + nút đồng ý luật.
+async function buildWelcome(member, s) {
   const guild = member.guild;
   const server = guild.name;
   const author = (s?.title) || config.welcomeTitle || `By ${server}`;
@@ -29,18 +29,26 @@ function buildWelcome(member, s) {
   const annCh = (s?.announceChannelId) ?? config.welcomeAnnounceChannelId;
   const chatCh = (s?.chatChannelId) ?? config.welcomeChatChannelId;
 
-  // Cho phép soạn nội dung tùy ý (dashboard/lệnh), biến: {member} {tag} {server} {count} {role} {rules} {announce} {chat}
+  // Biến builder: {user} {username} {mention} {tag} {server} {membercount} {count} {created} + kênh
+  const created = `<t:${Math.floor(member.user.createdTimestamp / 1000)}:D>`;
+  const vars = {
+    member: `${member}`, mention: `${member}`, user: `${member}`,
+    username: member.user.username, tag: member.user.tag,
+    server: `**${server}**`, count: `**${count}**`, membercount: `**${guild.memberCount}**`,
+    created,
+    role: ch(roleCh, '**role-sever**'), rules: ch(rulesCh, '**rule-discord**'),
+    announce: ch(annCh, '**thông-báo**'), chat: ch(chatCh, '**chat-chung**'),
+  };
+  const fill = (t) => {
+    let out = String(t || '');
+    for (const [k, v] of Object.entries(vars)) out = out.replaceAll(`{${k}}`, v);
+    return out;
+  };
+
+  // Cho phép soạn nội dung tùy ý (dashboard/lệnh)
   let description;
   if (s?.welcomeText) {
-    description = s.welcomeText
-      .replaceAll('{member}', `${member}`)
-      .replaceAll('{tag}', member.user.tag)
-      .replaceAll('{server}', `**${server}**`)
-      .replaceAll('{count}', `**${count}**`)
-      .replaceAll('{role}', ch(roleCh, '**role-sever**'))
-      .replaceAll('{rules}', ch(rulesCh, '**rule-discord**'))
-      .replaceAll('{announce}', ch(annCh, '**thông-báo**'))
-      .replaceAll('{chat}', ch(chatCh, '**chat-chung**'));
+    description = fill(s.welcomeText);
   } else {
     description = [
     `➔ Chào mừng ${member} đã tham gia **${server}**.`,
@@ -60,17 +68,45 @@ function buildWelcome(member, s) {
     footer: `${member.user.tag} • ${new Date().toLocaleString('vi-VN')}`,
   });
 
-  // Gạch cầu vồng dưới embed: ưu tiên link banner riêng, không thì ảnh mặc định
+  // Ảnh dưới embed: link banner riêng > card tự vẽ (avatar + cầu vồng) > gạch cầu vồng
   const files = [];
   const banner = s?.bannerUrl || null;
   const rainbow = s?.bannerRainbow ?? true;
+  const cardOn = s?.cardEnabled ?? true;
   if (banner) {
     em.setImage(banner);
+  } else if (cardOn !== false) {
+    try {
+      const { drawWelcomeCard } = require('./welcomeCard');
+      const buf = await drawWelcomeCard({ avatarUrl: member.user.displayAvatarURL({ extension: 'png', size: 128 }) });
+      em.setImage('attachment://welcome-card.png');
+      files.push({ attachment: buf, name: 'welcome-card.png' });
+    } catch {
+      if (rainbow !== false) {
+        em.setImage('attachment://rainbow.png');
+        files.push({ attachment: RAINBOW_FILE, name: 'rainbow.png' });
+      }
+    }
   } else if (rainbow !== false) {
     em.setImage('attachment://rainbow.png');
     files.push({ attachment: RAINBOW_FILE, name: 'rainbow.png' });
   }
-  return { embed: em, files };
+
+  // Nút: đồng ý luật (cấp role) + tối đa 4 nút link
+  const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+  const row = new ActionRowBuilder();
+  if (s?.acceptRoleId) {
+    row.addComponents(
+      new ButtonBuilder().setCustomId('welcome-accept').setLabel('✅ Tôi đồng ý luật').setStyle(ButtonStyle.Success),
+    );
+  }
+  const links = Array.isArray(s?.welcomeButtons) ? s.welcomeButtons.filter((b) => b?.label && /^https?:\/\//i.test(b.url || '')).slice(0, 4) : [];
+  for (const b of links) {
+    row.addComponents(
+      new ButtonBuilder().setLabel(String(b.label).slice(0, 80)).setStyle(ButtonStyle.Link).setURL(b.url),
+    );
+  }
+  return { embed: em, files, components: row.components.length ? [row] : [] };
 }
 
 module.exports = { buildWelcome, ordinal };

@@ -59,10 +59,10 @@ async function clearGoodbye(guildId) {
 function buildGoodbye(member, s) {
   const guild = member.guild;
   const vars = {
-    user: `${member}`,
-    tag: member.user.tag,
-    server: guild.name,
-    members: String(guild.memberCount ?? '?'),
+    user: `${member}`, mention: `${member}`,
+    username: member.user.username, tag: member.user.tag,
+    server: guild.name, members: String(guild.memberCount ?? '?'), membercount: String(guild.memberCount ?? '?'),
+    created: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:D>`,
   };
   let text = s?.text || DEFAULT_TEXT;
   for (const [k, v] of Object.entries(vars)) text = text.replaceAll(`{${k}}`, v);

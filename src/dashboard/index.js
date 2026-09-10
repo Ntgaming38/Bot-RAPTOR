@@ -234,6 +234,24 @@ function mount(app) {
     if (b.bannerUrl !== undefined) patch.bannerUrl = String(b.bannerUrl || '') || null;
     if (b.bannerRainbow !== undefined) patch.bannerRainbow = !!b.bannerRainbow;
     if (b.welcomeText !== undefined) patch.welcomeText = String(b.welcomeText || '').slice(0, 2000) || null;
+    if (b.cardEnabled !== undefined) patch.cardEnabled = !!b.cardEnabled;
+    if (b.dmEnabled !== undefined) patch.dmEnabled = !!b.dmEnabled;
+    if (b.acceptRoleId !== undefined) patch.acceptRoleId = String(b.acceptRoleId || '') || null;
+    if (b.welcomeButtons !== undefined && Array.isArray(b.welcomeButtons)) {
+      patch.welcomeButtons = b.welcomeButtons.slice(0, 4)
+        .filter((x) => x && x.label && /^https?:\/\//i.test(x.url || ''))
+        .map((x) => ({ label: String(x.label).slice(0, 80), url: x.url }));
+      if (!patch.welcomeButtons.length) patch.welcomeButtons = null;
+    }
+    if (b.cardEnabled !== undefined) patch.cardEnabled = !!b.cardEnabled;
+    if (b.dmEnabled !== undefined) patch.dmEnabled = !!b.dmEnabled;
+    if (b.acceptRoleId !== undefined) patch.acceptRoleId = String(b.acceptRoleId || '') || null;
+    if (b.welcomeButtons !== undefined && Array.isArray(b.welcomeButtons)) {
+      patch.welcomeButtons = b.welcomeButtons.slice(0, 4)
+        .filter((x) => x && x.label && /^https?:\/\//i.test(x.url || ''))
+        .map((x) => ({ label: String(x.label).slice(0, 80), url: x.url }));
+      if (!patch.welcomeButtons.length) patch.welcomeButtons = null;
+    }
     if (b.color !== undefined) {
       patch.color = /^#[0-9a-fA-F]{6}$/.test(String(b.color || '')) ? b.color : null;
     }
@@ -253,8 +271,8 @@ function mount(app) {
     const member = await guild.members.fetch(req.session.user.id).catch(() => null);
     if (!member) return res.status(400).json({ error: 'not-member' });
     const { buildWelcome } = require('../utils/welcome');
-    const { embed: em, files } = buildWelcome(member, s);
-    const msg = await ch.send({ embeds: [em], files }).catch((e) => ({ error: e?.message }));
+    const { embed: em, files, components } = await buildWelcome(member, s);
+    const msg = await ch.send({ embeds: [em], files, components }).catch((e) => ({ error: e?.message }));
     if (msg?.error) return res.status(500).json({ error: msg.error });
     for (const e of (s.reactions || []).slice(0, 5)) await msg.react(e).catch(() => {});
     res.json({ ok: true, url: `https://discord.com/channels/${guild.id}/${ch.id}/${msg.id}` });

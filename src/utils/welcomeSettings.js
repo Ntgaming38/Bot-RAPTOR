@@ -36,6 +36,11 @@ async function getWelcomeSettings(guildId) {
     autoRoleId: config.autoRoleId,
     bannerUrl: null,
     bannerRainbow: true,
+    welcomeText: null,
+    welcomeButtons: null,
+    dmEnabled: false,
+    acceptRoleId: null,
+    cardEnabled: true,
   };
   let over = {};
   if (useMongo()) {

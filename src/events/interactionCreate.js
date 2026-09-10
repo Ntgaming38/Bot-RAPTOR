@@ -129,6 +129,30 @@ module.exports = {
           await require('../utils/ticketsPro').handleDeleteNow(interaction);
           return;
         }
+        if (id === 'welcome-accept') {
+          // Nút đồng ý luật trên tin welcome → cấp role
+          try {
+            const st = await require('../utils/welcomeSettings').getWelcomeSettings(interaction.guildId).catch(() => null);
+            if (!st?.acceptRoleId) {
+              await interaction.reply({ content: 'Bảng này chưa cài role đồng ý luật.', ephemeral: true }).catch(() => {});
+              return;
+            }
+            const member = interaction.member;
+            if (member.roles.cache.has(st.acceptRoleId)) {
+              await interaction.reply({ content: 'Bạn đã xác nhận rồi nhé!', ephemeral: true }).catch(() => {});
+              return;
+            }
+            await member.roles.add(st.acceptRoleId).catch(() => null);
+            if (!member.roles.cache.has(st.acceptRoleId)) {
+              await interaction.reply({ content: '⚠️ Không gắn được role (bot thiếu quyền hoặc role cao hơn bot).', ephemeral: true }).catch(() => {});
+              return;
+            }
+            await interaction.reply({ content: '✅ Đã xác nhận! Chào mừng bạn.', ephemeral: true }).catch(() => {});
+          } catch (e) {
+            console.error('[welcome-accept]', e?.message);
+          }
+          return;
+        }
       } catch (err) {
         console.error('[Lỗi button]', err);
         if (!interaction.replied) await interaction.reply({ embeds: [errorEmbed('Có lỗi khi xử lý nút này.')], ephemeral: true }).catch(() => {});
