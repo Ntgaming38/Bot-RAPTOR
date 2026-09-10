@@ -23,14 +23,12 @@ module.exports = {
       .addChannelOption(o => o.setName('channel').setDescription('Kênh log').addChannelTypes(ChannelType.GuildText).setRequired(true)))
     .addSubcommand(s => s
       .setName('enable')
-      .setDescription('Bật 1 loại log (hoặc tất cả)')
-      .addStringOption(o => o.setName('type').setDescription('Loại log').setRequired(true)
-        .addChoices({ name: 'Tất cả', value: 'all' }, ...typeChoices)))
+      .setDescription('Bật 1 loại log (bỏ trống = bật tất cả)')
+      .addStringOption(o => o.setName('type').setDescription('Loại log').addChoices(...typeChoices)))
     .addSubcommand(s => s
       .setName('disable')
-      .setDescription('Tắt 1 loại log (hoặc tất cả)')
-      .addStringOption(o => o.setName('type').setDescription('Loại log').setRequired(true)
-        .addChoices({ name: 'Tất cả', value: 'all' }, ...typeChoices)))
+      .setDescription('Tắt 1 loại log (bỏ trống = tắt tất cả)')
+      .addStringOption(o => o.setName('type').setDescription('Loại log').addChoices(...typeChoices)))
     .addSubcommand(s => s.setName('config').setDescription('Xem cấu hình log hiện tại')),
   async execute(interaction) {
     if (!needAdmin(interaction)) return;
@@ -44,7 +42,7 @@ module.exports = {
       return interaction.editReply({ embeds: [successEmbed(`Đã đặt kênh log là ${channel}.\nMặc định bật hết 20 loại — tắt bớt bằng \`/logs disable\`.`)] });
     }
     if (sub === 'enable' || sub === 'disable') {
-      const type = interaction.options.getString('type', true);
+      const type = interaction.options.getString('type') || 'all';
       const on = sub === 'enable';
       const toggles = {};
       if (type === 'all') {
