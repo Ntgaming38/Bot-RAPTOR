@@ -34,15 +34,26 @@ module.exports = {
           });
         }
       }
-      // Timeout / gỡ timeout
+      // Timeout / gỡ timeout (kèm reason + duration)
       const wasTo = oldMember.communicationDisabledUntilTimestamp;
       const nowTo = newMember.communicationDisabledUntilTimestamp;
       if ((wasTo || 0) !== (nowTo || 0)) {
-        const executor = await logger.findExecutor(newMember.guild, AuditLogEvent.MemberUpdate, newMember.id);
+        let executor = await logger.findExecutor(newMember.guild, AuditLogEvent.MemberUpdate, newMember.id);
+        let reason = null;
+        try {
+          const logs = await newMember.guild.fetchAuditLogs({ type: AuditLogEvent.MemberUpdate, limit: 3 });
+          const hit = logs.entries.find((e) => e.target?.id === newMember.id && Date.now() - e.createdTimestamp < 15000);
+          if (hit) {
+            reason = hit.reason || null;
+            if (!executor && hit.executor) executor = hit.executor.id === newMember.guild.client.user.id ? 'BOT' : hit.executor;
+          }
+        } catch {}
         if (nowTo && nowTo > Date.now()) {
+          const mins = Math.max(1, Math.round((nowTo - Date.now()) / 60000));
+          const dur = mins >= 60 ? `${Math.floor(mins / 60)} giờ ${mins % 60 ? `${mins % 60} phút` : ''}`.trim() : `${mins} phút`;
           await logger.log(newMember.guild, 'timeout', {
-            title: '⏳ Timeout',
-            description: `${newMember} (<@${newMember.id}>)\n**Đến:** <t:${Math.floor(nowTo / 1000)}:F>`,
+            title: '⏳ Member Timeout',
+            description: `**User:** ${newMember} (<@${newMember.id}>)\n**Reason:** ${reason || 'Không có'}\n**Duration:** ${dur}\n**Đến:** <t:${Math.floor(nowTo / 1000)}:F>`,
             color: 0xED4245,
             user: newMember.user,
             moderator: executor,
@@ -50,13 +61,22 @@ module.exports = {
         } else {
           await logger.log(newMember.guild, 'timeout', {
             title: '✅ Gỡ timeout',
-            description: `${newMember} (<@${newMember.id}>)`,
+            description: `**User:** ${newMember} (<@${newMember.id}>)\n**Reason:** ${reason || 'Hết hạn/Không có'}`,
             color: 0x57F287,
             user: newMember.user,
             moderator: executor,
           });
         }
       }
+      // Đổi username/avatar toàn cục
+      try {
+        const changes = [];
+        if (oldMember.user.username !== newMember.user.username) {
+          changes.push(`**Username:** \`${oldMember.user.username}\` → \`${newMember.user.username}\``);
+        }
+        if (oldMember.user.avatar !== newMember.user.avatar) changes.push('**Avatar:** đã đổi');
+        if (changes.length) await logger.logUsername(newMember.guild, newMember.user, changes);
+      } catch {}
     } catch (e) {
       console.warn('[log memberUpdate nick/timeout]', e?.message);
     }

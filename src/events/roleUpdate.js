@@ -12,11 +12,11 @@ module.exports = {
       }
       if (!changes.length) return;
       const logger = require('../utils/logger');
-      const executor = await logger.findExecutor(newRole.guild, AuditLogEvent.RoleUpdate, newRole.id);
+      const { executor, reason } = await logger.findExecutorReason(newRole.guild, AuditLogEvent.RoleUpdate, newRole.id);
       if (executor === 'BOT') return;
       await logger.log(newRole.guild, 'roleUpdate', {
         title: `🎨 Sửa role: ${newRole.name}`,
-        description: `**Role:** ${newRole}\n${changes.join('\n')}`,
+        description: `**Role:** ${newRole}\n${changes.join('\n')}${reason ? `\n**Reason:** ${reason}` : ''}`,
         color: 0xFEE75C,
         moderator: executor,
       });

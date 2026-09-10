@@ -15,11 +15,11 @@ module.exports = {
     try {
       if (!channel.guild) return;
       const logger = require('../utils/logger');
-      const executor = await logger.findExecutor(channel.guild, AuditLogEvent.ChannelCreate, channel.id);
+      const { executor, reason } = await logger.findExecutorReason(channel.guild, AuditLogEvent.ChannelCreate, channel.id);
       if (executor === 'BOT') return; // kênh ticket/stats do bot tạo → khỏi spam
       await logger.log(channel.guild, 'channelCreate', {
         title: '➕ Tạo kênh',
-        description: `**${kind(channel)}:** ${channel} (\`${channel.name}\`)`,
+        description: `**${kind(channel)}:** ${channel} (\`${channel.name}\`)${reason ? `\n**Reason:** ${reason}` : ''}`,
         color: 0x57F287,
         moderator: executor,
       });

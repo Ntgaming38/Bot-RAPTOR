@@ -2,14 +2,19 @@ const { embed } = require('./embeds');
 
 // Tìm người thực hiện trong Audit Log (cần quyền Xem nhật ký). Bỏ qua nếu do bot làm.
 async function findExecutor(guild, type, targetId, skipBot = true) {
+  const r = await findExecutorReason(guild, type, targetId, skipBot);
+  return r.executor;
+}
+
+async function findExecutorReason(guild, type, targetId, skipBot = true) {
   try {
     const logs = await guild.fetchAuditLogs({ type, limit: 3 });
     const hit = logs.entries.find((e) => (!targetId || e.target?.id === targetId) && Date.now() - e.createdTimestamp < 15000);
-    if (!hit?.executor) return null;
-    if (skipBot && hit.executor.id === guild.client.user.id) return 'BOT';
-    return hit.executor;
+    if (!hit?.executor) return { executor: null, reason: null };
+    if (skipBot && hit.executor.id === guild.client.user.id) return { executor: 'BOT', reason: hit.reason || null };
+    return { executor: hit.executor, reason: hit.reason || null };
   } catch {
-    return null;
+    return { executor: null, reason: null };
   }
 }
 
@@ -110,10 +115,10 @@ function logRoleChange(guild, user, added, removed, executor) {
 }
 
 // Ai sửa kênh gì (tên cũ → mới, kiểu ProBot)
-function logChannelUpdate(guild, oldName, newName, channel, executor) {
+function logChannelUpdate(guild, oldName, newName, channel, executor, reason = null) {
   return log(guild, 'channelUpdate', {
     title: `🔧 Đã cập nhật kênh: ${newName}`,
-    description: `**Kênh:** ${channel}\n**Tên cũ:** ${oldName}\n**Tên mới:** ${newName}`,
+    description: `**Kênh:** ${channel}\n**Tên cũ:** ${oldName}\n**Tên mới:** ${newName}${reason ? `\n**Reason:** ${reason}` : ''}`,
     color: 0xFEE75C,
     moderator: executor,
   });
@@ -169,12 +174,67 @@ function logVoice(oldState, newState) {
 
 function logBan(guild, user, reason, banned = true, moderator = null) {
   return log(guild, banned ? 'ban' : 'unban', {
-    title: banned ? '🔨 Ban' : '♻️ Unban',
-    description: `**User:** ${user.tag} (<@${user.id}>)\n**Lý do:** ${reason || 'Không có'}`,
+    title: banned ? '🔨 Member Banned' : '♻️ Member Unbanned',
+    description: `**User:** ${user} (<@${user.id}>)\n**Reason:** ${reason || 'Không có'}${banned ? '\n**Duration:** Permanent' : ''}`,
     color: banned ? 0xED4245 : 0x57F287,
     user,
     moderator,
   });
 }
 
-module.exports = { send, log, logMod, logJoin, logLeave, logRoleChange, logChannelUpdate, logMessageDelete, logMessageUpdate, logVoice, logBan, findExecutor, getLogChannel };
+// Đổi username/avatar toàn cục (phát hiện qua member update)
+function logUsername(guild, user, changes) {
+  return log(guild, 'userChange', {
+    title: '👤 Đổi thông tin user',
+    description: `**User:** ${user} (<@${user.id}>)\n${changes.join('\n')}`,
+    thumbnail: user.displayAvatarURL(),
+    color: 0xFEE75C,
+    user,
+  });
+}
+
+function logInvite(guild, invite, created, inviter) {
+  return log(guild, 'invite', {
+    title: created ? '📨 Tạo invite' : '🗑️ Xóa invite',
+    description: `**Code:** \`${invite.code}\`\n**Kênh:** ${invite.channel ? `${invite.channel}` : '?'}\n**Tác giả:** ${inviter ? `${inviter.tag} (<@${inviter.id}>)` : '?'}\n**Dùng:** ${invite.uses ?? 0}/${invite.maxUses || '∞'} • **Hết hạn:** ${invite.expiresTimestamp ? `<t:${Math.floor(invite.expiresTimestamp / 1000)}:R>` : 'không'}`,
+    color: created ? 0x57F287 : 0xED4245,
+    user: inviter || undefined,
+  });
+}
+
+function logThread(guild, thread, action) {
+  const label = { create: '🧵 Tạo thread', delete: '🧵 Xóa thread', update: '🧵 Sửa thread' }[action] || '🧵 Thread';
+  return log(guild, 'thread', {
+    title: label,
+    description: `**Thread:** ${action === 'delete' ? `\`#${thread.name}\`` : `${thread}`} (\`${thread.name}\`)\n**Kênh cha:** ${thread.parent ? `${thread.parent}` : '?'}\n**Chủ:** ${thread.ownerId ? `<@${thread.ownerId}>` : '?'}`,
+    color: action === 'delete' ? 0xED4245 : action === 'create' ? 0x57F287 : 0xFEE75C,
+  });
+}
+
+function logWebhook(guild, channel) {
+  return log(guild, 'webhook', {
+    title: '🪝 Webhook đổi',
+    description: `Webhook trong ${channel} vừa thay đổi (tạo/sửa/xóa).`,
+    color: 0xFEE75C,
+  });
+}
+
+function logGuildUpdate(oldGuild, newGuild, executor) {
+  const changes = [];
+  if (oldGuild.name !== newGuild.name) changes.push(`**Tên:** \`${oldGuild.name}\` → \`${newGuild.name}\``);
+  if (oldGuild.icon !== newGuild.icon) changes.push('**Icon server:** đã đổi');
+  if (oldGuild.banner !== newGuild.banner) changes.push('**Banner server:** đã đổi');
+  if (oldGuild.preferredLocale !== newGuild.preferredLocale) changes.push(`**Ngôn ngữ:** ${oldGuild.preferredLocale} → ${newGuild.preferredLocale}`);
+  if (oldGuild.verificationLevel !== newGuild.verificationLevel) changes.push('**Mức xác minh:** đã đổi');
+  if (oldGuild.afkChannelId !== newGuild.afkChannelId || oldGuild.afkTimeout !== newGuild.afkTimeout) changes.push('**Kênh AFK:** đã đổi');
+  if (!changes.length) return Promise.resolve(false);
+  return log(newGuild, 'guildUpdate', {
+    title: '⚙️ Đổi cài đặt server',
+    description: `${changes.join('\n')}`,
+    thumbnail: newGuild.iconURL(),
+    color: 0xFEE75C,
+    moderator: executor,
+  });
+}
+
+module.exports = { send, log, logMod, logJoin, logLeave, logRoleChange, logChannelUpdate, logMessageDelete, logMessageUpdate, logVoice, logBan, logUsername, logInvite, logThread, logWebhook, logGuildUpdate, findExecutor, findExecutorReason, getLogChannel };

@@ -45,6 +45,7 @@ async function main() {
       GatewayIntentBits.GuildVoiceStates, // BẮT BUỘC cho nhạc
       GatewayIntentBits.GuildMessageReactions,
       GatewayIntentBits.GuildPresences, // Đếm số người đang online cho kênh trạng thái (bật thêm Presence Intent trên portal)
+      GatewayIntentBits.GuildInvites, // Log invite tạo/xóa
     ],
     partials: [Partials.GuildMember, Partials.Message, Partials.Channel, Partials.Reaction],
   });
