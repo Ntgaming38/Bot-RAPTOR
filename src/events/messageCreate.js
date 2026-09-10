@@ -12,24 +12,20 @@ module.exports = {
       require('../utils/ticketsPro').touchTicketActivity(message.channelId);
     } catch {}
 
-    // 1) Lọc từ cấm (theo server, dashboard chỉnh được)
+    // 1) AutoMod: từ cấm / invite / link / spam (dashboard tab AutoMod)
     const st = await require('../utils/guildSettings').getGuildSettings(message.guild.id).catch(() => null);
-    const banned = st?.bannedWords ?? config.bannedWords;
-    if (banned.length) {
-      const content = message.content.toLowerCase();
-      const found = banned.find(w => content.includes(w));
-      if (found) {
-        await message.delete().catch(() => {});
-        const warn = await message.channel.send(`⚠️ ${message.author}, tin nhắn của bạn chứa từ cấm, đã bị xóa.`).catch(() => null);
-        if (warn) setTimeout(() => warn.delete().catch(() => {}), 5000);
-        try {
-          require('../utils/logger').logMod(message.guild, `🗑️ Xóa tin nhắn chứa từ cấm của ${message.author.tag} trong ${message.channel}`, message.content.slice(0, 1000));
-        } catch {}
+    try {
+      const { checkAutomod, punishAutomod } = require('../utils/automod');
+      const banned = st?.bannedWords ?? config.bannedWords;
+      const violation = await checkAutomod(message, st, banned);
+      if (violation) {
+        await punishAutomod(message, st, violation);
         return;
       }
-    }
+    } catch {}
 
-    // 2) Cộng XP level
+    // 2) Cộng XP level (tắt được: dashboard tab Level → hệ thống level)
+    if (st?.levelEnabled === false) return;
     try {
       const res = await addXp(message.guild.id, message.author.id);
       const lvlMsg = st?.levelUpMessage ?? config.levelUpMessage;

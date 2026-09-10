@@ -8,6 +8,14 @@ module.exports = {
     if (interaction.isChatInputCommand()) {
       const cmd = client.commands.get(interaction.commandName);
       if (!cmd) return;
+      // Lệnh bị tắt trên dashboard (trang Commands) → báo, không chạy
+      try {
+        const st = await require('../utils/guildSettings').getGuildSettings(interaction.guildId).catch(() => null);
+        const off = st?.disabledCommands || [];
+        if (Array.isArray(off) && off.includes(interaction.commandName)) {
+          return interaction.reply({ embeds: [errorEmbed('Lệnh này đang tắt trên server (mở dashboard trang Commands để bật lại).')], ephemeral: true }).catch(() => {});
+        }
+      } catch {}
       try {
         if (client.player?.context) {
           await client.player.context.provide({ guild: interaction.guild }, () => cmd.execute(interaction, client));

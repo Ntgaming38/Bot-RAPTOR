@@ -214,6 +214,36 @@ function mount(app) {
       if (Number.isFinite(n)) patch.giveawayWinners = Math.min(20, Math.max(1, n));
     }
     if (b.giveawayDuration !== undefined) patch.giveawayDuration = String(b.giveawayDuration || '').slice(0, 20) || null;
+    if (b.language !== undefined) patch.language = b.language === 'en' ? 'en' : 'vi';
+    if (b.prefix !== undefined) patch.prefix = String(b.prefix || '').slice(0, 5) || '!';
+    if (b.levelEnabled !== undefined) patch.levelEnabled = !!b.levelEnabled;
+    if (b.timezone !== undefined) {
+      try {
+        Intl.DateTimeFormat('vi-VN', { timeZone: String(b.timezone) });
+        patch.timezone = String(b.timezone);
+      } catch {
+        return res.status(400).json({ error: 'timezone' });
+      }
+    }
+    if (b.automod !== undefined && b.automod && typeof b.automod === 'object') {
+      const a = b.automod;
+      const num = (v, min, max, fb) => {
+        const n = parseInt(v, 10);
+        return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fb;
+      };
+      patch.automod = {
+        words: a.words !== false,
+        invites: !!a.invites,
+        links: !!a.links,
+        spam: !!a.spam,
+        spamCount: num(a.spamCount, 2, 20, 5),
+        spamSecs: num(a.spamSecs, 2, 60, 5),
+        action: ['delete', 'warn', 'timeout'].includes(a.action) ? a.action : 'delete',
+        timeoutMin: num(a.timeoutMin, 1, 40320, 10),
+        exemptChannels: Array.isArray(a.exemptChannels) ? a.exemptChannels.filter((x) => typeof x === 'string').slice(0, 25) : [],
+        exemptRoles: Array.isArray(a.exemptRoles) ? a.exemptRoles.filter((x) => typeof x === 'string').slice(0, 25) : [],
+      };
+    }
     // Bỏ key undefined (giữ giá trị cũ)
     for (const k of Object.keys(patch)) if (patch[k] === undefined) delete patch[k];
     const s = await require('../utils/guildSettings').saveGuildSettings(req.params.gid, patch);
@@ -292,6 +322,8 @@ function mount(app) {
       if (Number.isFinite(n)) patch.limit = Math.min(25, Math.max(3, n));
     }
     const s = await require('../utils/leaderboardSettings').saveLeaderboardSettings(req.params.gid, patch);
+    // Áp dụng ngay, khỏi đợi lịch 10 phút
+    require('../utils/leaderboardSettings').updateLeaderboardChannel(client, req.params.gid).catch(() => {});
     res.json({ ok: true, settings: s });
   });
 
@@ -322,6 +354,7 @@ function mount(app) {
     for (const k of Object.keys(patch)) if (patch[k] === undefined) delete patch[k];
     patch.lastRotated = Date.now();
     const s = await require('../utils/announceSettings').saveAnnounce(req.params.gid, patch);
+    require('../utils/announceSettings').updateBoard(client, req.params.gid).catch(() => {});
     res.json({ ok: true, settings: s });
   });
 
@@ -350,6 +383,7 @@ function mount(app) {
       patch.multiNames = mn;
     }
     const s = await require('../utils/statsSettings').saveStats(req.params.gid, patch);
+    require('../utils/statsSettings').updateStatsChannel(client, req.params.gid).catch(() => {});
     res.json({ ok: true, settings: s });
   });
 
@@ -493,6 +527,7 @@ function mount(app) {
         .map((i) => ({ roleId: String(i.roleId), label: String(i.label || '').slice(0, 80) || 'Role', emoji: String(i.emoji || '') || null }));
     }
     await roleBoards.saveBoard(req.params.gid, req.params.bid, patch);
+    roleBoards.renderBoard(client, req.params.gid, req.params.bid).catch(() => {});
     res.json({ ok: true });
   });
   app.delete('/dashboard/api/guilds/:gid/roleboards/:bid', guard, async (req, res) => {
@@ -613,6 +648,94 @@ function mount(app) {
       if (member) await member.roles.remove(String(roleId)).catch(() => {});
     } catch {}
     await require('../utils/tempRoles').revokeTempRole(req.params.gid, String(userId), String(roleId));
+    res.json({ ok: true });
+  });
+
+  // Overview + thao tác moderation từ web
+  app.get('/dashboard/api/guilds/:gid/overview', guard, async (req, res) => {
+    const guild = await client.guilds.fetch(req.params.gid).catch(() => null);
+    if (!guild) return res.status(404).json({ error: 'bot-not-in-guild' });
+    const channels = await guild.channels.fetch().catch(() => guild.channels.cache);
+    const roles = await guild.roles.fetch().catch(() => guild.roles.cache);
+    let openTickets = 0;
+    try {
+      openTickets = Object.values(require('../utils/tickets').load())
+        .filter((t) => t.guildId === req.params.gid && !t.closed).length;
+    } catch {}
+    let boards = 0;
+    try {
+      boards = (await require('../utils/roleBoards').listBoards(req.params.gid)).length;
+    } catch {}
+    res.json({
+      guild: { id: guild.id, name: guild.name, icon: guild.icon, created: guild.createdTimestamp, premiumTier: guild.premiumTier },
+      members: guild.memberCount,
+      channels: channels?.size ?? 0,
+      roles: roles?.size ?? 0,
+      openTickets, boards,
+    });
+  });
+
+  app.post('/dashboard/api/guilds/:gid/mod', guard, async (req, res) => {
+    const b = req.body || {};
+    const action = b.action;
+    if (!['ban', 'kick', 'timeout', 'unban', 'warn'].includes(action)) return res.status(400).json({ error: 'action' });
+    if (!b.userId) return res.status(400).json({ error: 'user' });
+    try {
+      const guild = await client.guilds.fetch(req.params.gid).catch(() => null);
+      if (!guild) return res.status(404).json({ error: 'bot-not-in-guild' });
+      const reason = `${String(b.reason || 'Không có lý do').slice(0, 400)} (web: ${req.session.user.username})`;
+      if (action === 'unban') {
+        await guild.bans.remove(String(b.userId), reason);
+        return res.json({ ok: true });
+      }
+      const member = await guild.members.fetch(String(b.userId)).catch(() => null);
+      if (!member) return res.status(400).json({ error: 'not-member' });
+      if (action === 'ban') {
+        if (!member.bannable) return res.status(400).json({ error: 'perm' });
+        await member.ban({ reason });
+      } else if (action === 'kick') {
+        if (!member.kickable) return res.status(400).json({ error: 'perm' });
+        await member.kick(reason);
+      } else if (action === 'timeout') {
+        const mins = Math.min(40320, Math.max(1, parseInt(b.minutes, 10) || 10));
+        if (!member.moderatable) return res.status(400).json({ error: 'perm' });
+        await member.timeout(mins * 60 * 1000, reason);
+      } else if (action === 'warn') {
+        const { addWarn } = require('../utils/warns');
+        const n = await addWarn(req.params.gid, member.id, req.session.user.id, req.session.user.username + ' (web)', String(b.reason || 'Không có lý do'));
+        await require('../utils/logger').log(guild, 'warn', {
+          title: '⚠️ Warn',
+          description: `**User:** ${member.user.tag} (<@${member.id}>)\n**Lần thứ:** ${n}\n**Lý do:** ${String(b.reason || 'Không có lý do')}`,
+          color: 0xFEE75C,
+          user: member.user,
+          moderator: { tag: req.session.user.username + ' (web)', toString: () => req.session.user.username },
+        });
+      }
+      res.json({ ok: true });
+    } catch (e) {
+      res.status(500).json({ error: e?.message || 'failed' });
+    }
+  });
+
+  app.get('/dashboard/api/guilds/:gid/warns', guard, async (req, res) => {
+    if (!req.query.userId) return res.status(400).json({ error: 'user' });
+    res.json(await require('../utils/warns').listWarns(req.params.gid, String(req.query.userId)));
+  });
+
+  // Bật/tắt lệnh theo server (trang Commands)
+  app.get('/dashboard/api/guilds/:gid/commands', guard, async (req, res) => {
+    const st = await require('../utils/guildSettings').getGuildSettings(req.params.gid).catch(() => ({}));
+    const off = new Set(Array.isArray(st?.disabledCommands) ? st.disabledCommands : []);
+    const list = [...client.commands.values()]
+      .map((c) => ({ name: c.data.name, description: c.data.description, group: c.group || 'khác', enabled: !off.has(c.data.name) }))
+      .sort((a, b) => a.group.localeCompare(b.group) || a.name.localeCompare(b.name));
+    res.json(list);
+  });
+
+  app.put('/dashboard/api/guilds/:gid/commands', guard, async (req, res) => {
+    const valid = new Set([...client.commands.values()].map((c) => c.data.name));
+    const disabled = Array.isArray(req.body?.disabled) ? req.body.disabled.filter((n) => valid.has(n)).slice(0, 100) : [];
+    await require('../utils/guildSettings').saveGuildSettings(req.params.gid, { disabledCommands: disabled });
     res.json({ ok: true });
   });
 

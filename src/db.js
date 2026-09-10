@@ -133,6 +133,12 @@ const guildSettingsSchema = new mongoose.Schema({
   giveawayChannelId: { type: String, default: null },
   giveawayWinners: Number,
   giveawayDuration: { type: String, default: null },
+  language: { type: String, default: null },
+  timezone: { type: String, default: null },
+  prefix: { type: String, default: null },
+  levelEnabled: Boolean,
+  automod: { type: Object, default: undefined },
+  disabledCommands: { type: [String], default: undefined },
 });
 const GuildSettings = mongoose.models.GuildSettings || mongoose.model('GuildSettings', guildSettingsSchema);
 

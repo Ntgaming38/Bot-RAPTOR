@@ -14,6 +14,9 @@ textarea{min-height:120px;resize:vertical;font-family:inherit}
 button{background:#5865f2;color:#fff;border:0;border-radius:8px;padding:10px 16px;font-size:14px;cursor:pointer;margin:14px 8px 0 0}
 button.ghost{background:#262b36}button:disabled{opacity:.5}
 a{color:#8b9cf9}.tabs{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}.tab{padding:8px 14px;border-radius:8px;background:#262b36;cursor:pointer}.tab.on{background:#5865f2;color:#fff}
+.layout{display:flex;gap:16px;align-items:flex-start}.side{position:sticky;top:12px;min-width:180px;background:#171a21;border:1px solid #262b36;border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:4px}.nav{padding:9px 12px;border-radius:8px;cursor:pointer;color:#b9c0cc;font-size:14px}.nav.on{background:#5865f2;color:#fff}main{flex:1;min-width:0}main .card:first-child{margin-top:0}@media(max-width:800px){.layout{flex-direction:column}.side{position:static;flex-direction:row;flex-wrap:wrap;min-width:0;width:100%}}
+.statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:12px 0}.stat{background:#0f1115;border:1px solid #262b36;border-radius:10px;padding:12px;text-align:center}.stat b{font-size:22px;display:block}.stat span{font-size:12px;color:#9aa3b2}
+select[multiple]{min-height:96px}.chk{display:flex;gap:8px;align-items:center;margin:8px 0;font-size:14px}.chk input{width:auto}
 .srv{display:flex;gap:12px;align-items:center;padding:12px;border:1px solid #262b36;border-radius:10px;margin:10px 0;text-decoration:none;color:inherit}
 .srv img{width:44px;height:44px;border-radius:50%;background:#262b36}.badge{font-size:11px;padding:2px 8px;border-radius:20px;background:#2c3340}.badge.ok{background:#1d4d2b;color:#7de2a8}.badge.no{background:#5a2b2b;color:#f2a3a3}
 #toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#222836;border:1px solid #334;padding:10px 18px;border-radius:10px;display:none}`;
@@ -41,7 +44,7 @@ fetch('/dashboard/api/me').then(r=>r.json()).then(d=>{
 }
 
 function guild(gid) {
-  return shell('Tùy chỉnh server', `<a href="/dashboard" class="mut">← Tất cả server</a><h1>⚙️ Tùy chỉnh</h1><div class="tabs"><div class="tab on" id="t-w">Welcome</div><div class="tab" id="t-l">Leaderboard</div><div class="tab" id="t-x">Level</div><div class="tab" id="t-m">Kiểm duyệt</div><div class="tab" id="t-t">Ticket</div><div class="tab" id="t-a">Thông báo</div><div class="tab" id="t-s">Trạng thái</div><div class="tab" id="t-r">Role</div><div class="tab" id="t-g">Goodbye</div><div class="tab" id="t-o">Logs</div><div class="tab" id="t-u">Music</div><div class="tab" id="t-v">Giveaway</div></div>
+  return shell('Tùy chỉnh server', `<a href="/dashboard" class="mut">← Tất cả server</a><h1>⚙️ Tùy chỉnh</h1><div class="layout"><aside class="side"><div class="nav on" id="t-ov">📊 Overview</div><div class="nav" id="t-mod">🛡️ Moderation</div><div class="nav" id="t-am">🤖 AutoMod</div><div class="nav" id="t-o">📝 Logs</div><div class="nav" id="t-w">👋 Welcome</div><div class="nav" id="t-g">👋 Goodbye</div><div class="nav" id="t-x">🏆 Leveling</div><div class="nav" id="t-v">🎉 Giveaway</div><div class="nav" id="t-t">🎫 Ticket</div><div class="nav" id="t-r">🎭 Roles</div><div class="nav" id="t-u">🎵 Music</div><div class="nav" id="t-s">📈 Server Stats</div><div class="nav" id="t-cmd">⌨️ Commands</div><div class="nav" id="t-set">⚙️ Settings</div></aside><main id="main">`, `<script>
 <div id="p-w" class="card"><h2>Welcome (giống BotGhost)</h2>
 <div class="grid"><div><label>Kênh gửi welcome</label><select id="w-channel"></select></div><div><label>Tiêu đề (VD: By RAPTOR)</label><input id="w-title" placeholder="Để trống = theo tên server"></div>
 <div><label>Kênh chọn role ✅</label><select id="w-role"></select></div><div><label>Kênh luật</label><select id="w-rules"></select></div>
@@ -60,6 +63,7 @@ function guild(gid) {
 <div class="grid"><div><label>Kênh đăng BXH</label><select id="l-channel"></select></div><div><label>Top mấy</label><input id="l-limit" type="number" min="3" max="25" value="10"></div></div>
 <button id="l-save">Lưu</button><button class="ghost" id="l-refresh">Cập nhật ngay</button><p class="mut">Bot tự sửa tin BXH mỗi 10 phút.</p></div>
 <div id="p-x" class="card" style="display:none"><h2>Level / XP</h2>
+<div><label>Hệ thống level</label><select id="x-on"><option value="1">Bật</option><option value="0">Tắt cả XP</option></select></div>
 <div class="grid"><div><label>XP mỗi tin (tối thiểu)</label><input id="x-min" type="number" min="1" max="100" value="15"></div><div><label>XP mỗi tin (tối đa)</label><input id="x-max" type="number" min="1" max="100" value="25"></div>
 <div><label>Chống spam: mỗi bao nhiêu giây mới tính XP</label><input id="x-cd" type="number" min="0" max="3600" value="60"></div><div><label>Thông báo khi lên level</label><select id="x-msg"><option value="1">Bật</option><option value="0">Tắt</option></select></div></div>
 <button id="x-save">Lưu</button></div>
@@ -136,13 +140,46 @@ function guild(gid) {
 <div id="p-v" class="card" style="display:none"><h2>Giveaway mặc định</h2>
 <div><label>Kênh đăng giveaway mặc định</label><select id="v-channel"></select></div>
 <div class="grid"><div><label>Số người thắng mặc định</label><input id="v-winners" type="number" min="1" max="20" value="1"></div><div><label>Thời gian mặc định (VD: 10m, 1h, 1d)</label><input id="v-duration" value="10m"></div></div>
-<button id="v-save">Lưu</button><p class="mut">Lệnh <b>/giveaway start</b> chỉ cần ghi giải thưởng, còn lại lấy mặc định ở đây.</p></div>`, `<script>
+<button id="v-save">Lưu</button><p class="mut">Lệnh <b>/giveaway start</b> chỉ cần ghi giải thưởng, còn lại lấy mặc định ở đây.</p></div>
+<div id="p-ov" class="card"><h2>Tổng quan</h2><div id="ov-body"><p class="mut">Đang tải...</p></div><div class="row" id="ov-links"></div></div>
+<div id="p-mod" class="card" style="display:none"><h2>Moderation — thao tác nhanh</h2>
+<div class="grid"><div><label>Hành động</label><select id="md-act"><option value="warn">⚠️ Warn</option><option value="timeout">⏳ Timeout</option><option value="kick">👢 Kick</option><option value="ban">🔨 Ban</option><option value="unban">♻️ Unban (dùng ID)</option></select></div><div><label>User ID</label><input id="md-user" placeholder="123..."></div></div>
+<div class="grid"><div><label>Lý do</label><input id="md-reason" maxlength="400" placeholder="Không có lý do"></div><div><label>Số phút (chỉ timeout)</label><input id="md-mins" type="number" min="1" max="40320" value="10"></div></div>
+<button id="md-go">Thực hiện</button>
+<div><label>Tra warns của user</label></div>
+<div class="grid"><div><label>User ID</label><input id="md-wuser" placeholder="123..."></div><div><label>&nbsp;</label><button class="ghost" id="md-wgo" style="margin-top:0">Xem warns</button></div></div>
+<div id="md-warns" class="mut"></div></div>
+<div id="p-am" class="card" style="display:none"><h2>AutoMod — lọc tự động</h2>
+<label class="chk"><input type="checkbox" id="am-words" checked> Lọc từ cấm (danh sách ở trang Kiểm duyệt)</label>
+<label class="chk"><input type="checkbox" id="am-invites"> Chặn link invite Discord</label>
+<label class="chk"><input type="checkbox" id="am-links"> Chặn mọi link http(s)</label>
+<label class="chk"><input type="checkbox" id="am-spam"> Chống spam (nhắn quá nhanh)</label>
+<div class="grid"><div><label>Spam: tối đa mấy tin</label><input id="am-count" type="number" min="2" max="20" value="5"></div><div><label>Spam: trong mấy giây</label><input id="am-secs" type="number" min="2" max="60" value="5"></div></div>
+<div class="grid"><div><label>Hình phạt thêm (ngoài xóa tin)</label><select id="am-act"><option value="delete">Chỉ xóa tin</option><option value="warn">Xóa + warn</option><option value="timeout">Xóa + timeout</option></select></div><div><label>Timeout mấy phút</label><input id="am-mins" type="number" min="1" max="40320" value="10"></div></div>
+<div class="grid"><div><label>Kênh bỏ qua (giữ Ctrl để chọn nhiều)</label><select id="am-xch" multiple></select></div><div><label>Role bỏ qua</label><select id="am-xr" multiple></select></div></div>
+<button id="am-save">Lưu</button></div>
+<div id="p-cmd" class="card" style="display:none"><h2>Lệnh bật/tắt</h2><p class="mut">Tắt lệnh nào thì member gõ sẽ bị từ chối (vẫn nhìn thấy lệnh trong list).</p><div id="cmd-list"></div><button id="cmd-save">Lưu</button></div>
+<div id="p-set" class="card" style="display:none"><h2>Cài đặt chung</h2>
+<div class="grid"><div><label>Ngôn ngữ</label><select id="s-lang"><option value="vi">Tiếng Việt</option><option value="en">English (đang dịch dần)</option></select></div><div><label>Prefix (dự trữ — bot hiện dùng lệnh slash)</label><input id="s-prefix" maxlength="5" value="!"></div></div>
+<div><label>Múi giờ hiển thị ngày giờ</label><select id="s-tz"><option value="Asia/Ho_Chi_Minh">Việt Nam (GMT+7)</option><option value="Asia/Tokyo">Nhật Bản (GMT+9)</option><option value="Asia/Bangkok">Bangkok (GMT+7)</option><option value="Asia/Singapore">Singapore (GMT+8)</option><option value="UTC">UTC</option><option value="America/New_York">New York</option><option value="Europe/London">London</option></select></div>
+<button id="set-save">Lưu</button></div></main></div>`, `<script>
 const G='${esc(gid)}';
 const $=id=>document.getElementById(id);
-document.getElementById('t-w').onclick=e=>{t('t-w','p-w')};document.getElementById('t-l').onclick=e=>{t('t-l','p-l')};
-document.getElementById('t-x').onclick=e=>{t('t-x','p-x')};document.getElementById('t-m').onclick=e=>{t('t-m','p-m')};document.getElementById('t-t').onclick=e=>{t('t-t','p-t')};
-document.getElementById('t-a').onclick=e=>{t('t-a','p-a')};document.getElementById('t-s').onclick=e=>{t('t-s','p-s')};document.getElementById('t-r').onclick=e=>{t('t-r','p-r')};document.getElementById('t-g').onclick=e=>{t('t-g','p-g')};document.getElementById('t-o').onclick=e=>{t('t-o','p-o')};document.getElementById('t-u').onclick=e=>{t('t-u','p-u');loadMusic()};document.getElementById('t-v').onclick=e=>{t('t-v','p-v')};
-function t(tab,page){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));document.getElementById(tab).classList.add('on');['p-w','p-l','p-x','p-m','p-t','p-a','p-s','p-r','p-g','p-o','p-u','p-v'].forEach(p=>document.getElementById(p).style.display='none');document.getElementById(page).style.display='block'}
+document.getElementById('t-ov').onclick=e=>{t('t-ov',['p-ov'])};
+document.getElementById('t-mod').onclick=e=>{t('t-mod',['p-mod','p-m'])};
+document.getElementById('t-am').onclick=e=>{t('t-am',['p-am'])};
+document.getElementById('t-o').onclick=e=>{t('t-o',['p-o'])};
+document.getElementById('t-w').onclick=e=>{t('t-w',['p-w'])};
+document.getElementById('t-g').onclick=e=>{t('t-g',['p-g'])};
+document.getElementById('t-x').onclick=e=>{t('t-x',['p-x','p-l'])};
+document.getElementById('t-v').onclick=e=>{t('t-v',['p-v'])};
+document.getElementById('t-t').onclick=e=>{t('t-t',['p-t'])};
+document.getElementById('t-r').onclick=e=>{t('t-r',['p-r'])};
+document.getElementById('t-u').onclick=e=>{t('t-u',['p-u']);loadMusic()};
+document.getElementById('t-s').onclick=e=>{t('t-s',['p-s','p-a'])};
+document.getElementById('t-cmd').onclick=e=>{t('t-cmd',['p-cmd']);loadCmds()};
+document.getElementById('t-set').onclick=e=>{t('t-set',['p-set'])};
+function t(tab,pages){if(!Array.isArray(pages))pages=[pages];document.querySelectorAll('.nav').forEach(x=>x.classList.remove('on'));document.getElementById(tab).classList.add('on');['p-ov','p-mod','p-am','p-w','p-l','p-x','p-m','p-t','p-a','p-s','p-r','p-g','p-o','p-u','p-v','p-cmd','p-set'].forEach(p=>document.getElementById(p).style.display='none');pages.forEach(p=>document.getElementById(p).style.display='block')}
 function opt(sel,list,cur,allowEmpty){const s=$(sel);s.innerHTML=(allowEmpty?'<option value="">— không dùng —</option>':'')+list.map(o=>'<option value="'+o.id+'">'+o.name.replace(/</g,'&lt;')+'</option>').join('');if(cur)s.value=cur}
 let META=null;
 async function api(m,url,body){const r=await fetch(url,{method:m,headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||('Lỗi '+r.status));return d}
@@ -161,7 +198,7 @@ async function api(m,url,body){const r=await fetch(url,{method:m,headers:{'Conte
     opt('w-autorole',[{id:'',name:'— không dùng —'}].concat(META.roles),w.autoRoleId,true);
     opt('l-channel',txt,l.channelId,true);$('l-limit').value=l.limit||10;
     const st=await api('GET','/dashboard/api/guilds/'+G+'/settings');
-    $('x-min').value=st.xpMin??15;$('x-max').value=st.xpMax??25;$('x-cd').value=st.xpCooldownSec??60;$('x-msg').value=st.levelUpMessage===false?'0':'1';
+    $('x-min').value=st.xpMin??15;$('x-max').value=st.xpMax??25;$('x-cd').value=st.xpCooldownSec??60;$('x-msg').value=st.levelUpMessage===false?'0':'1';$('x-on').value=st.levelEnabled===false?'0':'1';
     $('m-words').value=(st.bannedWords||'');opt('m-log',txt,st.logChannelId,true);
     opt('k-cat',[{id:'',name:'— tạo ở đầu server —'}].concat(META.categories||[]),st.ticketCategoryId,true);
     opt('k-staff',[{id:'',name:'— chỉ admin + chủ ticket —'}].concat(META.roles),st.ticketStaffRoleId,true);
@@ -201,13 +238,19 @@ async function api(m,url,body){const r=await fetch(url,{method:m,headers:{'Conte
     const lg=await api('GET','/dashboard/api/guilds/'+G+'/logs');
     opt('o-channel',txt,lg.channelId,true);
     $('o-types').innerHTML=lg.types.map(([k,l])=>'<label style="display:flex;gap:8px;align-items:center;margin:6px 0"><input type="checkbox" data-k="'+k+'" style="width:auto"'+(lg.toggles[k]!==false?' checked':'')+'> '+l.replace(/</g,'&lt;')+'</label>').join('');
+    $('s-lang').value=st.language||'vi';$('s-prefix').value=st.prefix||'!';if(st.timezone)$('s-tz').value=st.timezone;
+    const am=st.automod||{};
+    $('am-words').checked=am.words!==false;$('am-invites').checked=!!am.invites;$('am-links').checked=!!am.links;$('am-spam').checked=!!am.spam;
+    $('am-count').value=am.spamCount||5;$('am-secs').value=am.spamSecs||5;$('am-act').value=am.action||'delete';$('am-mins').value=am.timeoutMin||10;
+    optMulti('am-xch',txt,am.exemptChannels||[]);optMulti('am-xr',META.roles,am.exemptRoles||[]);
+    loadOv();
   }catch(e){toast('Lỗi tải: '+e.message+' (bot phải đã vào server và bạn là admin)')}
 })();
 $('w-save').onclick=async()=>{try{await api('PUT','/dashboard/api/guilds/'+G+'/welcome',{channelId:$('w-channel').value||null,title:$('w-title').value||null,roleChannelId:$('w-role').value||null,rulesChannelId:$('w-rules').value||null,announceChannelId:$('w-ann').value||null,chatChannelId:$('w-chat').value||null,imageUrl:$('w-image').value||null,color:$('w-color').value||null,reactions:$('w-reactions').value,autoRoleId:$('w-autorole').value||null,bannerUrl:$('w-banner').value||null,bannerRainbow:$('w-rainbow').value==='1',welcomeText:$('w-desc').value||null,cardEnabled:$('w-card').value==='1',dmEnabled:$('w-dm').value==='1',acceptRoleId:$('w-accept').value||null,welcomeButtons:WBTS});toast('Đã lưu welcome')}catch(e){toast('Lỗi: '+e.message)}};
 $('w-test').onclick=async()=>{try{const d=await api('POST','/dashboard/api/guilds/'+G+'/welcome/test');toast('Đã gửi thử! Mở Discord xem');if(d.url)window.open(d.url,'_blank')}catch(e){toast('Lỗi: '+e.message+' (cần setup kênh trước)')}};
 $('l-save').onclick=async()=>{try{await api('PUT','/dashboard/api/guilds/'+G+'/leaderboard',{channelId:$('l-channel').value||null,limit:parseInt($('l-limit').value||'10',10)});toast('Đã lưu leaderboard')}catch(e){toast('Lỗi: '+e.message)}};
 $('l-refresh').onclick=async()=>{try{await api('POST','/dashboard/api/guilds/'+G+'/leaderboard/refresh');toast('Đã cập nhật BXH')}catch(e){toast('Lỗi: '+e.message+' (cần setup kênh trước)')}};
-function curSettings(){return{xpMin:parseInt($('x-min').value||'15',10),xpMax:parseInt($('x-max').value||'25',10),xpCooldownSec:parseInt($('x-cd').value||'60',10),levelUpMessage:$('x-msg').value==='1',bannedWords:$('m-words').value,logChannelId:$('m-log').value||null,ticketCategoryId:$('k-cat').value||null,ticketStaffRoleId:$('k-staff').value||null,ticketPanelImageUrl:$('k-img').value||null,panelTitle:$('k-title').value||null,panelDescription:$('k-desc').value||null,showClaim:$('k-claim').value==='1',showTranscript:$('k-trans').value==='1',showRating:$('k-rate').value==='1',closeDelaySec:parseInt($('k-delay').value||'5',10),closeMode:$('k-mode').value,archiveCategoryId:$('k-arch').value||null,autoCloseHours:parseInt($('k-auto').value||'0',10),defaultPriority:$('k-prio').value,ticketTypes:KTYPES,giveawayChannelId:$('v-channel').value||null,giveawayWinners:parseInt($('v-winners').value||'1',10),giveawayDuration:$('v-duration').value||null,musicDefaultVolume:$('u-defvol').value===''||$('u-defvol').value===null?null:parseInt($('u-defvol').value,10)}}
+function curSettings(){return{xpMin:parseInt($('x-min').value||'15',10),xpMax:parseInt($('x-max').value||'25',10),xpCooldownSec:parseInt($('x-cd').value||'60',10),levelUpMessage:$('x-msg').value==='1',levelEnabled:$('x-on').value==='1',bannedWords:$('m-words').value,logChannelId:$('m-log').value||null,ticketCategoryId:$('k-cat').value||null,ticketStaffRoleId:$('k-staff').value||null,ticketPanelImageUrl:$('k-img').value||null,panelTitle:$('k-title').value||null,panelDescription:$('k-desc').value||null,showClaim:$('k-claim').value==='1',showTranscript:$('k-trans').value==='1',showRating:$('k-rate').value==='1',closeDelaySec:parseInt($('k-delay').value||'5',10),closeMode:$('k-mode').value,archiveCategoryId:$('k-arch').value||null,autoCloseHours:parseInt($('k-auto').value||'0',10),defaultPriority:$('k-prio').value,ticketTypes:KTYPES,giveawayChannelId:$('v-channel').value||null,giveawayWinners:parseInt($('v-winners').value||'1',10),giveawayDuration:$('v-duration').value||null,musicDefaultVolume:$('u-defvol').value===''||$('u-defvol').value===null?null:parseInt($('u-defvol').value,10)}}
 $('x-save').onclick=$('m-save').onclick=$('k-save').onclick=$('v-save').onclick=async()=>{try{await api('PUT','/dashboard/api/guilds/'+G+'/settings',curSettings());toast('Đã lưu')}catch(e){toast('Lỗi: '+e.message)}};
 $('a-save').onclick=async()=>{try{await api('PUT','/dashboard/api/guilds/'+G+'/announce',{channelId:$('a-channel').value||null,title:$('a-title').value||null,text:$('a-text').value,intervalMin:parseInt($('a-min').value||'0',10),color:$('a-color').value||null});toast('Đã lưu bảng tin')}catch(e){toast('Lỗi: '+e.message)}};
 $('a-test').onclick=async()=>{try{const d=await api('POST','/dashboard/api/guilds/'+G+'/announce/test');toast('Đã đăng bảng! Mở Discord xem');if(d.url)window.open(d.url,'_blank')}catch(e){toast('Lỗi: '+e.message+' (cần setup kênh + nội dung trước)')}};
@@ -237,6 +280,15 @@ $('r-import').onclick=async()=>{try{const d=await api('POST','/dashboard/api/gui
 $('r-del').onclick=async()=>{if(!RBID)return;if(!confirm('Xóa bảng này? Tin nhắn bảng cũng bị xóa.'))return;try{await api('DELETE','/dashboard/api/guilds/'+G+'/roleboards/'+RBID);const l=await api('GET','/dashboard/api/guilds/'+G+'/roleboards');RBOARDS=l;RBID=RBOARDS.length?String(RBOARDS[0].id||RBOARDS[0]._id):'';renderBoards();await loadBoard();toast('Đã xóa bảng')}catch(e){toast('Lỗi: '+e.message)}};
 $('g-save').onclick=async()=>{try{await api('PUT','/dashboard/api/guilds/'+G+'/goodbye',{channelId:$('g-channel').value||null,title:$('g-title').value||null,text:$('g-text').value,imageUrl:$('g-image').value||null,color:$('g-color').value||null});toast('Đã lưu tin tạm biệt')}catch(e){toast('Lỗi: '+e.message)}};
 $('o-save').onclick=async()=>{try{const tg={};document.querySelectorAll('#o-types input').forEach(c=>tg[c.dataset.k]=c.checked);await api('PUT','/dashboard/api/guilds/'+G+'/logs',{channelId:$('o-channel').value||null,toggles:tg});toast('Đã lưu cấu hình log')}catch(e){toast('Lỗi: '+e.message)}};
+function optMulti(sel,list,cur){const s=$(sel);const set=new Set(cur||[]);s.innerHTML=list.map(o=>'<option value="'+o.id+'"'+(set.has(o.id)?' selected':'')+'>'+o.name.replace(/</g,'&lt;')+'</option>').join('')}
+function selVals(sel){return Array.from($(sel).selectedOptions).map(o=>o.value)}
+async function loadOv(){try{const d=await api('GET','/dashboard/api/guilds/'+G+'/overview');$('ov-body').innerHTML='<div class=statgrid><div class=stat><b>'+d.members+'</b><span>thành viên</span></div><div class=stat><b>'+d.channels+'</b><span>kênh</span></div><div class=stat><b>'+d.roles+'</b><span>role</span></div><div class=stat><b>'+d.openTickets+'</b><span>ticket mở</span></div><div class=stat><b>'+d.boards+'</b><span>bảng role</span></div></div>';const go=[['t-w','👋 Welcome'],['t-mod','🛡️ Moderation'],['t-v','🎉 Giveaway'],['t-t','🎫 Ticket'],['t-o','📝 Logs']];$('ov-links').innerHTML=go.map(([t,l])=>'<button class=ghost data-t="'+t+'">'+l+'</button>').join('');document.querySelectorAll('#ov-links button').forEach(b=>b.onclick=()=>document.getElementById(b.dataset.t).click())}catch(e){$('ov-body').innerHTML='<p class=mut>Lỗi tải.</p>'}}
+$('md-go').onclick=async()=>{try{await api('POST','/dashboard/api/guilds/'+G+'/mod',{action:$('md-act').value,userId:$('md-user').value.trim(),reason:$('md-reason').value,minutes:parseInt($('md-mins').value||'10',10)});$('md-user').value='';toast('Đã thực hiện')}catch(e){toast('Lỗi: '+e.message+' (kiểm tra ID, quyền bot)')}};
+$('md-wgo').onclick=async()=>{try{const l=await api('GET','/dashboard/api/guilds/'+G+'/warns?userId='+encodeURIComponent($('md-wuser').value.trim()));$('md-warns').innerHTML=l.length?l.map((w,i)=>'<b>'+(i+1)+'.</b> '+String(w.reason||'').replace(/</g,'&lt;')+' <span class=mut>— '+(w.byTag||'').replace(/</g,'&lt;')+'</span>').join('<br>'):'Chưa có warn nào.'}catch(e){toast('Lỗi: '+e.message)}};
+$('am-save').onclick=async()=>{try{await api('PUT','/dashboard/api/guilds/'+G+'/settings',{automod:{words:$('am-words').checked,invites:$('am-invites').checked,links:$('am-links').checked,spam:$('am-spam').checked,spamCount:parseInt($('am-count').value||'5',10),spamSecs:parseInt($('am-secs').value||'5',10),action:$('am-act').value,timeoutMin:parseInt($('am-mins').value||'10',10),exemptChannels:selVals('am-xch'),exemptRoles:selVals('am-xr')}});toast('Đã lưu AutoMod (áp dụng ngay tin nhắn tiếp theo)')}catch(e){toast('Lỗi: '+e.message)}};
+async function loadCmds(){try{const l=await api('GET','/dashboard/api/guilds/'+G+'/commands');let g='';$('cmd-list').innerHTML=l.map(c=>(c.group!==g?'<h2>'+(g=c.group).toUpperCase()+'</h2>':'')+'<label class=chk><input type=checkbox data-n="'+c.name+'"'+(c.enabled?' checked':'')+'> <b>/'+c.name+'</b> <span class=mut>'+String(c.description||'').replace(/</g,'&lt;')+'</span></label>').join('')}catch(e){$('cmd-list').innerHTML='<p class=mut>Lỗi tải.</p>'}}
+$('cmd-save').onclick=async()=>{try{const off=[];document.querySelectorAll('#cmd-list input').forEach(c=>{if(!c.checked)off.push(c.dataset.n)});await api('PUT','/dashboard/api/guilds/'+G+'/commands',{disabled:off});toast('Đã lưu (áp dụng ngay lệnh tiếp theo)')}catch(e){toast('Lỗi: '+e.message)}};
+$('set-save').onclick=async()=>{try{await api('PUT','/dashboard/api/guilds/'+G+'/settings',{language:$('s-lang').value,timezone:$('s-tz').value,prefix:$('s-prefix').value||'!'});toast('Đã lưu')}catch(e){toast('Lỗi: '+e.message)}};
 async function loadMusic(){try{const m=await api('GET','/dashboard/api/guilds/'+G+'/music');const el=$('u-state');if(!m.playing){el.innerHTML='<p class=mut>Không có gì đang phát.</p>';return}el.innerHTML='<p>🔊 <b>'+(m.voice||'voice').replace(/</g,'&lt;')+'</b> '+(m.paused?'⏸ đang dừng':'▶ đang phát')+' • Volume '+(m.volume??'?')+'</p><p><b>'+(m.current.title||'').replace(/</g,'&lt;')+'</b> — '+(m.current.author||'').replace(/</g,'&lt;')+'</p>'+(m.queueCount?'<p class=mut>Hàng chờ ('+m.queueCount+'):<br>'+m.queue.map((t,i)=>(i+1)+'. '+String(t.title||'').replace(/</g,'&lt;')).join('<br>')+'</p>':'')}catch(e){$('u-state').innerHTML='<p class=mut>Lỗi tải.</p>'}}
 async function mAct(a,body){try{await api('POST','/dashboard/api/guilds/'+G+'/music/'+a,body||{});await loadMusic()}catch(e){toast('Lỗi: '+e.message)}}
 $('u-pause').onclick=()=>mAct('pause');$('u-resume').onclick=()=>mAct('resume');$('u-skip').onclick=()=>mAct('skip');$('u-stop').onclick=()=>mAct('stop');

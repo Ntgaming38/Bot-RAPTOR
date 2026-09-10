@@ -7,6 +7,13 @@ const FILE = path.join(__dirname, '..', '..', 'data', 'guild-settings.json');
 const cache = new Map();
 const TTL = 30_000;
 
+// Đọc cache đồng bộ (dùng cho hàm sync như format giờ). Trả null nếu chưa có.
+function getCached(guildId) {
+  const hit = cache.get(guildId);
+  if (hit && Date.now() - hit.at < TTL) return hit.data;
+  return null;
+}
+
 function loadAll() {
   try {
     if (!fs.existsSync(FILE)) return {};
@@ -48,6 +55,12 @@ function baseFromEnv() {
     defaultPriority: 'medium',
     musicDefaultVolume: null,
     giveawayChannelId: null,
+    language: 'vi',
+    timezone: 'Asia/Ho_Chi_Minh',
+    prefix: '!',
+    levelEnabled: true,
+    automod: null,
+    disabledCommands: null,
     giveawayWinners: 1,
     giveawayDuration: '10m',
   };
@@ -91,4 +104,4 @@ async function saveGuildSettings(guildId, patch) {
   return getGuildSettings(guildId);
 }
 
-module.exports = { getGuildSettings, saveGuildSettings };
+module.exports = { getGuildSettings, saveGuildSettings, getCached };
