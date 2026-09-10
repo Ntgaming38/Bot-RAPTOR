@@ -66,10 +66,11 @@ function applyVars(text, vars) {
     .replaceAll('{members}', String(vars.members ?? ''));
 }
 
-function boardEmbed(guild, title, line, idx, total) {
+function boardEmbed(guild, title, line, idx, total, color) {
   return embed({
     title: title || '📢 THÔNG BÁO',
     description: applyVars(line, { server: guild?.name, members: guild?.memberCount }),
+    color: color || undefined,
     footer: total > 1 ? `Tin ${idx + 1}/${total} • ${new Date().toLocaleString('vi-VN')}` : new Date().toLocaleString('vi-VN'),
   });
 }
@@ -88,7 +89,7 @@ async function updateBoard(client, guildId, lineIdx = null) {
     console.warn('[announce] không tìm thấy kênh', s.channelId);
     return null;
   }
-  const em = boardEmbed(guild, s.title, lines[idx], idx, lines.length);
+  const em = boardEmbed(guild, s.title, lines[idx], idx, lines.length, s.color);
   if (s.messageId) {
     const msg = await ch.messages.fetch(s.messageId).catch(() => null);
     if (msg) {

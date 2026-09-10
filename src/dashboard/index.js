@@ -172,6 +172,33 @@ function mount(app) {
     }
     for (const k of ['logChannelId', 'ticketCategoryId', 'ticketStaffRoleId']) patch[k] = idOrNull(b[k]);
     if (b.ticketPanelImageUrl !== undefined) patch.ticketPanelImageUrl = String(b.ticketPanelImageUrl || '') || null;
+    if (b.panelTitle !== undefined) patch.panelTitle = String(b.panelTitle || '').slice(0, 100) || null;
+    if (b.panelDescription !== undefined) patch.panelDescription = String(b.panelDescription || '').slice(0, 2000) || null;
+    for (const k of ['showClaim', 'showTranscript', 'showRating']) {
+      if (b[k] !== undefined) patch[k] = !!b[k];
+    }
+    if (b.closeDelaySec !== undefined) {
+      const n = parseInt(b.closeDelaySec, 10);
+      if (Number.isFinite(n)) patch.closeDelaySec = Math.min(600, Math.max(0, n));
+    }
+    if (b.ticketTypes !== undefined && Array.isArray(b.ticketTypes)) {
+      patch.ticketTypes = b.ticketTypes.slice(0, 10)
+        .filter((t) => t && t.label)
+        .map((t) => ({
+          id: String(t.id || t.label).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '').slice(0, 20) || 'loai',
+          label: String(t.label).slice(0, 25),
+          description: String(t.description || '').slice(0, 100),
+          emoji: String(t.emoji || '') || '🎫',
+        }));
+      if (!patch.ticketTypes.length) patch.ticketTypes = null;
+    }
+    if (b.musicDefaultVolume !== undefined) {
+      if (b.musicDefaultVolume === null || b.musicDefaultVolume === '') patch.musicDefaultVolume = null;
+      else {
+        const n = parseInt(b.musicDefaultVolume, 10);
+        if (Number.isFinite(n)) patch.musicDefaultVolume = Math.min(100, Math.max(0, n));
+      }
+    }
     if (b.giveawayChannelId !== undefined) patch.giveawayChannelId = String(b.giveawayChannelId || '') || null;
     if (b.giveawayWinners !== undefined) {
       const n = parseInt(b.giveawayWinners, 10);
@@ -197,6 +224,7 @@ function mount(app) {
     }
     if (b.bannerUrl !== undefined) patch.bannerUrl = String(b.bannerUrl || '') || null;
     if (b.bannerRainbow !== undefined) patch.bannerRainbow = !!b.bannerRainbow;
+    if (b.welcomeText !== undefined) patch.welcomeText = String(b.welcomeText || '').slice(0, 2000) || null;
     if (b.color !== undefined) {
       patch.color = /^#[0-9a-fA-F]{6}$/.test(String(b.color || '')) ? b.color : null;
     }
@@ -258,6 +286,7 @@ function mount(app) {
       channelId: b.channelId !== undefined ? (String(b.channelId || '') || null) : undefined,
       title: b.title !== undefined ? (String(b.title || '') || null) : undefined,
       text: b.text !== undefined ? String(b.text || '').slice(0, 2000) : undefined,
+      color: b.color !== undefined ? (/^#[0-9a-fA-F]{6}$/.test(String(b.color || '')) ? b.color : null) : undefined,
     };
     if (b.intervalMin !== undefined) {
       const n = parseInt(b.intervalMin, 10);
@@ -355,6 +384,7 @@ function mount(app) {
     if (b.title !== undefined) patch.title = String(b.title || '').slice(0, 100) || null;
     if (b.text !== undefined) patch.text = String(b.text || '').slice(0, 2000) || null;
     if (b.imageUrl !== undefined) patch.imageUrl = String(b.imageUrl || '') || null;
+    if (b.color !== undefined) patch.color = /^#[0-9a-fA-F]{6}$/.test(String(b.color || '')) ? b.color : null;
     const s = await require('../utils/goodbyeSettings').saveGoodbye(req.params.gid, patch);
     res.json({ ok: true, settings: s });
   });

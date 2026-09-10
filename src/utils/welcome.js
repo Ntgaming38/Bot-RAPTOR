@@ -29,7 +29,20 @@ function buildWelcome(member, s) {
   const annCh = (s?.announceChannelId) ?? config.welcomeAnnounceChannelId;
   const chatCh = (s?.chatChannelId) ?? config.welcomeChatChannelId;
 
-  const description = [
+  // Cho phép soạn nội dung tùy ý (dashboard/lệnh), biến: {member} {tag} {server} {count} {role} {rules} {announce} {chat}
+  let description;
+  if (s?.welcomeText) {
+    description = s.welcomeText
+      .replaceAll('{member}', `${member}`)
+      .replaceAll('{tag}', member.user.tag)
+      .replaceAll('{server}', `**${server}**`)
+      .replaceAll('{count}', `**${count}**`)
+      .replaceAll('{role}', ch(roleCh, '**role-sever**'))
+      .replaceAll('{rules}', ch(rulesCh, '**rule-discord**'))
+      .replaceAll('{announce}', ch(annCh, '**thông-báo**'))
+      .replaceAll('{chat}', ch(chatCh, '**chat-chung**'));
+  } else {
+    description = [
     `➔ Chào mừng ${member} đã tham gia **${server}**.`,
     `➔ Bạn là người thứ : **${count}**`,
     `➔ Nhớ chọn Role ở kênh ✅ ${ch(roleCh, '**role-sever**')} để xem các kênh trong sever nhé.`,
@@ -37,10 +50,11 @@ function buildWelcome(member, s) {
     `➔ Luôn luôn check 🔊 ${ch(annCh, '**thông-báo**')} để không bỏ lỡ những việc quan trọng, điều đó có thể sẽ giúp bạn nha...!`,
     `➔ Có gì khó khăn hãy vào 💬 ${ch(chatCh, '**chat-chung**')} nơi giao lưu của mọi người nhé...!`,
   ].join('\n');
+  }
 
   const em = embed({
     title: author,
-    description,
+    description: description.slice(0, 2000),
     thumbnail: thumb,
     color,
     footer: `${member.user.tag} • ${new Date().toLocaleString('vi-VN')}`,

@@ -20,13 +20,35 @@ async function getT(guildId) {
 const FILE = path.join(__dirname, '..', '..', 'data', 'tickets.json');
 const RATINGS_FILE = path.join(__dirname, '..', '..', 'data', 'ticket-ratings.json');
 
-// Các loại ticket — thêm/sửa tùy ý. Mỗi loại 1 emoji + mô tả riêng.
+// Các loại ticket mặc định — mỗi server tự thêm/sửa/xóa trên dashboard
 const TICKET_TYPES = [
   { id: 'hotro', label: 'Hỗ trợ chung', description: 'Hỏi đáp, cần giúp đỡ', emoji: '🛠️' },
   { id: 'tocao', label: 'Tố cáo', description: 'Báo cáo vi phạm, scam', emoji: '🚨' },
   { id: 'napthe', label: 'Nạp / Mua hàng', description: 'Thanh toán, đơn hàng', emoji: '💳' },
   { id: 'tuyen', label: 'Tuyển staff / Đối tác', description: 'Ứng tuyển, hợp tác', emoji: '🤝' },
 ];
+
+const slug = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-z0-9]+/g, '').slice(0, 20) || 'loai';
+
+function sanitizeTypes(arr) {
+  if (!Array.isArray(arr)) return null;
+  const out = [];
+  for (const t of arr.slice(0, 10)) {
+    if (!t || !t.label) continue;
+    out.push({
+      id: slug(t.id || t.label),
+      label: String(t.label).slice(0, 25),
+      description: String(t.description || '').slice(0, 100),
+      emoji: String(t.emoji || '') || '🎫',
+    });
+  }
+  return out.length ? out : null;
+}
+
+function getTypes(st) {
+  return sanitizeTypes(st?.ticketTypes) || TICKET_TYPES;
+}
 
 function load() {
   try {
@@ -47,43 +69,46 @@ function setupComponents() {
   )];
 }
 
+const PANEL_DESC_DEFAULT = [
+  'Bạn đang gặp vấn đề hoặc cần hỗ trợ? Hãy tạo Ticket để đội ngũ Admin có thể hỗ trợ bạn nhanh chóng.',
+  '',
+  '📌 **Trước khi tạo Ticket:**',
+  '• Mô tả vấn đề của bạn rõ ràng và đầy đủ.',
+  '• Cung cấp ảnh/video hoặc bằng chứng nếu cần thiết.',
+  '• Không spam hoặc tạo nhiều Ticket cho cùng một vấn đề.',
+  '• Vui lòng chờ Admin phản hồi và giữ thái độ lịch sự trong quá trình hỗ trợ.',
+  '',
+  '🛠️ **Các vấn đề có thể hỗ trợ:**',
+  '• ❓ Giải đáp thắc mắc về game',
+  '• 🚨 Báo cáo thành viên',
+  '• 🔧 Hỗ trợ kỹ thuật',
+  '• ⚠️ Khiếu nại hoặc kháng cáo',
+  '• 💬 Các vấn đề khác liên quan đến Server',
+  '',
+  '🎫 **Cách tạo Ticket:**',
+  '',
+  'Nhấn vào nút "🎫 Mở Ticket" bên dưới và mô tả vấn đề của bạn.',
+  '',
+  '💡 **Lưu ý:** Ticket được tạo để hỗ trợ thành viên. Vui lòng không sử dụng Ticket để spam hoặc làm phiền Admin.',
+].join('\n');
+
 function setupEmbed(st) {
   const thumb = (st?.ticketPanelImageUrl) ?? config.ticketPanelImageUrl;
   return embed({
-    title: '🎫 Bạn cần hỗ trợ - hãy mở ticket!',
-    description: [
-      'Bạn đang gặp vấn đề hoặc cần hỗ trợ? Hãy tạo Ticket để đội ngũ Admin có thể hỗ trợ bạn nhanh chóng.',
-      '',
-      '📌 **Trước khi tạo Ticket:**',
-      '• Mô tả vấn đề của bạn rõ ràng và đầy đủ.',
-      '• Cung cấp ảnh/video hoặc bằng chứng nếu cần thiết.',
-      '• Không spam hoặc tạo nhiều Ticket cho cùng một vấn đề.',
-      '• Vui lòng chờ Admin phản hồi và giữ thái độ lịch sự trong quá trình hỗ trợ.',
-      '',
-      '🛠️ **Các vấn đề có thể hỗ trợ:**',
-      '• ❓ Giải đáp thắc mắc về game',
-      '• 🚨 Báo cáo thành viên',
-      '• 🔧 Hỗ trợ kỹ thuật',
-      '• ⚠️ Khiếu nại hoặc kháng cáo',
-      '• 💬 Các vấn đề khác liên quan đến Server',
-      '',
-      '🎫 **Cách tạo Ticket:**',
-      '',
-      'Nhấn vào nút "🎫 Mở Ticket" bên dưới và mô tả vấn đề của bạn.',
-      '',
-      '💡 **Lưu ý:** Ticket được tạo để hỗ trợ thành viên. Vui lòng không sử dụng Ticket để spam hoặc làm phiền Admin.',
-    ].join('\n'),
+    title: st?.panelTitle || '🎫 Bạn cần hỗ trợ - hãy mở ticket!',
+    description: st?.panelDescription || PANEL_DESC_DEFAULT,
     thumbnail: thumb || undefined,
     footer: 'Mỗi người chỉ có 1 ticket mở cùng lúc',
   });
 }
 
 // Giữ select menu nhiều loại (nếu sever nào thích chia loại thì dùng)
-function setupSelectComponents() {
+function setupSelectComponents(types) {
+  const list = types?.length ? types : TICKET_TYPES;
   const menu = new StringSelectMenuBuilder()
     .setCustomId('ticket-select')
     .setPlaceholder('📩 Hoặc chọn loại ticket...')
-    .addOptions(TICKET_TYPES.map(t => ({
+    .addOptions(list.map(t => ({
       label: t.label, value: t.id, description: t.description, emoji: t.emoji,
     })));
   return [new ActionRowBuilder().addComponents(menu)];
@@ -96,12 +121,22 @@ function setupRow() {
   );
 }
 
-function ticketRow() {
-  return new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId('ticket-claim').setLabel('Nhận').setEmoji('✋').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('ticket-transcript').setLabel('Lịch sử').setEmoji('📝').setStyle(ButtonStyle.Secondary),
+function ticketRow(st) {
+  const row = new ActionRowBuilder();
+  if (st?.showClaim !== false) {
+    row.addComponents(
+      new ButtonBuilder().setCustomId('ticket-claim').setLabel('Nhận').setEmoji('✋').setStyle(ButtonStyle.Secondary),
+    );
+  }
+  if (st?.showTranscript !== false) {
+    row.addComponents(
+      new ButtonBuilder().setCustomId('ticket-transcript').setLabel('Lịch sử').setEmoji('📝').setStyle(ButtonStyle.Secondary),
+    );
+  }
+  row.addComponents(
     new ButtonBuilder().setCustomId('ticket-close').setLabel('Đóng').setEmoji('🔒').setStyle(ButtonStyle.Danger),
   );
+  return row;
 }
 
 function ratingRow(ownerId) {
@@ -117,7 +152,8 @@ function ratingRow(ownerId) {
 // ===== CHỌN LOẠI → HIỆN FORM =====
 async function handleSelect(interaction) {
   const typeId = interaction.values?.[0];
-  const type = TICKET_TYPES.find(t => t.id === typeId) || TICKET_TYPES[0];
+  const types = getTypes(await getT(interaction.guildId));
+  const type = types.find(t => t.id === typeId) || types[0];
 
   const db = load();
   const existing = Object.entries(db).find(([, t]) => t.guildId === interaction.guildId && t.ownerId === interaction.user.id);
@@ -145,7 +181,8 @@ async function handleSelect(interaction) {
 // ===== SUBMIT FORM → TẠO KÊNH =====
 async function handleModal(interaction) {
   const typeId = (interaction.customId || '').split(':')[1] || 'hotro';
-  const type = TICKET_TYPES.find(t => t.id === typeId) || TICKET_TYPES[0];
+  const types = getTypes(await getT(interaction.guildId));
+  const type = types.find(t => t.id === typeId) || types[0];
   const reason = interaction.fields.getTextInputValue('lydo')?.slice(0, 1000) || 'Không có';
   await createTicket(interaction, type, reason);
 }
@@ -184,14 +221,18 @@ async function createTicket(interaction, type, reason) {
   };
   save(db);
 
+  const helpLines = [];
+  if (st.showClaim !== false) helpLines.push('✋ **Nhận** — staff nhận xử lý');
+  if (st.showTranscript !== false) helpLines.push('📝 **Lịch sử** — xuất transcript');
+  helpLines.push('🔒 **Đóng** — đóng ticket khi xong');
   await channel.send({
     content: `${interaction.user} ${st.ticketStaffRoleId ? `<@&${st.ticketStaffRoleId}>` : ''}`,
     embeds: [embed({
       title: `${type.emoji} ${type.label} — ${interaction.user.username}`,
-      description: `**Lý do:**\n\`\`\`${reason}\`\`\`\nStaff sẽ hỗ trợ bạn sớm.\n\n✋ **Nhận** — staff nhận xử lý\n📝 **Lịch sử** — xuất transcript\n🔒 **Đóng** — đóng ticket khi xong`,
+      description: `**Lý do:**\n\`\`\`${reason}\`\`\`\nStaff sẽ hỗ trợ bạn sớm.\n\n${helpLines.join('\n')}`,
       footer: `Mở lúc`,
     })],
-    components: [ticketRow()],
+    components: [ticketRow(st)],
   });
 
   try {
@@ -209,7 +250,7 @@ async function handleCreate(interaction) {
     return interaction.reply({ content: `⚠️ Bạn đã có ticket mở: <#${existing[0]}>`, ephemeral: true });
   }
   // Mở thẳng form loại mặc định
-  const type = TICKET_TYPES[0];
+  const type = getTypes(await getT(interaction.guildId))[0];
   const modal = new ModalBuilder().setCustomId(`ticket-modal:${type.id}`).setTitle(`${type.emoji} ${type.label}`);
   modal.addComponents(
     new ActionRowBuilder().addComponents(
@@ -286,21 +327,25 @@ async function handleClose(interaction) {
     }
   } catch {}
 
-  // DM cho chủ ticket kèm transcript + form đánh giá
+  // DM cho chủ ticket kèm transcript + form đánh giá (tắt được trên dashboard)
   try {
+    const st2 = await getT(interaction.guildId);
     const owner = await interaction.client.users.fetch(t.ownerId).catch(() => null);
     if (owner) {
-      await owner.send({
-        content: `Ticket **#${channel.name}** của bạn đã được đóng. Cảm ơn bạn! Hãy đánh giá hỗ trợ 👇`,
-        components: [ratingRow(t.ownerId)],
-      }).catch(() => {});
+      if (st2.showRating !== false) {
+        await owner.send({
+          content: `Ticket **#${channel.name}** của bạn đã được đóng. Cảm ơn bạn! Hãy đánh giá hỗ trợ 👇`,
+          components: [ratingRow(t.ownerId)],
+        }).catch(() => {});
+      }
       if (file) await owner.send({ content: '📝 Lịch sử ticket của bạn:', files: [file] }).catch(() => {});
     }
   } catch {}
 
   delete db[interaction.channelId];
   save(db);
-  setTimeout(() => channel.delete().catch(() => {}), 5000);
+  const delaySec = Math.min(600, Math.max(0, (await getT(interaction.guildId)).closeDelaySec ?? 5));
+  setTimeout(() => channel.delete().catch(() => {}), delaySec * 1000);
 }
 
 async function handleClaim(interaction) {

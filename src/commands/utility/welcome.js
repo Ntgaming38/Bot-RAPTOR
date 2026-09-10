@@ -22,6 +22,7 @@ module.exports = {
       .addStringOption(o => o.setName('color').setDescription('Màu viền, VD: #FF4D9D'))
       .addStringOption(o => o.setName('reactions').setDescription('VD: 🔥,✅ (tối đa 5)'))
       .addStringOption(o => o.setName('banner').setDescription('Link ảnh gạch ngang dưới embed (trống = cầu vồng mặc định)'))
+      .addStringOption(o => o.setName('description').setDescription('Soạn nội dung (biến {member} {server} {count} {role} {rules} {announce} {chat})').setMaxLength(2000))
       .addBooleanOption(o => o.setName('rainbow').setDescription('Gạch cầu vồng dưới embed (mặc định: bật)'))
       .addRoleOption(o => o.setName('auto-role').setDescription('Role tự gắn khi join')))
     .addSubcommand(s => s.setName('test').setDescription('Gửi thử welcome vào kênh hiện tại'))
@@ -51,6 +52,8 @@ module.exports = {
       };
       const banner = interaction.options.getString('banner');
       if (banner !== null) patch.bannerUrl = banner || null;
+      const desc = interaction.options.getString('description');
+      if (desc !== null) patch.welcomeText = desc || null;
       const rainbow = interaction.options.getBoolean('rainbow');
       if (rainbow !== null) patch.bannerRainbow = rainbow;
       const rawReactions = interaction.options.getString('reactions');

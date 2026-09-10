@@ -21,6 +21,7 @@ module.exports = {
       .addChannelOption(o => o.setName('channel').setDescription('Kênh đăng bảng').addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement).setRequired(true))
       .addStringOption(o => o.setName('text').setDescription('Nội dung (biến {server} {members}; nhiều tin cách nhau bằng dòng ---)').setRequired(true).setMaxLength(2000))
       .addStringOption(o => o.setName('title').setDescription('Tiêu đề, VD: 📢 THÔNG BÁO'))
+      .addStringOption(o => o.setName('color').setDescription('Màu viền, VD: #5865F2'))
       .addIntegerOption(o => o.setName('minutes').setDescription('Mấy phút xoay 1 tin (0 = tĩnh, mặc định 0)').setMinValue(0).setMaxValue(1440)))
     .addSubcommand(s => s.setName('test').setDescription('Đăng/cập nhật bảng ngay'))
     .addSubcommand(s => s.setName('status').setDescription('Xem cấu hình bảng tin'))
@@ -37,6 +38,7 @@ module.exports = {
         channelId: channel.id,
         title: interaction.options.getString('title') || null,
         text: interaction.options.getString('text', true),
+        color: interaction.options.getString('color') || null,
         intervalMin: interaction.options.getInteger('minutes') ?? 0,
         lastRotated: Date.now(),
       };

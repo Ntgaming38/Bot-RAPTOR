@@ -21,7 +21,8 @@ module.exports = {
       .addChannelOption(o => o.setName('channel').setDescription('Kênh gửi tin tạm biệt').addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement).setRequired(true))
       .addStringOption(o => o.setName('text').setDescription('Nội dung (biến {user} {tag} {server} {members})').setMaxLength(2000))
       .addStringOption(o => o.setName('title').setDescription('Tiêu đề').setMaxLength(100))
-      .addStringOption(o => o.setName('image').setDescription('Link ảnh (trống = avatar người rời)')))
+      .addStringOption(o => o.setName('image').setDescription('Link ảnh (trống = avatar người rời)'))
+      .addStringOption(o => o.setName('color').setDescription('Màu viền, VD: #ED4245')))
     .addSubcommand(s => s.setName('test').setDescription('Gửi thử với chính bạn'))
     .addSubcommand(s => s.setName('status').setDescription('Xem cấu hình hiện tại'))
     .addSubcommand(s => s.setName('disable').setDescription('Tắt tin tạm biệt')),
@@ -38,6 +39,7 @@ module.exports = {
         ...(interaction.options.getString('text') ? { text: interaction.options.getString('text') } : {}),
         ...(interaction.options.getString('title') ? { title: interaction.options.getString('title') } : {}),
         ...(interaction.options.getString('image') ? { imageUrl: interaction.options.getString('image') } : {}),
+        ...(interaction.options.getString('color') ? { color: interaction.options.getString('color') } : {}),
       });
       const s = await getGoodbye(guildId);
       await channel.send({ embeds: [buildGoodbye(interaction.member, s)] }).catch(() => null);

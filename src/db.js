@@ -84,6 +84,7 @@ const welcomeSettingsSchema = new mongoose.Schema({
   autoRoleId: { type: String, default: null },
   bannerUrl: { type: String, default: null },
   bannerRainbow: { type: Boolean, default: undefined },
+  welcomeText: { type: String, default: null },
 });
 const WelcomeSettings = mongoose.models.WelcomeSettings || mongoose.model('WelcomeSettings', welcomeSettingsSchema);
 
@@ -108,6 +109,14 @@ const guildSettingsSchema = new mongoose.Schema({
   ticketCategoryId: { type: String, default: null },
   ticketStaffRoleId: { type: String, default: null },
   ticketPanelImageUrl: { type: String, default: null },
+  ticketTypes: { type: Array, default: undefined },
+  panelTitle: { type: String, default: null },
+  panelDescription: { type: String, default: null },
+  showClaim: Boolean,
+  showTranscript: Boolean,
+  showRating: Boolean,
+  closeDelaySec: Number,
+  musicDefaultVolume: Number,
   giveawayChannelId: { type: String, default: null },
   giveawayWinners: Number,
   giveawayDuration: { type: String, default: null },
@@ -124,6 +133,7 @@ const announceSettingsSchema = new mongoose.Schema({
   intervalMin: { type: Number, default: 0 },
   idx: { type: Number, default: 0 },
   lastRotated: { type: Number, default: 0 },
+  color: { type: String, default: null },
 });
 const AnnounceSettings = mongoose.models.AnnounceSettings || mongoose.model('AnnounceSettings', announceSettingsSchema);
 

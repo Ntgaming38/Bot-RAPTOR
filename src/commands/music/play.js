@@ -24,12 +24,28 @@ module.exports = {
     }
 
     await interaction.deferReply();
+    const wasActive = (() => {
+      try {
+        const q0 = player.nodes?.get?.(interaction.guildId);
+        return !!(q0?.currentTrack || q0?.current);
+      } catch { return false; }
+    })();
     try {
-      const { track } = await player.play(channel, resolved.query, {
+      const res = await player.play(channel, resolved.query, {
         nodeOptions: { metadata: { channel: interaction.channel } },
         requestedBy: interaction.user,
         searchEngine: resolved.searchEngine,
       });
+      const track = res?.track;
+      // Volume mặc định theo server (dashboard tab Music) khi bắt đầu phiên mới
+      try {
+        const st = await require('../../utils/guildSettings').getGuildSettings(interaction.guildId).catch(() => null);
+        const dv = st?.musicDefaultVolume;
+        if (!wasActive && Number.isFinite(dv)) {
+          const q = res?.queue || player.nodes?.get?.(interaction.guildId);
+          if (q?.node?.setVolume) q.node.setVolume(Math.min(100, Math.max(0, dv)));
+        }
+      } catch {}
       const lines = [
         `**${track.cleanTitle || track.title}**`,
         `Tác giả: ${track.author || '?'}`,
