@@ -63,6 +63,37 @@ module.exports = {
       });
     } catch (e) {
       console.error('[play]', e?.message);
+      // Extractor chính không ra kết quả (hay gặp ở SoundCloud) → thử yt-dlp lấy link trực tiếp
+      const noResult = /No results|Empty|Noresult/i.test(e?.message || '');
+      if (noResult && (resolved.adapter === 'soundcloud' || resolved.adapter === 'youtube')) {
+        try {
+          console.log('[play] thử đường dự phòng yt-dlp...');
+          const { resolveDirectUrl } = require('../../music/fallback');
+          const direct = await resolveDirectUrl(resolved.query);
+          const { QueryType } = require('discord-player');
+          const res2 = await player.play(channel, direct.url, {
+            nodeOptions: { metadata: { channel: interaction.channel } },
+            requestedBy: interaction.user,
+            searchEngine: QueryType.AUTO,
+          });
+          const track2 = res2?.track;
+          return interaction.followUp({
+            embeds: [embed({
+              title: '🎶 Đã thêm vào hàng chờ',
+              description: [
+                `**${track2?.cleanTitle || track2?.title || direct.title || 'Bài hát'}**`,
+                `Tác giả: ${track2?.author || direct.author || '?'}`,
+                `Thời lượng: ${track2?.duration || direct.duration || '?'}`,
+                `Nguồn: ${resolved.label} (dự phòng)`,
+              ].join('\n'),
+              thumbnail: track2?.thumbnail || direct.thumbnail,
+              footer: `Yêu cầu bởi ${interaction.user.tag}`,
+            })],
+          });
+        } catch (e2) {
+          console.error('[play-fallback]', e2?.message);
+        }
+      }
       const msg = friendlyPlayError(e);
       if (interaction.deferred) await interaction.followUp({ embeds: [errorEmbed(msg)] }).catch(() => {});
       else await interaction.reply({ embeds: [errorEmbed(msg)], ephemeral: true }).catch(() => {});
