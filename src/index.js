@@ -192,6 +192,15 @@ async function main() {
   setTimeout(() => { announceTick(); statsTick(); }, 90_000);
   setInterval(announceTick, 5 * 60_000);
   setInterval(statsTick, 15 * 60_000);
+
+  // Tự đóng ticket im lặng quá lâu
+  const ticketTick = async () => {
+    try {
+      await require('./utils/ticketsPro').autoCloseTick(client);
+    } catch {}
+  };
+  setTimeout(ticketTick, 120_000);
+  setInterval(ticketTick, 10 * 60_000);
 }
 
 main().catch(e => {

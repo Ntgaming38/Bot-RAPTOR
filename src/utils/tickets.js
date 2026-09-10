@@ -151,6 +151,10 @@ function ratingRow(ownerId) {
 
 // ===== CHỌN LOẠI → HIỆN FORM =====
 async function handleSelect(interaction) {
+  const pro = require('./ticketsPro');
+  if (await pro.isBlacklisted(interaction.guildId, interaction.user.id)) {
+    return interaction.reply({ embeds: [errorEmbed('⛔ Bạn đang bị chặn tạo ticket. Liên hệ admin.')], ephemeral: true });
+  }
   const typeId = interaction.values?.[0];
   const types = getTypes(await getT(interaction.guildId));
   const type = types.find(t => t.id === typeId) || types[0];
@@ -189,7 +193,12 @@ async function handleModal(interaction) {
 
 async function createTicket(interaction, type, reason) {
   await interaction.deferReply({ ephemeral: true });
+  const pro = require('./ticketsPro');
+  if (await pro.isBlacklisted(interaction.guildId, interaction.user.id)) {
+    return interaction.editReply({ embeds: [errorEmbed('⛔ Bạn đang bị chặn tạo ticket. Liên hệ admin.') ] });
+  }
   const st = await getT(interaction.guildId);
+  const number = await pro.nextTicketNumber(interaction.guildId);
 
   const overwrites = [
     { id: interaction.guild.id, deny: [PermissionFlagsBits.ViewChannel] },
@@ -217,23 +226,19 @@ async function createTicket(interaction, type, reason) {
   db[channel.id] = {
     ownerId: interaction.user.id, ownerTag: interaction.user.tag,
     guildId: interaction.guildId, type: type.id, typeLabel: type.label,
-    reason, createdAt: Date.now(), claimedBy: null,
+    reason, createdAt: Date.now(), lastActivity: Date.now(), claimedBy: null,
+    number, priority: st.defaultPriority || 'medium', closed: false,
+    openingMessageId: null,
   };
   save(db);
 
-  const helpLines = [];
-  if (st.showClaim !== false) helpLines.push('✋ **Nhận** — staff nhận xử lý');
-  if (st.showTranscript !== false) helpLines.push('📝 **Lịch sử** — xuất transcript');
-  helpLines.push('🔒 **Đóng** — đóng ticket khi xong');
-  await channel.send({
+  const opening = await channel.send({
     content: `${interaction.user} ${st.ticketStaffRoleId ? `<@&${st.ticketStaffRoleId}>` : ''}`,
-    embeds: [embed({
-      title: `${type.emoji} ${type.label} — ${interaction.user.username}`,
-      description: `**Lý do:**\n\`\`\`${reason}\`\`\`\nStaff sẽ hỗ trợ bạn sớm.\n\n${helpLines.join('\n')}`,
-      footer: `Mở lúc`,
-    })],
-    components: [ticketRow(st)],
+    embeds: [pro.ticketInfoEmbed({ ...db[channel.id] })],
+    components: [ticketRow(st), pro.priorityRow(db[channel.id].priority)],
   });
+  db[channel.id].openingMessageId = opening?.id || null;
+  save(db);
 
   try {
     require('./logger').logMod(interaction.guild, `🎫 Mở ticket ${channel} (${type.label}) bởi ${interaction.user.tag}`, reason);
@@ -310,42 +315,12 @@ async function handleClose(interaction) {
   }
   await interaction.reply('🔒 Đang đóng ticket, xuất lịch sử...');
   const channel = interaction.channel;
-  let file = null;
-  try {
-    ({ file } = await generateTranscript(channel));
-  } catch {}
-
-  // Gửi transcript vào kênh log
-  try {
-    const logger = require('./logger');
-    await logger.logMod(interaction.guild, `🔒 Đóng ticket #${channel.name} (${t.typeLabel || ''}) bởi ${interaction.user.tag}`);
-    const st = await getT(interaction.guildId);
-    const logId = st.logChannelId || config.logChannelId;
-    if (file && logId) {
-      const logCh = await interaction.guild.channels.fetch(logId).catch(() => null);
-      if (logCh?.isTextBased()) await logCh.send({ content: `📝 Transcript #${channel.name} (${t.ownerTag})`, files: [file] }).catch(() => {});
-    }
-  } catch {}
-
-  // DM cho chủ ticket kèm transcript + form đánh giá (tắt được trên dashboard)
-  try {
-    const st2 = await getT(interaction.guildId);
-    const owner = await interaction.client.users.fetch(t.ownerId).catch(() => null);
-    if (owner) {
-      if (st2.showRating !== false) {
-        await owner.send({
-          content: `Ticket **#${channel.name}** của bạn đã được đóng. Cảm ơn bạn! Hãy đánh giá hỗ trợ 👇`,
-          components: [ratingRow(t.ownerId)],
-        }).catch(() => {});
-      }
-      if (file) await owner.send({ content: '📝 Lịch sử ticket của bạn:', files: [file] }).catch(() => {});
-    }
-  } catch {}
-
-  delete db[interaction.channelId];
-  save(db);
-  const delaySec = Math.min(600, Math.max(0, (await getT(interaction.guildId)).closeDelaySec ?? 5));
-  setTimeout(() => channel.delete().catch(() => {}), delaySec * 1000);
+  const mode = await require('./ticketsPro').finishClose(interaction.client, interaction.guild, channel, t, {
+    byId: interaction.user.id, byTag: interaction.user.tag,
+  });
+  if (mode === 'archived') {
+    await interaction.followUp({ content: '📦 Ticket đã lưu trữ (kênh giữ lại, mở lại được bằng nút **Mở lại**).', ephemeral: true }).catch(() => {});
+  }
 }
 
 async function handleClaim(interaction) {
@@ -461,8 +436,9 @@ async function createPanelChannel(guild, name) {
 }
 
 module.exports = {
-  TICKET_TYPES, setupComponents, setupSelectComponents, setupEmbed, setupRow, ticketRow,
+  TICKET_TYPES, setupComponents, setupSelectComponents, setupEmbed, setupRow, ticketRow, ratingRow,
   handleSelect, handleModal, handleCreate, handleClose, handleClaim,
   handleTranscript, handleRate, handleAdd, handleRemove, handleRename,
   isTicketChannel, generateTranscript, lockPanelChannel, createPanelChannel,
+  load, save, getT, canManageTicket,
 };

@@ -23,10 +23,14 @@ module.exports = {
       return;
     }
 
-    // 2) Chọn loại ticket (select menu)
-    if (interaction.isStringSelectMenu() && interaction.customId === 'ticket-select') {
+    // 2) Chọn loại ticket (select menu) + priority ticket
+    if (interaction.isStringSelectMenu() && (interaction.customId === 'ticket-select' || interaction.customId === 'ticket-priority')) {
       try {
-        await require('../utils/tickets').handleSelect(interaction);
+        if (interaction.customId === 'ticket-priority') {
+          await require('../utils/ticketsPro').handlePriority(interaction);
+        } else {
+          await require('../utils/tickets').handleSelect(interaction);
+        }
       } catch (err) {
         console.error('[Lỗi select]', err);
         if (!interaction.replied) await interaction.reply({ embeds: [errorEmbed('Có lỗi khi xử lý.')], ephemeral: true }).catch(() => {});
@@ -79,6 +83,14 @@ module.exports = {
         }
         if (id.startsWith('ticket-rate:')) {
           await require('../utils/tickets').handleRate(interaction);
+          return;
+        }
+        if (id === 'ticket-reopen') {
+          await require('../utils/ticketsPro').handleReopen(interaction);
+          return;
+        }
+        if (id === 'ticket-delete') {
+          await require('../utils/ticketsPro').handleDeleteNow(interaction);
           return;
         }
       } catch (err) {

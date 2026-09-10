@@ -7,6 +7,11 @@ module.exports = {
   async execute(message) {
     if (message.author.bot || !message.guild) return;
 
+    // Chạm activity cho auto-close ticket
+    try {
+      require('../utils/ticketsPro').touchTicketActivity(message.channelId);
+    } catch {}
+
     // 1) Lọc từ cấm (theo server, dashboard chỉnh được)
     const st = await require('../utils/guildSettings').getGuildSettings(message.guild.id).catch(() => null);
     const banned = st?.bannedWords ?? config.bannedWords;

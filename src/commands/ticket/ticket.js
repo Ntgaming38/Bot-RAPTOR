@@ -20,7 +20,27 @@ module.exports = {
     .addSubcommand(s => s.setName('remove').setDescription('Xóa người khỏi ticket')
       .addUserOption(o => o.setName('user').setDescription('Người cần xóa').setRequired(true)))
     .addSubcommand(s => s.setName('rename').setDescription('Đổi tên kênh ticket')
-      .addStringOption(o => o.setName('ten').setDescription('Tên mới').setRequired(true))),
+      .addStringOption(o => o.setName('ten').setDescription('Tên mới').setRequired(true)))
+    .addSubcommand(s => s.setName('priority').setDescription('Đặt mức ưu tiên')
+      .addStringOption(o => o.setName('muc').setDescription('Mức').setRequired(true)
+        .addChoices(
+          { name: '🟢 Low', value: 'low' },
+          { name: '🟡 Medium', value: 'medium' },
+          { name: '🔴 High', value: 'high' },
+          { name: '⛔ Urgent', value: 'urgent' },
+        )))
+    .addSubcommand(s => s.setName('lock').setDescription('Khóa ticket (chủ ticket chỉ xem)'))
+    .addSubcommand(s => s.setName('unlock').setDescription('Mở khóa ticket'))
+    .addSubcommand(s => s.setName('unclaim').setDescription('Bỏ nhận ticket (staff)'))
+    .addSubcommand(s => s.setName('reopen').setDescription('Mở lại ticket đã lưu trữ'))
+    .addSubcommandGroup(g => g.setName('blacklist').setDescription('Chặn/mở chặn tạo ticket')
+      .addSubcommand(s => s.setName('add').setDescription('Chặn 1 người tạo ticket')
+        .addUserOption(o => o.setName('user').setDescription('Người cần chặn').setRequired(true))
+        .addStringOption(o => o.setName('reason').setDescription('Lý do').setMaxLength(300)))
+      .addSubcommand(s => s.setName('remove').setDescription('Gỡ chặn')
+        .addUserOption(o => o.setName('user').setDescription('Người cần gỡ').setRequired(true)))
+      .addSubcommand(s => s.setName('list').setDescription('Xem danh sách chặn')))
+    .addSubcommand(s => s.setName('stats').setDescription('Thống kê ticket/staff/đánh giá')),
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
     if (sub === 'setup') {
@@ -63,5 +83,71 @@ module.exports = {
     if (sub === 'add') return tickets.handleAdd(interaction, interaction.options.getUser('user', true));
     if (sub === 'remove') return tickets.handleRemove(interaction, interaction.options.getUser('user', true));
     if (sub === 'rename') return tickets.handleRename(interaction, interaction.options.getString('ten', true));
+    const pro = require('../../utils/ticketsPro');
+    if (interaction.options.getSubcommandGroup(false) === 'blacklist') {
+      const bsub = interaction.options.getSubcommand();
+      if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
+        return interaction.reply({ embeds: [errorEmbed('⛔ Chỉ **Admin** mới quản lý blacklist.')], ephemeral: true });
+      }
+      if (bsub === 'add') {
+        const user = interaction.options.getUser('user', true);
+        await pro.blacklistAdd(interaction.guildId, user.id, interaction.options.getString('reason') || '', interaction.user.tag);
+        return interaction.reply({ embeds: [successEmbed(`⛔ Đã chặn ${user.tag} tạo ticket.`)] });
+      }
+      if (bsub === 'remove') {
+        const user = interaction.options.getUser('user', true);
+        await pro.blacklistRemove(interaction.guildId, user.id);
+        return interaction.reply({ embeds: [successEmbed(`✅ Đã gỡ chặn ${user.tag}.`)] });
+      }
+      const list = await pro.blacklistList(interaction.guildId);
+      if (!list.length) return interaction.reply({ content: 'Danh sách chặn trống.', ephemeral: true });
+      return interaction.reply({
+        content: list.map((e) => `• <@${e.userId}> — ${e.reason || 'không lý do'} _(bởi ${e.by || '?'})_`).join('\n').slice(0, 2000),
+        ephemeral: true,
+      });
+    }
+    if (sub === 'priority') {
+      const level = interaction.options.getString('muc', true);
+      const db = tickets.load();
+      const t = db[interaction.channelId];
+      if (!t) return interaction.reply({ embeds: [errorEmbed('Kênh này không phải ticket.')], ephemeral: true });
+      if (!(await tickets.canManageTicket(interaction, t))) {
+        return interaction.reply({ embeds: [errorEmbed('Chỉ chủ ticket hoặc staff mới đổi priority.')], ephemeral: true });
+      }
+      t.priority = level;
+      db[interaction.channelId] = t;
+      tickets.save(db);
+      try {
+        if (t.openingMessageId) {
+          const msg = await interaction.channel.messages.fetch(t.openingMessageId).catch(() => null);
+          if (msg) await msg.edit({ embeds: [pro.ticketInfoEmbed(t)] }).catch(() => {});
+        }
+      } catch {}
+      return interaction.reply({ content: `⚡ Priority → **${pro.prioText(level)}**` });
+    }
+    if (sub === 'lock') return pro.handleLock(interaction, true);
+    if (sub === 'unlock') return pro.handleLock(interaction, false);
+    if (sub === 'unclaim') return pro.handleUnclaim(interaction);
+    if (sub === 'reopen') return pro.handleReopen(interaction);
+    if (sub === 'stats') {
+      if (!interaction.deferred && !interaction.replied) await interaction.deferReply({ ephemeral: true }).catch(() => {});
+      const s = await pro.computeTicketStats(interaction.guildId);
+      const typeLines = Object.entries(s.byType).map(([k, v]) => `• ${k}: **${v}**`).join('\n') || '—';
+      const staffLines = s.staff.map((x) => `• **${x.tag}** — nhận ${x.claimed}, đóng ${x.closed}`).join('\n') || '—';
+      const dist = (s.ratingDist || []).map((n, i) => `${i + 1}⭐: ${n}`).join(' • ');
+      return interaction.editReply({
+        embeds: [require('../../utils/embeds').embed({
+          title: `📊 Thống kê ticket — ${interaction.guild.name}`,
+          description: [
+            `**Đang mở:** ${s.open} • **Đã đóng:** ${s.closedTotal}`,
+            s.avgMin !== null ? `**Thời gian xử lý TB:** ~${s.avgMin} phút` : '**Thời gian xử lý TB:** chưa đủ dữ liệu',
+            `**Đánh giá:** ${s.ratingAvg ? `${s.ratingAvg}⭐ (${s.ratingCount} lượt)` : 'chưa có'}`,
+            dist ? `\n${dist}` : '',
+            `\n**Theo loại:**\n${typeLines}`,
+            `\n**Top staff:**\n${staffLines}`,
+          ].join('\n'),
+        })],
+      });
+    }
   },
 };

@@ -116,6 +116,10 @@ const guildSettingsSchema = new mongoose.Schema({
   showTranscript: Boolean,
   showRating: Boolean,
   closeDelaySec: Number,
+  archiveCategoryId: { type: String, default: null },
+  closeMode: { type: String, default: null },
+  autoCloseHours: Number,
+  defaultPriority: { type: String, default: null },
   musicDefaultVolume: Number,
   giveawayChannelId: { type: String, default: null },
   giveawayWinners: Number,
@@ -192,6 +196,42 @@ const logSettingsSchema = new mongoose.Schema({
 });
 const LogSettings = mongoose.models.LogSettings || mongoose.model('LogSettings', logSettingsSchema);
 
+// === Ticket nâng cao: đếm số, blacklist, lịch sử đóng ===
+const ticketCounterSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, unique: true },
+  seq: { type: Number, default: 0 },
+});
+const TicketCounter = mongoose.models.TicketCounter || mongoose.model('TicketCounter', ticketCounterSchema);
+
+const closedTicketSchema = new mongoose.Schema({
+  guildId: { type: String, index: true },
+  number: Number,
+  ownerId: String,
+  ownerTag: String,
+  type: String,
+  typeLabel: String,
+  priority: String,
+  reason: String,
+  createdAt: Number,
+  closedAt: Number,
+  closedBy: String,
+  closedByTag: String,
+  claimedBy: String,
+  claimedTag: String,
+  auto: { type: Boolean, default: false },
+});
+const ClosedTicket = mongoose.models.ClosedTicket || mongoose.model('ClosedTicket', closedTicketSchema);
+
+const ticketBlacklistSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  userId: { type: String, required: true, index: true },
+  reason: String,
+  by: String,
+  at: Number,
+});
+ticketBlacklistSchema.index({ guildId: 1, userId: 1 }, { unique: true });
+const TicketBlacklist = mongoose.models.TicketBlacklist || mongoose.model('TicketBlacklist', ticketBlacklistSchema);
+
 // === Warns kiểm duyệt theo server ===
 const warnSchema = new mongoose.Schema({
   guildId: { type: String, required: true, index: true },
@@ -201,4 +241,4 @@ const warnSchema = new mongoose.Schema({
 warnSchema.index({ guildId: 1, userId: 1 }, { unique: true });
 const Warn = mongoose.models.Warn || mongoose.model('Warn', warnSchema);
 
-module.exports = { mongoose, connectDB, isMongo, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings, GuildSettings, AnnounceSettings, StatsSettings, RolePanel, GoodbyeSettings, LogSettings, Warn, RoleBoard };
+module.exports = { mongoose, connectDB, isMongo, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings, GuildSettings, AnnounceSettings, StatsSettings, RolePanel, GoodbyeSettings, LogSettings, Warn, RoleBoard, TicketCounter, ClosedTicket, TicketBlacklist };

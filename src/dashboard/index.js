@@ -181,6 +181,15 @@ function mount(app) {
       const n = parseInt(b.closeDelaySec, 10);
       if (Number.isFinite(n)) patch.closeDelaySec = Math.min(600, Math.max(0, n));
     }
+    if (b.archiveCategoryId !== undefined) patch.archiveCategoryId = String(b.archiveCategoryId || '') || null;
+    if (b.closeMode !== undefined) patch.closeMode = b.closeMode === 'archive' ? 'archive' : 'delete';
+    if (b.autoCloseHours !== undefined) {
+      const n = parseInt(b.autoCloseHours, 10);
+      if (Number.isFinite(n)) patch.autoCloseHours = Math.min(720, Math.max(0, n));
+    }
+    if (b.defaultPriority !== undefined) {
+      patch.defaultPriority = ['low', 'medium', 'high', 'urgent'].includes(b.defaultPriority) ? b.defaultPriority : 'medium';
+    }
     if (b.ticketTypes !== undefined && Array.isArray(b.ticketTypes)) {
       patch.ticketTypes = b.ticketTypes.slice(0, 10)
         .filter((t) => t && t.label)
@@ -525,6 +534,24 @@ function mount(app) {
     } catch (e) {
       res.status(500).json({ error: e?.message || 'failed' });
     }
+  });
+
+  // Ticket blacklist + thống kê
+  app.get('/dashboard/api/guilds/:gid/tickets/blacklist', guard, async (req, res) => {
+    res.json(await require('../utils/ticketsPro').blacklistList(req.params.gid));
+  });
+  app.post('/dashboard/api/guilds/:gid/tickets/blacklist', guard, async (req, res) => {
+    const b = req.body || {};
+    if (!b.userId) return res.status(400).json({ error: 'user' });
+    await require('../utils/ticketsPro').blacklistAdd(req.params.gid, String(b.userId), String(b.reason || ''), req.session.user.username);
+    res.json({ ok: true });
+  });
+  app.delete('/dashboard/api/guilds/:gid/tickets/blacklist/:uid', guard, async (req, res) => {
+    await require('../utils/ticketsPro').blacklistRemove(req.params.gid, req.params.uid);
+    res.json({ ok: true });
+  });
+  app.get('/dashboard/api/guilds/:gid/tickets/stats', guard, async (req, res) => {
+    res.json(await require('../utils/ticketsPro').computeTicketStats(req.params.gid));
   });
 
   // --- Pages ---
