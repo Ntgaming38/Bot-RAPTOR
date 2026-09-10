@@ -23,11 +23,31 @@ module.exports = {
       return;
     }
 
-    // 2) Chọn loại ticket (select menu) + priority ticket
-    if (interaction.isStringSelectMenu() && (interaction.customId === 'ticket-select' || interaction.customId === 'ticket-priority')) {
+    // 2) Chọn loại ticket (select menu) + priority ticket + select-menu role
+    if (interaction.isStringSelectMenu() && (interaction.customId === 'ticket-select' || interaction.customId === 'ticket-priority' || interaction.customId.startsWith('rps:'))) {
       try {
         if (interaction.customId === 'ticket-priority') {
           await require('../utils/ticketsPro').handlePriority(interaction);
+        } else if (interaction.customId.startsWith('rps:')) {
+          const bid = interaction.customId.split(':')[1];
+          try {
+            const rb = require('../utils/roleBoards');
+            const board = await rb.getBoard(interaction.guildId, bid);
+            if (!board) {
+              await interaction.reply({ content: 'Bảng này không còn tồn tại.', ephemeral: true }).catch(() => {});
+              return;
+            }
+            const out = [];
+            for (const roleId of interaction.values || []) {
+              const item = (board.items || []).find((i) => i.roleId === roleId);
+              if (!item) continue;
+              const r = await rb.toggleBoardRole(interaction.guild, interaction.member, board, item);
+              out.push(r.action === 'added' ? `+${r.role.name}` : r.action === 'removed' ? `−${r.role.name}` : `⚠ ${r.reason}`);
+            }
+            await interaction.reply({ content: out.join('\n').slice(0, 2000) || 'Xong.', ephemeral: true }).catch(() => {});
+          } catch (e) {
+            console.error('[rps]', e?.message);
+          }
         } else {
           await require('../utils/tickets').handleSelect(interaction);
         }
@@ -58,7 +78,23 @@ module.exports = {
           return;
         }
         if (id.startsWith('rpb:')) {
-          await require('../utils/rolePanels').handleToggle(interaction, id.split(':')[2]);
+          const [, bid, roleId] = id.split(':');
+          try {
+            const rb = require('../utils/roleBoards');
+            const board = await rb.getBoard(interaction.guildId, bid);
+            const item = board?.items?.find((i) => i.roleId === roleId);
+            if (!board || !item) {
+              await interaction.reply({ content: 'Bảng này không còn tồn tại.', ephemeral: true }).catch(() => {});
+              return;
+            }
+            const r = await rb.toggleBoardRole(interaction.guild, interaction.member, board, item);
+            const msg = r.action === 'added' ? `✅ Đã nhận role **${r.role.name}**!`
+              : r.action === 'removed' ? `➖ Đã bỏ role **${r.role.name}**.`
+              : `⚠️ ${r.reason}`;
+            await interaction.reply({ content: msg, ephemeral: true }).catch(() => {});
+          } catch (e) {
+            console.error('[rpb]', e?.message);
+          }
           return;
         }
         if (id.startsWith('giveaway-join:')) {

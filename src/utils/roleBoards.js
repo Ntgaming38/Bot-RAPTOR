@@ -136,6 +136,33 @@ function buildRows(board, withEmoji = true) {
   return rows;
 }
 
+function buildSelect(board, withEmoji = true) {
+  const { StringSelectMenuBuilder, ActionRowBuilder } = require('discord.js');
+  const items = (board.items || []).slice(0, 25);
+  const max = board.maxPicks > 0 ? Math.min(board.maxPicks, items.length) : items.length;
+  const menu = new StringSelectMenuBuilder()
+    .setCustomId(`rps:${boardIdOf(board)}`)
+    .setPlaceholder('Chọn role...')
+    .setMinValues(1)
+    .setMaxValues(Math.max(1, max));
+  for (const it of items) {
+    const opt = { label: (it.label || 'Role').slice(0, 100), value: it.roleId, description: '' };
+    if (withEmoji && it.emoji) opt.emoji = it.emoji;
+    menu.addOptions(opt);
+  }
+  return [new ActionRowBuilder().addComponents(menu)];
+}
+
+// So khớp emoji reaction với item (unicode hoặc custom <:name:id>)
+function matchItemEmoji(items, reaction) {
+  const customId = reaction.emoji.id ? `<:${reaction.emoji.name}:${reaction.emoji.id}>` : null;
+  return (items || []).find((it) => {
+    if (!it.emoji) return false;
+    if (customId && (it.emoji === customId || it.emoji.endsWith(`:${reaction.emoji.id}>`))) return true;
+    return it.emoji === reaction.emoji.name || it.emoji === reaction.emoji.toString();
+  }) || null;
+}
+
 async function renderBoard(client, guildId, nameOrId) {
   const board = typeof nameOrId === 'object' ? nameOrId : await getBoard(guildId, nameOrId);
   if (!board?.channelId || !board.items?.length) return null;
@@ -146,16 +173,29 @@ async function renderBoard(client, guildId, nameOrId) {
     console.warn('[rolepanel] không tìm thấy kênh', board.channelId);
     return null;
   }
+  const display = board.display || 'buttons';
+  const descNote = display === 'reactions'
+    ? '\n\n_Thả reaction vào tin này để nhận role, bỏ reaction để gỡ._'
+    : display === 'select' ? '\n\n_Chọn trong menu bên dưới (bấm lại để bỏ)._' : '';
   const data = {
     embeds: [embed({
       title: board.title || '🎮 CHỌN ROLE',
-      description: board.description || 'Bấm nút bên dưới để nhận / bỏ role.',
+      description: (board.description || 'Bấm nút bên dưới để nhận / bỏ role.') + descNote,
       footer: guild.name,
     })],
   };
   const bid = boardIdOf(board);
   const trySend = async (withEmoji) => {
-    const rows = buildRows({ ...board, _id: bid, id: bid }, withEmoji);
+    let rows = [];
+    if (display === 'select') {
+      try {
+        rows = buildSelect({ ...board, _id: bid, id: bid }, withEmoji);
+      } catch {
+        rows = buildRows({ ...board, _id: bid, id: bid }, withEmoji);
+      }
+    } else if (display === 'buttons') {
+      rows = buildRows({ ...board, _id: bid, id: bid }, withEmoji);
+    }
     if (board.messageId) {
       const msg = await ch.messages.fetch(board.messageId).catch(() => null);
       if (msg) return msg.edit({ ...data, components: rows }).catch(() => null);
@@ -164,19 +204,75 @@ async function renderBoard(client, guildId, nameOrId) {
   };
   let msg = await trySend(true);
   if (!msg) msg = await trySend(false); // emoji lỗi → vẽ lại không emoji
-  if (msg && msg.id !== board.messageId) {
-    if (useMongo()) {
-      const { RoleBoard } = require('../db');
-      await RoleBoard.updateOne({ guildId, _id: bid }, { $set: { messageId: msg.id } }).catch(() => {});
-    } else {
-      const all = loadAll();
-      if (all[guildId]?.[bid]) {
-        all[guildId][bid].messageId = msg.id;
-        saveAll(all);
+  if (msg) {
+    if (display === 'reactions') {
+      // Thả sẵn reaction để member chỉ việc bấm
+      for (const it of (board.items || []).slice(0, 20)) {
+        if (it.emoji) await msg.react(it.emoji).catch(() => {});
+      }
+    }
+    if (msg.id !== board.messageId) {
+      if (useMongo()) {
+        const { RoleBoard } = require('../db');
+        await RoleBoard.updateOne({ guildId, _id: bid }, { $set: { messageId: msg.id } }).catch(() => {});
+      } else {
+        const all = loadAll();
+        if (all[guildId]?.[bid]) {
+          all[guildId][bid].messageId = msg.id;
+          saveAll(all);
+        }
       }
     }
   }
   return msg;
 }
 
-module.exports = { listBoards, getBoard, resolveBoard, createBoard, saveBoard, deleteBoard, renderBoard, MAX_ITEMS, MAX_BOARDS };
+// Tìm board theo messageId (cho reaction events)
+async function findBoardByMessage(guildId, messageId) {
+  if (useMongo()) {
+    const { RoleBoard } = require('../db');
+    return (await RoleBoard.findOne({ guildId, messageId }).lean().catch(() => null)) || null;
+  }
+  return Object.values(loadAll()[guildId] || {}).find((b) => b.messageId === messageId) || null;
+}
+
+// Lõi toggle dùng chung: kiểm tra verify/limit/exclusive/quyền bot
+// Trả về { action: 'added'|'removed'|'denied', reason?, role? }
+async function toggleBoardRole(guild, member, board, item) {
+  const role = await guild.roles.fetch(item.roleId).catch(() => null);
+  if (!role) return { action: 'denied', reason: 'Role này không còn tồn tại.' };
+  if (role.managed || role.id === guild.id) return { action: 'denied', reason: 'Role này không thể tự nhận.' };
+  const me = guild.members.me;
+  if (!me?.permissions.has('ManageRoles')) return { action: 'denied', reason: 'Bot thiếu quyền Manage Roles.' };
+  if (role.position >= me.roles.highest.position) {
+    return { action: 'denied', reason: 'Role này cao hơn role bot (kéo role bot lên trên).' };
+  }
+  // Verify role: phải có role X mới được chọn
+  if (board.requiredRoleId && !member.roles.cache.has(board.requiredRoleId)) {
+    const req = await guild.roles.fetch(board.requiredRoleId).catch(() => null);
+    return { action: 'denied', reason: `Cần có role **${req ? req.name : 'xác minh'}** trước (bấm bảng verify).` };
+  }
+  if (member.roles.cache.has(role.id)) {
+    await member.roles.remove(role).catch(() => null);
+    return { action: 'removed', role };
+  }
+  // Exclusive: bỏ các role khác cùng bảng
+  if (board.exclusive) {
+    for (const it of board.items || []) {
+      if (it.roleId !== role.id && member.roles.cache.has(it.roleId)) {
+        await member.roles.remove(it.roleId).catch(() => {});
+      }
+    }
+  } else if ((board.maxPicks || 0) > 0) {
+    // Giới hạn số role/bảng/người
+    const mine = (board.items || []).filter((it) => member.roles.cache.has(it.roleId)).length;
+    if (mine >= board.maxPicks) {
+      return { action: 'denied', reason: `Mỗi người chỉ được chọn tối đa ${board.maxPicks} role ở bảng này.` };
+    }
+  }
+  await member.roles.add(role).catch(() => null);
+  if (!member.roles.cache.has(role.id)) return { action: 'denied', reason: 'Không gắn được role (kiểm tra phân quyền).' };
+  return { action: 'added', role };
+}
+
+module.exports = { listBoards, getBoard, resolveBoard, createBoard, saveBoard, deleteBoard, renderBoard, findBoardByMessage, toggleBoardRole, matchItemEmoji, MAX_ITEMS, MAX_BOARDS };

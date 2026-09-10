@@ -13,6 +13,11 @@ async function connectDB() {
   try {
     await mongoose.connect(config.mongodbUri);
     console.log('🍃 Đã kết nối MongoDB Atlas (giữ XP/giveaway/ticket vĩnh viễn).');
+    // Gỡ index unique cũ của roleboards (giờ cho nhiều bảng/server)
+    try {
+      await mongoose.connection.collection('roleboards').dropIndex('guildId_1');
+      console.log('[db] đã gỡ index guildId_1 cũ của roleboards');
+    } catch {}
     return true;
   } catch (e) {
     console.error('❌ Kết nối MongoDB thất bại, fallback về JSON:', e.message);
@@ -184,9 +189,24 @@ const roleBoardSchema = new mongoose.Schema({
   title: { type: String, default: null },
   description: { type: String, default: null },
   items: { type: [{ roleId: String, label: String, emoji: String }], default: [] },
+  display: { type: String, default: null },
+  exclusive: Boolean,
+  maxPicks: Number,
+  requiredRoleId: { type: String, default: null },
 });
 roleBoardSchema.index({ guildId: 1, name: 1 }, { unique: true });
 const RoleBoard = mongoose.models.RoleBoard || mongoose.model('RoleBoard', roleBoardSchema);
+
+// === Role tạm thời (tự gỡ khi hết hạn) ===
+const tempRoleSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  userId: { type: String, required: true },
+  roleId: { type: String, required: true },
+  expiresAt: { type: Number, required: true },
+  byTag: String,
+});
+tempRoleSchema.index({ expiresAt: 1 });
+const TempRole = mongoose.models.TempRole || mongoose.model('TempRole', tempRoleSchema);
 
 // === Log kiểu ProBot: kênh + bật/tắt từng loại ===
 const logSettingsSchema = new mongoose.Schema({
@@ -241,4 +261,4 @@ const warnSchema = new mongoose.Schema({
 warnSchema.index({ guildId: 1, userId: 1 }, { unique: true });
 const Warn = mongoose.models.Warn || mongoose.model('Warn', warnSchema);
 
-module.exports = { mongoose, connectDB, isMongo, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings, GuildSettings, AnnounceSettings, StatsSettings, RolePanel, GoodbyeSettings, LogSettings, Warn, RoleBoard, TicketCounter, ClosedTicket, TicketBlacklist };
+module.exports = { mongoose, connectDB, isMongo, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings, GuildSettings, AnnounceSettings, StatsSettings, RolePanel, GoodbyeSettings, LogSettings, Warn, RoleBoard, TicketCounter, ClosedTicket, TicketBlacklist, TempRole };

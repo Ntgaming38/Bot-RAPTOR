@@ -462,6 +462,13 @@ function mount(app) {
     if (b.channelId !== undefined) patch.channelId = String(b.channelId || '') || null;
     if (b.title !== undefined) patch.title = String(b.title || '').slice(0, 100) || null;
     if (b.description !== undefined) patch.description = String(b.description || '').slice(0, 1000) || null;
+    if (b.display !== undefined) patch.display = ['buttons', 'select', 'reactions'].includes(b.display) ? b.display : 'buttons';
+    if (b.exclusive !== undefined) patch.exclusive = !!b.exclusive;
+    if (b.maxPicks !== undefined) {
+      const n = parseInt(b.maxPicks, 10);
+      if (Number.isFinite(n)) patch.maxPicks = Math.min(25, Math.max(0, n));
+    }
+    if (b.requiredRoleId !== undefined) patch.requiredRoleId = String(b.requiredRoleId || '') || null;
     if (b.items !== undefined) {
       if (!Array.isArray(b.items) || b.items.length > 25) return res.status(400).json({ error: 'items' });
       patch.items = b.items.filter((i) => i && i.roleId).slice(0, 25)
@@ -552,6 +559,43 @@ function mount(app) {
   });
   app.get('/dashboard/api/guilds/:gid/tickets/stats', guard, async (req, res) => {
     res.json(await require('../utils/ticketsPro').computeTicketStats(req.params.gid));
+  });
+
+  // Role tạm thời
+  app.get('/dashboard/api/guilds/:gid/temproles', guard, async (req, res) => {
+    res.json(await require('../utils/tempRoles').listTempRoles(req.params.gid));
+  });
+  app.post('/dashboard/api/guilds/:gid/temproles', guard, async (req, res) => {
+    const b = req.body || {};
+    const { parseDuration } = require('../utils/giveaways');
+    const ms = parseDuration(String(b.duration || ''));
+    if (!b.userId || !b.roleId || !ms) return res.status(400).json({ error: 'input' });
+    try {
+      const guild = await client.guilds.fetch(req.params.gid).catch(() => null);
+      const member = guild && await guild.members.fetch(String(b.userId)).catch(() => null);
+      const role = guild && await guild.roles.fetch(String(b.roleId)).catch(() => null);
+      if (!member || !role) return res.status(400).json({ error: 'not-found' });
+      const me = guild.members.me;
+      if (!me?.permissions.has('ManageRoles') || role.position >= me.roles.highest.position) {
+        return res.status(400).json({ error: 'perm' });
+      }
+      await member.roles.add(role).catch(() => null);
+      await require('../utils/tempRoles').grantTempRole(req.params.gid, member.id, role.id, ms, req.session.user.username);
+      res.json({ ok: true });
+    } catch (e) {
+      res.status(500).json({ error: e?.message || 'failed' });
+    }
+  });
+  app.delete('/dashboard/api/guilds/:gid/temproles', guard, async (req, res) => {
+    const { userId, roleId } = req.query || {};
+    if (!userId || !roleId) return res.status(400).json({ error: 'input' });
+    try {
+      const guild = await client.guilds.fetch(req.params.gid).catch(() => null);
+      const member = guild && await guild.members.fetch(String(userId)).catch(() => null);
+      if (member) await member.roles.remove(String(roleId)).catch(() => {});
+    } catch {}
+    await require('../utils/tempRoles').revokeTempRole(req.params.gid, String(userId), String(roleId));
+    res.json({ ok: true });
   });
 
   // --- Pages ---

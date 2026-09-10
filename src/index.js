@@ -201,6 +201,15 @@ async function main() {
   };
   setTimeout(ticketTick, 120_000);
   setInterval(ticketTick, 10 * 60_000);
+
+  // Gỡ role tạm thời hết hạn
+  const tempTick = async () => {
+    try {
+      await require('./utils/tempRoles').sweepTempRoles(client);
+    } catch {}
+  };
+  setTimeout(tempTick, 180_000);
+  setInterval(tempTick, 5 * 60_000);
 }
 
 main().catch(e => {
