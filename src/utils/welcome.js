@@ -1,5 +1,8 @@
+const path = require('node:path');
 const config = require('../config');
 const { embed } = require('./embeds');
+
+const RAINBOW_FILE = path.join(__dirname, '..', '..', 'assets', 'rainbow.png');
 
 // 1st, 2nd, 3rd... như trong hình (185th)
 function ordinal(n) {
@@ -12,8 +15,7 @@ function ch(id, fallback) {
   return id ? `<#${id}>` : fallback;
 }
 
-// member: GuildMember (có .user + .guild). Dùng chung cho event join thật + lệnh xem trước.
-// s: setting đã merge (từ /welcome setup). Không truyền = dùng .env.
+// Trả về { embed, files } — files kèm ảnh gạch cầu vồng nếu bật.
 function buildWelcome(member, s) {
   const guild = member.guild;
   const server = guild.name;
@@ -36,13 +38,25 @@ function buildWelcome(member, s) {
     `➔ Có gì khó khăn hãy vào 💬 ${ch(chatCh, '**chat-chung**')} nơi giao lưu của mọi người nhé...!`,
   ].join('\n');
 
-  return embed({
+  const em = embed({
     title: author,
     description,
     thumbnail: thumb,
     color,
     footer: `${member.user.tag} • ${new Date().toLocaleString('vi-VN')}`,
   });
+
+  // Gạch cầu vồng dưới embed: ưu tiên link banner riêng, không thì ảnh mặc định
+  const files = [];
+  const banner = s?.bannerUrl || null;
+  const rainbow = s?.bannerRainbow ?? true;
+  if (banner) {
+    em.setImage(banner);
+  } else if (rainbow !== false) {
+    em.setImage('attachment://rainbow.png');
+    files.push({ attachment: RAINBOW_FILE, name: 'rainbow.png' });
+  }
+  return { embed: em, files };
 }
 
 module.exports = { buildWelcome, ordinal };

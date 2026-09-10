@@ -34,6 +34,8 @@ async function getWelcomeSettings(guildId) {
     color: config.welcomeColor,
     reactions: config.welcomeReactions,
     autoRoleId: config.autoRoleId,
+    bannerUrl: null,
+    bannerRainbow: true,
   };
   let over = {};
   if (useMongo()) {

@@ -82,6 +82,8 @@ const welcomeSettingsSchema = new mongoose.Schema({
   color: { type: String, default: null },
   reactions: { type: [String], default: undefined },
   autoRoleId: { type: String, default: null },
+  bannerUrl: { type: String, default: null },
+  bannerRainbow: { type: Boolean, default: undefined },
 });
 const WelcomeSettings = mongoose.models.WelcomeSettings || mongoose.model('WelcomeSettings', welcomeSettingsSchema);
 

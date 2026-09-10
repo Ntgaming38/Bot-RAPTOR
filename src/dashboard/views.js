@@ -47,6 +47,7 @@ function guild(gid) {
 <div><label>Kênh chọn role ✅</label><select id="w-role"></select></div><div><label>Kênh luật</label><select id="w-rules"></select></div>
 <div><label>Kênh thông báo 🔊</label><select id="w-ann"></select></div><div><label>Kênh chat 💬</label><select id="w-chat"></select></div>
 <div><label>Ảnh góc phải (link gif/png)</label><input id="w-image" placeholder="Để trống = icon server"></div><div><label>Màu viền</label><input id="w-color" type="color" value="#ff4d9d" style="height:40px;padding:2px"></div>
+<div><label>Ảnh gạch ngang dưới embed (trống = cầu vồng mặc định)</label><input id="w-banner" placeholder="https://..."></div><div><label>Gạch cầu vồng 🌈</label><select id="w-rainbow"><option value="1">Bật</option><option value="0">Tắt</option></select></div>
 <div><label>Reaction (cách nhau dấu phẩy)</label><input id="w-reactions" placeholder="🔥,✅"></div><div><label>Role tự gắn khi join</label><select id="w-autorole"></select></div></div>
 <button id="w-save">Lưu</button><button class="ghost" id="w-test">Gửi thử vào kênh welcome</button></div>
 <div id="p-l" class="card" style="display:none"><h2>Leaderboard (BXH riêng)</h2>
@@ -125,6 +126,7 @@ async function api(m,url,body){const r=await fetch(url,{method:m,headers:{'Conte
     const [w,l]=await Promise.all([api('GET','/dashboard/api/guilds/'+G+'/welcome'),api('GET','/dashboard/api/guilds/'+G+'/leaderboard')]);
     fill('w-channel',w.channelId);$('w-title').value=w.title||'';fill('w-role',w.roleChannelId);fill('w-rules',w.rulesChannelId);fill('w-ann',w.announceChannelId);fill('w-chat',w.chatChannelId);
     $('w-image').value=w.imageUrl||'';if(w.color)$('w-color').value=w.color;$('w-reactions').value=(w.reactions||[]).join(',');
+    $('w-banner').value=w.bannerUrl||'';$('w-rainbow').value=w.bannerRainbow===false?'0':'1';
     opt('w-autorole',[{id:'',name:'— không dùng —'}].concat(META.roles),w.autoRoleId,true);
     opt('l-channel',txt,l.channelId,true);$('l-limit').value=l.limit||10;
     const st=await api('GET','/dashboard/api/guilds/'+G+'/settings');
@@ -155,7 +157,7 @@ async function api(m,url,body){const r=await fetch(url,{method:m,headers:{'Conte
     $('o-types').innerHTML=lg.types.map(([k,l])=>'<label style="display:flex;gap:8px;align-items:center;margin:6px 0"><input type="checkbox" data-k="'+k+'" style="width:auto"'+(lg.toggles[k]!==false?' checked':'')+'> '+l.replace(/</g,'&lt;')+'</label>').join('');
   }catch(e){toast('Lỗi tải: '+e.message+' (bot phải đã vào server và bạn là admin)')}
 })();
-$('w-save').onclick=async()=>{try{await api('PUT','/dashboard/api/guilds/'+G+'/welcome',{channelId:$('w-channel').value||null,title:$('w-title').value||null,roleChannelId:$('w-role').value||null,rulesChannelId:$('w-rules').value||null,announceChannelId:$('w-ann').value||null,chatChannelId:$('w-chat').value||null,imageUrl:$('w-image').value||null,color:$('w-color').value||null,reactions:$('w-reactions').value,autoRoleId:$('w-autorole').value||null});toast('Đã lưu welcome')}catch(e){toast('Lỗi: '+e.message)}};
+$('w-save').onclick=async()=>{try{await api('PUT','/dashboard/api/guilds/'+G+'/welcome',{channelId:$('w-channel').value||null,title:$('w-title').value||null,roleChannelId:$('w-role').value||null,rulesChannelId:$('w-rules').value||null,announceChannelId:$('w-ann').value||null,chatChannelId:$('w-chat').value||null,imageUrl:$('w-image').value||null,color:$('w-color').value||null,reactions:$('w-reactions').value,autoRoleId:$('w-autorole').value||null,bannerUrl:$('w-banner').value||null,bannerRainbow:$('w-rainbow').value==='1'});toast('Đã lưu welcome')}catch(e){toast('Lỗi: '+e.message)}};
 $('w-test').onclick=async()=>{try{const d=await api('POST','/dashboard/api/guilds/'+G+'/welcome/test');toast('Đã gửi thử! Mở Discord xem');if(d.url)window.open(d.url,'_blank')}catch(e){toast('Lỗi: '+e.message+' (cần setup kênh trước)')}};
 $('l-save').onclick=async()=>{try{await api('PUT','/dashboard/api/guilds/'+G+'/leaderboard',{channelId:$('l-channel').value||null,limit:parseInt($('l-limit').value||'10',10)});toast('Đã lưu leaderboard')}catch(e){toast('Lỗi: '+e.message)}};
 $('l-refresh').onclick=async()=>{try{await api('POST','/dashboard/api/guilds/'+G+'/leaderboard/refresh');toast('Đã cập nhật BXH')}catch(e){toast('Lỗi: '+e.message+' (cần setup kênh trước)')}};

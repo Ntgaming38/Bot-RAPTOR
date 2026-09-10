@@ -30,7 +30,8 @@ module.exports = {
     }
 
     try {
-      const msg = await welcomeCh.send({ embeds: [buildWelcome(member, s)] });
+      const { embed: em, files } = buildWelcome(member, s);
+      const msg = await welcomeCh.send({ embeds: [em], files });
       const reactions = s?.reactions || config.welcomeReactions;
       for (const e of reactions.slice(0, 5)) {
         await msg.react(e).catch(() => {});

@@ -21,6 +21,8 @@ module.exports = {
       .addStringOption(o => o.setName('image').setDescription('Link ảnh/gif góc phải'))
       .addStringOption(o => o.setName('color').setDescription('Màu viền, VD: #FF4D9D'))
       .addStringOption(o => o.setName('reactions').setDescription('VD: 🔥,✅ (tối đa 5)'))
+      .addStringOption(o => o.setName('banner').setDescription('Link ảnh gạch ngang dưới embed (trống = cầu vồng mặc định)'))
+      .addBooleanOption(o => o.setName('rainbow').setDescription('Gạch cầu vồng dưới embed (mặc định: bật)'))
       .addRoleOption(o => o.setName('auto-role').setDescription('Role tự gắn khi join')))
     .addSubcommand(s => s.setName('test').setDescription('Gửi thử welcome vào kênh hiện tại'))
     .addSubcommand(s => s.setName('status').setDescription('Xem cấu hình welcome hiện tại'))
@@ -47,6 +49,10 @@ module.exports = {
         color: interaction.options.getString('color') || null,
         autoRoleId: interaction.options.getRole('auto-role')?.id || null,
       };
+      const banner = interaction.options.getString('banner');
+      if (banner !== null) patch.bannerUrl = banner || null;
+      const rainbow = interaction.options.getBoolean('rainbow');
+      if (rainbow !== null) patch.bannerRainbow = rainbow;
       const rawReactions = interaction.options.getString('reactions');
       if (rawReactions !== null) {
         patch.reactions = rawReactions.split(',').map(e => e.trim()).filter(Boolean).slice(0, 5);
@@ -56,7 +62,8 @@ module.exports = {
         if (patch[k] === null) delete patch[k];
       }
       const s = await saveWelcomeSettings(guildId, patch);
-      const preview = await interaction.channel.send({ embeds: [buildWelcome(interaction.member, s)] }).catch(() => null);
+      const { embed: em, files } = buildWelcome(interaction.member, s);
+      const preview = await interaction.channel.send({ embeds: [em], files }).catch(() => null);
       if (preview && s.reactions?.length) {
         for (const e of s.reactions.slice(0, 5)) await preview.react(e).catch(() => {});
       }
@@ -66,7 +73,8 @@ module.exports = {
     if (sub === 'test') {
       const s = await getWelcomeSettings(guildId);
       if (!s.channelId) return interaction.editReply({ embeds: [errorEmbed('Chưa setup kênh. Chạy `/welcome setup` trước.')] });
-      const msg = await interaction.channel.send({ embeds: [buildWelcome(interaction.member, s)] });
+      const { embed: em2, files: f2 } = buildWelcome(interaction.member, s);
+      const msg = await interaction.channel.send({ embeds: [em2], files: f2 });
       for (const e of (s.reactions || []).slice(0, 5)) await msg.react(e).catch(() => {});
       return interaction.editReply({ content: '✅ Đã gửi bản xem trước ở trên.' });
     }
@@ -83,6 +91,7 @@ module.exports = {
             `Thông báo: ${s.announceChannelId ? `<#${s.announceChannelId}>` : '—'} | Chat: ${s.chatChannelId ? `<#${s.chatChannelId}>` : '—'}`,
             `Ảnh: ${s.imageUrl ? `[xem](${s.imageUrl})` : 'mặc định icon server'}`,
             `Màu: \`${s.color || '#FF4D9D'}\` | Reactions: ${(s.reactions || []).join(' ') || '—'}`,
+            `Banner dưới: ${s.bannerUrl ? `[xem](${s.bannerUrl})` : (s.bannerRainbow === false ? 'tắt' : 'cầu vồng 🌈')}`,
             `Auto-role: ${s.autoRoleId ? `<@&${s.autoRoleId}>` : '—'}`,
           ].join('\n'),
         })],

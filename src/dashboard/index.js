@@ -192,9 +192,11 @@ function mount(app) {
   app.put('/dashboard/api/guilds/:gid/welcome', guard, async (req, res) => {
     const b = req.body || {};
     const patch = {};
-    for (const k of ['channelId', 'title', 'roleChannelId', 'rulesChannelId', 'announceChannelId', 'chatChannelId', 'imageUrl', 'autoRoleId']) {
+    for (const k of ['channelId', 'title', 'roleChannelId', 'rulesChannelId', 'announceChannelId', 'chatChannelId', 'imageUrl', 'color', 'autoRoleId']) {
       if (b[k] !== undefined) patch[k] = String(b[k] || '') || null;
     }
+    if (b.bannerUrl !== undefined) patch.bannerUrl = String(b.bannerUrl || '') || null;
+    if (b.bannerRainbow !== undefined) patch.bannerRainbow = !!b.bannerRainbow;
     if (b.color !== undefined) {
       patch.color = /^#[0-9a-fA-F]{6}$/.test(String(b.color || '')) ? b.color : null;
     }
@@ -214,7 +216,8 @@ function mount(app) {
     const member = await guild.members.fetch(req.session.user.id).catch(() => null);
     if (!member) return res.status(400).json({ error: 'not-member' });
     const { buildWelcome } = require('../utils/welcome');
-    const msg = await ch.send({ embeds: [buildWelcome(member, s)] }).catch((e) => ({ error: e?.message }));
+    const { embed: em, files } = buildWelcome(member, s);
+    const msg = await ch.send({ embeds: [em], files }).catch((e) => ({ error: e?.message }));
     if (msg?.error) return res.status(500).json({ error: msg.error });
     for (const e of (s.reactions || []).slice(0, 5)) await msg.react(e).catch(() => {});
     res.json({ ok: true, url: `https://discord.com/channels/${guild.id}/${ch.id}/${msg.id}` });

@@ -15,7 +15,8 @@ module.exports = {
     // Dùng chính member của bạn để xem trước — ưu tiên setting từ /welcome setup
     const s = await require('../../utils/welcomeSettings').getWelcomeSettings(interaction.guildId).catch(() => null);
     const reactions = s?.reactions || config.welcomeReactions;
-    const msg = await interaction.channel.send({ embeds: [buildWelcome(interaction.member, s)] });
+    const { embed: em, files } = buildWelcome(interaction.member, s);
+    const msg = await interaction.channel.send({ embeds: [em], files });
     for (const e of reactions.slice(0, 5)) {
       await msg.react(e).catch(() => {});
     }
