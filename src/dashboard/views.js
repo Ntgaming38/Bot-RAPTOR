@@ -134,6 +134,7 @@ function guild(gid) {
 <div><label>Xem trước</label><div class="pv" id="g-pv"></div></div></div>
 <div id="p-o" class="card" style="display:none"><h2>Log kiểu ProBot</h2>
 <div><label>Kênh nhận log</label><select id="o-channel"></select></div>
+<div><label>Không thấy kênh? Dán ID kênh (chuột phải kênh → Sao chép ID)</label><input id="o-logid" placeholder="123..."></div>
 <div><label>Bật/tắt từng loại</label><div id="o-types" class="grid"></div></div>
 <button id="o-save">Lưu</button><p class="mut">Log nào tắt thì bot bỏ qua luôn, khỏi spam.</p></div>
 <div id="p-u" class="card" style="display:none"><h2>Nhạc đang phát</h2>
@@ -288,7 +289,7 @@ $('r-import').onclick=async()=>{try{const d=await api('POST','/dashboard/api/gui
 $('r-del').onclick=async()=>{if(!RBID)return;if(!confirm('Xóa bảng này? Tin nhắn bảng cũng bị xóa.'))return;try{await api('DELETE','/dashboard/api/guilds/'+G+'/roleboards/'+RBID);const l=await api('GET','/dashboard/api/guilds/'+G+'/roleboards');RBOARDS=l;RBID=RBOARDS.length?String(RBOARDS[0].id||RBOARDS[0]._id):'';renderBoards();await loadBoard();toast('Đã xóa bảng')}catch(e){toast('Lỗi: '+e.message)}};
 $('g-save').onclick=async()=>{try{await api('PUT','/dashboard/api/guilds/'+G+'/goodbye',{channelId:$('g-channel').value||null,title:$('g-title').value||null,text:$('g-text').value,imageUrl:$('g-image').value||null,color:$('g-color').value||null});toast('Đã lưu tin tạm biệt')}catch(e){toast('Lỗi: '+e.message)}};
 $('g-test').onclick=async()=>{try{const d=await api('POST','/dashboard/api/guilds/'+G+'/goodbye/test');toast('Đã gửi thử! Mở Discord xem');if(d.url)window.open(d.url,'_blank')}catch(e){toast('Lỗi: '+e.message+' (cần setup kênh trước)')}};
-$('o-save').onclick=async()=>{try{const tg={};document.querySelectorAll('#o-types input').forEach(c=>tg[c.dataset.k]=c.checked);await api('PUT','/dashboard/api/guilds/'+G+'/logs',{channelId:$('o-channel').value||null,toggles:tg});toast('Đã lưu cấu hình log')}catch(e){toast('Lỗi: '+e.message)}};
+$('o-save').onclick=async()=>{try{const tg={};document.querySelectorAll('#o-types input').forEach(c=>tg[c.dataset.k]=c.checked);const id=$('o-logid').value.trim()||$('o-channel').value||null;await api('PUT','/dashboard/api/guilds/'+G+'/logs',{channelId:id,toggles:tg});if($('o-logid').value.trim())$('o-logid').value='';toast('Đã lưu cấu hình log')}catch(e){toast('Lỗi: '+e.message)}};
 function optMulti(sel,list,cur){const s=$(sel);const set=new Set(cur||[]);s.innerHTML=list.map(o=>'<option value="'+o.id+'"'+(set.has(o.id)?' selected':'')+'>'+o.name.replace(/</g,'&lt;')+'</option>').join('')}
 let GNAME='server', CHMAP={};
 function escH(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}

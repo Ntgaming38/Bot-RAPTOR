@@ -20,7 +20,7 @@ module.exports = {
     .addSubcommand(s => s
       .setName('setup')
       .setDescription('Chọn kênh nhận log')
-      .addChannelOption(o => o.setName('channel').setDescription('Kênh log').addChannelTypes(ChannelType.GuildText).setRequired(true)))
+      .addChannelOption(o => o.setName('channel').setDescription('Kênh log').addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement).setRequired(true)))
     .addSubcommand(s => s
       .setName('enable')
       .setDescription('Bật 1 loại log (bỏ trống = bật tất cả)')

@@ -472,7 +472,20 @@ function mount(app) {
   app.put('/dashboard/api/guilds/:gid/logs', guard, async (req, res) => {
     const b = req.body || {};
     const patch = {};
-    if (b.channelId !== undefined) patch.channelId = String(b.channelId || '') || null;
+    if (b.channelId !== undefined) {
+      const id = String(b.channelId || '') || null;
+      if (id) {
+        // Kiểm tra luôn: kênh tồn tại + gửi được, báo rõ nếu không
+        const guild = await client.guilds.fetch(req.params.gid).catch(() => null);
+        const ch = guild && await guild.channels.fetch(id).catch(() => null);
+        if (!ch?.isTextBased()) return res.status(400).json({ error: 'Kênh không tồn tại hoặc không phải kênh text.' });
+        const me = guild.members.me;
+        if (!ch.permissionsFor(me)?.has('SendMessages') || !ch.permissionsFor(me)?.has('ViewChannel')) {
+          return res.status(400).json({ error: 'Bot không có quyền Xem/Gửi trong kênh này. Vào setting kênh cấp quyền cho role bot.' });
+        }
+      }
+      patch.channelId = id;
+    }
     if (b.toggles && typeof b.toggles === 'object') {
       patch.toggles = {};
       for (const [k] of LOG_TYPES) {
