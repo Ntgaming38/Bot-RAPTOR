@@ -17,6 +17,7 @@ a{color:#8b9cf9}.tabs{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}.tab{pad
 .layout{display:flex;gap:16px;align-items:flex-start}.side{position:sticky;top:12px;min-width:180px;background:#171a21;border:1px solid #262b36;border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:4px}.nav{padding:9px 12px;border-radius:8px;cursor:pointer;color:#b9c0cc;font-size:14px}.nav.on{background:#5865f2;color:#fff}main{flex:1;min-width:0}main .card:first-child{margin-top:0}@media(max-width:800px){.layout{flex-direction:column}.side{position:static;flex-direction:row;flex-wrap:wrap;min-width:0;width:100%}}
 .statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:12px 0}.stat{background:#0f1115;border:1px solid #262b36;border-radius:10px;padding:12px;text-align:center}.stat b{font-size:22px;display:block}.stat span{font-size:12px;color:#9aa3b2}
 select[multiple]{min-height:96px}.chk{display:flex;gap:8px;align-items:center;margin:8px 0;font-size:14px}.chk input{width:auto}
+.pv{background:#111214;border:1px solid #262b36;border-radius:10px;padding:12px;margin-top:4px}.pv small{color:#9aa3b2}.pv-embed{background:#2b2d31;border-radius:8px;padding:12px 14px;border-left:4px solid #ff4d9d;margin-top:8px;overflow:hidden}.pv-title{font-weight:700;margin-bottom:6px}.pv-desc{font-size:14px;white-space:pre-wrap;word-break:break-word}.pv-thumb{float:right;width:72px;height:72px;border-radius:8px;margin-left:10px;background:#1e1f22}.pv-img{width:100%;border-radius:8px;margin-top:10px}
 .srv{display:flex;gap:12px;align-items:center;padding:12px;border:1px solid #262b36;border-radius:10px;margin:10px 0;text-decoration:none;color:inherit}
 .srv img{width:44px;height:44px;border-radius:50%;background:#262b36}.badge{font-size:11px;padding:2px 8px;border-radius:20px;background:#2c3340}.badge.ok{background:#1d4d2b;color:#7de2a8}.badge.no{background:#5a2b2b;color:#f2a3a3}
 #toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#222836;border:1px solid #334;padding:10px 18px;border-radius:10px;display:none}`;
@@ -58,7 +59,8 @@ function guild(gid) {
 <div><label>Nút link dưới tin chào (<span id="w-bcount">0</span>/4 — chữ + link https)</label><div id="w-btns"></div></div>
 <div class="grid"><div><label>Chữ nút mới</label><input id="w-btn-label" maxlength="80"></div><div><label>Link https</label><input id="w-btn-url" placeholder="https://..."></div></div>
 <div><button class="ghost" id="w-btn-add" style="margin-top:0">+ Thêm nút</button></div>
-<button id="w-save">Lưu</button><button class="ghost" id="w-test">Gửi thử vào kênh welcome</button></div>
+<button id="w-save">Lưu</button><button class="ghost" id="w-test">Gửi thử vào kênh welcome</button>
+<div><label>Xem trước (tự cập nhật khi sửa)</label><div class="pv" id="w-pv"></div></div></div>
 <div id="p-l" class="card" style="display:none"><h2>Leaderboard (BXH riêng)</h2>
 <div class="grid"><div><label>Kênh đăng BXH</label><select id="l-channel"></select></div><div><label>Top mấy</label><input id="l-limit" type="number" min="3" max="25" value="10"></div></div>
 <button id="l-save">Lưu</button><button class="ghost" id="l-refresh">Cập nhật ngay</button><p class="mut">Bot tự sửa tin BXH mỗi 10 phút.</p></div>
@@ -87,14 +89,16 @@ function guild(gid) {
 <div><label>Các loại ticket (<span id="k-count">0</span>/10)</label><div id="k-types"></div></div>
 <div class="grid"><div><label>Tên loại mới</label><input id="k-add-label" maxlength="25"></div><div><label>Mô tả ngắn</label><input id="k-add-desc" maxlength="100"></div></div>
 <div class="grid"><div><label>Emoji</label><input id="k-add-emoji" maxlength="50" placeholder="🎫"></div><div><label>&nbsp;</label><button class="ghost" id="k-add" style="margin-top:0">+ Thêm loại</button></div></div>
-<button id="k-save">Lưu</button><p class="mut">Áp dụng cho ticket mở mới và bảng panel gửi mới (dùng <b>/ticket setup</b> trong Discord).</p></div>
+<button id="k-save">Lưu</button><p class="mut">Áp dụng cho ticket mở mới và bảng panel gửi mới (dùng <b>/ticket setup</b> trong Discord).</p>
+<div><label>Xem trước bảng panel</label><div class="pv" id="k-pv"></div></div></div>
 <div id="p-a" class="card" style="display:none"><h2>Bảng thông báo (ticker)</h2>
 <div><label>Kênh đăng bảng</label><select id="a-channel"></select></div>
 <div><label>Tiêu đề</label><input id="a-title" placeholder="📢 THÔNG BÁO"></div>
 <div><label>Nội dung (biến {server} {members} — nhiều tin thì tách nhau bằng 1 dòng --- )</label><textarea id="a-text" placeholder="Server sẽ bảo trì lúc 22:00&#10;---&#10;Nhớ đọc luật trước khi chat"></textarea></div>
 <div><label>Xoay tin mỗi mấy phút (0 = tĩnh, chỉ hiện tin đầu)</label><input id="a-min" type="number" min="0" max="1440" value="0"></div>
 <div><label>Màu viền</label><input id="a-color" type="color" value="#5865f2" style="height:40px;padding:2px"></div>
-<button id="a-save">Lưu</button><button class="ghost" id="a-test">Đăng ngay</button></div>
+<button id="a-save">Lưu</button><button class="ghost" id="a-test">Đăng ngay</button>
+<div><label>Xem trước (tin đầu)</label><div class="pv" id="a-pv"></div></div></div>
 <div id="p-s" class="card" style="display:none"><h2>Trạng thái server</h2>
 <div><label>Kênh voice làm bảng trạng thái (để trống = chưa bật)</label><select id="s-voice"></select></div>
 <div><label>Mẫu tên kênh (biến {members} {online} {voice} {server})</label><input id="s-tpl" placeholder="🟢 ONLINE • 👥 {members} MEMBERS • 🎮 {voice} ONLINE"></div>
@@ -126,7 +130,8 @@ function guild(gid) {
 <div><label>Nội dung (biến {user} {tag} {server} {members})</label><textarea id="g-text" placeholder="👋 {user} vừa rời {server}. Hẹn gặp lại!"></textarea></div>
 <div><label>Ảnh (trống = avatar người rời)</label><input id="g-image" placeholder="https://..."></div>
 <div><label>Màu viền</label><input id="g-color" type="color" value="#ed4245" style="height:40px;padding:2px"></div>
-<button id="g-save">Lưu</button></div>
+<button id="g-save">Lưu</button><button class="ghost" id="g-test">Gửi thử</button>
+<div><label>Xem trước</label><div class="pv" id="g-pv"></div></div></div>
 <div id="p-o" class="card" style="display:none"><h2>Log kiểu ProBot</h2>
 <div><label>Kênh nhận log</label><select id="o-channel"></select></div>
 <div><label>Bật/tắt từng loại</label><div id="o-types" class="grid"></div></div>
@@ -186,6 +191,8 @@ async function api(m,url,body){const r=await fetch(url,{method:m,headers:{'Conte
 (async()=>{
   try{
     META=await api('GET','/dashboard/api/guilds/'+G+'/meta');
+    GNAME=META.guild?.name||'server';CHMAP={};
+    for(const c of (META.channels||[]).concat(META.categories||[]))CHMAP[c.id]=c.name;
     const chs=META.channels, txt=[{id:'',name:'— không dùng —'}].concat(chs);CHS=txt;
     const fill=(id,v)=>opt(id,txt,v,true);
     const [w,l]=await Promise.all([api('GET','/dashboard/api/guilds/'+G+'/welcome'),api('GET','/dashboard/api/guilds/'+G+'/leaderboard')]);
@@ -244,6 +251,7 @@ async function api(m,url,body){const r=await fetch(url,{method:m,headers:{'Conte
     $('am-count').value=am.spamCount||5;$('am-secs').value=am.spamSecs||5;$('am-act').value=am.action||'delete';$('am-mins').value=am.timeoutMin||10;
     optMulti('am-xch',txt,am.exemptChannels||[]);optMulti('am-xr',META.roles,am.exemptRoles||[]);
     loadOv();
+    pvWelcome();pvGoodbye();pvAnnounce();pvTicket();
   }catch(e){toast('Lỗi tải: '+e.message+' (bot phải đã vào server và bạn là admin)')}
 })();
 $('w-save').onclick=async()=>{try{await api('PUT','/dashboard/api/guilds/'+G+'/welcome',{channelId:$('w-channel').value||null,title:$('w-title').value||null,roleChannelId:$('w-role').value||null,rulesChannelId:$('w-rules').value||null,announceChannelId:$('w-ann').value||null,chatChannelId:$('w-chat').value||null,imageUrl:$('w-image').value||null,color:$('w-color').value||null,reactions:$('w-reactions').value,autoRoleId:$('w-autorole').value||null,bannerUrl:$('w-banner').value||null,bannerRainbow:$('w-rainbow').value==='1',welcomeText:$('w-desc').value||null,cardEnabled:$('w-card').value==='1',dmEnabled:$('w-dm').value==='1',acceptRoleId:$('w-accept').value||null,welcomeButtons:WBTS});toast('Đã lưu welcome')}catch(e){toast('Lỗi: '+e.message)}};
@@ -279,8 +287,44 @@ $('r-create').onclick=async()=>{const name=$('r-new').value.trim();if(!name)retu
 $('r-import').onclick=async()=>{try{const d=await api('POST','/dashboard/api/guilds/'+G+'/roleboards/import',{});const l=await api('GET','/dashboard/api/guilds/'+G+'/roleboards');RBOARDS=l;RBID=String(d.id);document.getElementById('r-import-wrap').style.display='none';renderBoards();await loadBoard();toast('Đã nhập bảng cũ')}catch(e){toast('Lỗi: '+e.message)}};
 $('r-del').onclick=async()=>{if(!RBID)return;if(!confirm('Xóa bảng này? Tin nhắn bảng cũng bị xóa.'))return;try{await api('DELETE','/dashboard/api/guilds/'+G+'/roleboards/'+RBID);const l=await api('GET','/dashboard/api/guilds/'+G+'/roleboards');RBOARDS=l;RBID=RBOARDS.length?String(RBOARDS[0].id||RBOARDS[0]._id):'';renderBoards();await loadBoard();toast('Đã xóa bảng')}catch(e){toast('Lỗi: '+e.message)}};
 $('g-save').onclick=async()=>{try{await api('PUT','/dashboard/api/guilds/'+G+'/goodbye',{channelId:$('g-channel').value||null,title:$('g-title').value||null,text:$('g-text').value,imageUrl:$('g-image').value||null,color:$('g-color').value||null});toast('Đã lưu tin tạm biệt')}catch(e){toast('Lỗi: '+e.message)}};
+$('g-test').onclick=async()=>{try{const d=await api('POST','/dashboard/api/guilds/'+G+'/goodbye/test');toast('Đã gửi thử! Mở Discord xem');if(d.url)window.open(d.url,'_blank')}catch(e){toast('Lỗi: '+e.message+' (cần setup kênh trước)')}};
 $('o-save').onclick=async()=>{try{const tg={};document.querySelectorAll('#o-types input').forEach(c=>tg[c.dataset.k]=c.checked);await api('PUT','/dashboard/api/guilds/'+G+'/logs',{channelId:$('o-channel').value||null,toggles:tg});toast('Đã lưu cấu hình log')}catch(e){toast('Lỗi: '+e.message)}};
 function optMulti(sel,list,cur){const s=$(sel);const set=new Set(cur||[]);s.innerHTML=list.map(o=>'<option value="'+o.id+'"'+(set.has(o.id)?' selected':'')+'>'+o.name.replace(/</g,'&lt;')+'</option>').join('')}
+let GNAME='server', CHMAP={};
+function escH(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function mdLite(s){
+  let out=escH(s);
+  out=out.replace(/<#(\d+)>/g,(m,id)=>'#'+escH(CHMAP[id]||'kênh'));
+  out=out.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+  return out.replace(/\n/g,'<br>');
+}
+function pvEmbed(el,title,desc,color,thumb,imgNote){
+  document.getElementById(el).innerHTML='<small>Xem trước kiểu Discord</small><div class="pv-embed" style="border-left-color:'+escH(color||'#ff4d9d')+'">'+(thumb?'<img class="pv-thumb" src="'+escH(thumb)+'">':'')+'<div class="pv-title">'+mdLite(title||'(không tiêu đề)')+'</div><div class="pv-desc">'+mdLite(desc||'(trống)')+'</div>'+(imgNote?'<div><small>'+escH(imgNote)+'</small></div>':'')+'<div style="clear:both"></div></div>';
+}
+function sampleVars(extra){return Object.assign({member:'@Bạn',mention:'@Bạn',user:'@Bạn',username:'Bạn',tag:'Bạn#0000',server:'**'+GNAME+'**',count:'**186th**',membercount:'**186**',created:'01/01/2024'},extra||{})}
+function fillVars(t,vars){let out=String(t||'');for(const k of Object.keys(vars))out=out.split('{'+k+'}').join(vars[k]);return out}
+function chName(id,fb){return id?'<#'+id+'>':fb}
+function pvWelcome(){
+  const v=sampleVars({role:chName($('w-role').value,'**role-sever**'),rules:chName($('w-rules').value,'**rule-discord**'),announce:chName($('w-ann').value,'**thông-báo**'),chat:chName($('w-chat').value,'**chat-chung**')});
+  const t=$('w-desc').value||'➔ Chào mừng {member} đã tham gia {server}.\n➔ Bạn là người thứ : {count}';
+  pvEmbed('w-pv',$('w-title').value||('By '+GNAME),fillVars(t,v),$('w-color').value,null,($('w-banner').value||($('w-rainbow').value==='1'))?'🖼️ Có ảnh dưới embed':'');
+}
+function pvGoodbye(){
+  const v=sampleVars({});
+  pvEmbed('g-pv',$('g-title').value||'👋 Tạm biệt Bạn',fillVars($('g-text').value||'👋 {user} vừa rời {server}. Hẹn gặp lại!'+'\n',v),$('g-color').value,null,'');
+}
+function pvAnnounce(){
+  const v=sampleVars({members:'186'});
+  const first=($('a-text').value||'').split(/\r?\n---\r?\n/)[0];
+  pvEmbed('a-pv',$('a-title').value||'📢 THÔNG BÁO',fillVars(first,v),$('a-color').value,null,'');
+}
+function pvTicket(){
+  pvEmbed('k-pv',$('k-title').value||'🎫 Bạn cần hỗ trợ - hãy mở ticket!',$('k-desc').value||'(mẫu mặc định của bot)',null,null,'');
+}
+['w-title','w-desc','w-color','w-role','w-rules','w-ann','w-chat'].forEach(id=>document.getElementById(id).addEventListener('input',pvWelcome));
+['g-title','g-text','g-color'].forEach(id=>document.getElementById(id).addEventListener('input',pvGoodbye));
+['a-title','a-text','a-color'].forEach(id=>document.getElementById(id).addEventListener('input',pvAnnounce));
+['k-title','k-desc'].forEach(id=>document.getElementById(id).addEventListener('input',pvTicket));
 function selVals(sel){return Array.from($(sel).selectedOptions).map(o=>o.value)}
 async function loadOv(){try{const d=await api('GET','/dashboard/api/guilds/'+G+'/overview');$('ov-body').innerHTML='<div class=statgrid><div class=stat><b>'+d.members+'</b><span>thành viên</span></div><div class=stat><b>'+d.channels+'</b><span>kênh</span></div><div class=stat><b>'+d.roles+'</b><span>role</span></div><div class=stat><b>'+d.openTickets+'</b><span>ticket mở</span></div><div class=stat><b>'+d.boards+'</b><span>bảng role</span></div></div>';const go=[['t-w','👋 Welcome'],['t-mod','🛡️ Moderation'],['t-v','🎉 Giveaway'],['t-t','🎫 Ticket'],['t-o','📝 Logs']];$('ov-links').innerHTML=go.map(([t,l])=>'<button class=ghost data-t="'+t+'">'+l+'</button>').join('');document.querySelectorAll('#ov-links button').forEach(b=>b.onclick=()=>document.getElementById(b.dataset.t).click())}catch(e){$('ov-body').innerHTML='<p class=mut>Lỗi tải.</p>'}}
 $('md-go').onclick=async()=>{try{await api('POST','/dashboard/api/guilds/'+G+'/mod',{action:$('md-act').value,userId:$('md-user').value.trim(),reason:$('md-reason').value,minutes:parseInt($('md-mins').value||'10',10)});$('md-user').value='';toast('Đã thực hiện')}catch(e){toast('Lỗi: '+e.message+' (kiểm tra ID, quyền bot)')}};

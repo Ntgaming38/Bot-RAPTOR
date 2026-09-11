@@ -437,7 +437,6 @@ function mount(app) {
   app.get('/dashboard/api/guilds/:gid/goodbye', guard, async (req, res) => {
     res.json(await require('../utils/goodbyeSettings').getGoodbye(req.params.gid));
   });
-
   app.put('/dashboard/api/guilds/:gid/goodbye', guard, async (req, res) => {
     const b = req.body || {};
     const patch = {};
@@ -448,6 +447,20 @@ function mount(app) {
     if (b.color !== undefined) patch.color = /^#[0-9a-fA-F]{6}$/.test(String(b.color || '')) ? b.color : null;
     const s = await require('../utils/goodbyeSettings').saveGoodbye(req.params.gid, patch);
     res.json({ ok: true, settings: s });
+  });
+
+  app.post('/dashboard/api/guilds/:gid/goodbye/test', guard, async (req, res) => {
+    const { getGoodbye, buildGoodbye } = require('../utils/goodbyeSettings');
+    const s = await getGoodbye(req.params.gid);
+    if (!s.channelId) return res.status(400).json({ error: 'no-channel' });
+    const guild = await client.guilds.fetch(req.params.gid).catch(() => null);
+    const ch = guild && (await guild.channels.fetch(s.channelId).catch(() => null));
+    if (!ch?.isTextBased()) return res.status(400).json({ error: 'no-channel' });
+    const member = await guild.members.fetch(req.session.user.id).catch(() => null);
+    if (!member) return res.status(400).json({ error: 'not-member' });
+    const msg = await ch.send({ embeds: [buildGoodbye(member, s)] }).catch((e) => ({ error: e?.message }));
+    if (msg?.error) return res.status(500).json({ error: msg.error });
+    res.json({ ok: true, url: `https://discord.com/channels/${guild.id}/${ch.id}/${msg.id}` });
   });
 
   // Log kiểu ProBot: kênh + bật/tắt từng loại
