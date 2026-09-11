@@ -125,11 +125,14 @@ function mount(app) {
     const list = [];
     const cats = [];
     const voice = [];
+    const KIND = { 0: 'text', 2: 'voice', 4: 'category', 5: 'thông báo', 10: 'thread', 11: 'thread', 12: 'thread', 13: 'stage', 15: 'forum' };
     for (const ch of channels.values()) {
       if (!ch) continue;
+      // Hiện mọi loại kênh để không bao giờ thiếu (ghi rõ loại, chọn sai sẽ báo)
       if (ch.type === 0 || ch.type === 5) list.push({ id: ch.id, name: ch.name, type: ch.type });
       else if (ch.type === 4) cats.push({ id: ch.id, name: ch.name });
       else if (ch.type === 2) voice.push({ id: ch.id, name: ch.name });
+      else if (ch.type === 13 || ch.type === 15) list.push({ id: ch.id, name: `${ch.name} (${KIND[ch.type]})`, type: ch.type });
     }
     list.sort((a, b) => a.name.localeCompare(b.name));
     cats.sort((a, b) => a.name.localeCompare(b.name));
@@ -267,6 +270,13 @@ function mount(app) {
     if (b.cardEnabled !== undefined) patch.cardEnabled = !!b.cardEnabled;
     if (b.dmEnabled !== undefined) patch.dmEnabled = !!b.dmEnabled;
     if (b.acceptRoleId !== undefined) patch.acceptRoleId = String(b.acceptRoleId || '') || null;
+    if (patch.channelId) {
+      const err = await checkTextChannel(req.params.gid, patch.channelId);
+      if (err) return res.status(400).json({ error: err });
+    }
+    if (b.cardEnabled !== undefined) patch.cardEnabled = !!b.cardEnabled;
+    if (b.dmEnabled !== undefined) patch.dmEnabled = !!b.dmEnabled;
+    if (b.acceptRoleId !== undefined) patch.acceptRoleId = String(b.acceptRoleId || '') || null;
     if (b.welcomeButtons !== undefined && Array.isArray(b.welcomeButtons)) {
       patch.welcomeButtons = b.welcomeButtons.slice(0, 4)
         .filter((x) => x && x.label && /^https?:\/\//i.test(x.url || ''))
@@ -334,6 +344,20 @@ function mount(app) {
     res.json({ ok: true });
   });
 
+  // Kiểm tra kênh text dùng chung: tồn tại + gửi được, báo rõ nếu không
+  async function checkTextChannel(gid, id) {
+    if (!id) return null;
+    const guild = await client.guilds.fetch(gid).catch(() => null);
+    if (!guild) return 'Bot không còn trong server.';
+    const ch = await guild.channels.fetch(id).catch(() => null);
+    if (!ch?.isTextBased()) return 'Kênh này không phải kênh text/thông báo (voice/forum/stage không gửi tin được).';
+    const me = guild.members.me;
+    if (!ch.permissionsFor(me)?.has('ViewChannel') || !ch.permissionsFor(me)?.has('SendMessages')) {
+      return 'Bot thiếu quyền Xem/Gửi trong kênh này.';
+    }
+    return null;
+  }
+
   // Bảng thông báo (ticker)
   app.get('/dashboard/api/guilds/:gid/announce', guard, async (req, res) => {
     res.json(await require('../utils/announceSettings').getAnnounce(req.params.gid));
@@ -350,6 +374,10 @@ function mount(app) {
     if (b.intervalMin !== undefined) {
       const n = parseInt(b.intervalMin, 10);
       patch.intervalMin = Number.isFinite(n) ? Math.min(1440, Math.max(0, n)) : 0;
+    }
+    if (patch.channelId) {
+      const err = await checkTextChannel(req.params.gid, patch.channelId);
+      if (err) return res.status(400).json({ error: err });
     }
     for (const k of Object.keys(patch)) if (patch[k] === undefined) delete patch[k];
     patch.lastRotated = Date.now();
@@ -445,6 +473,10 @@ function mount(app) {
     if (b.text !== undefined) patch.text = String(b.text || '').slice(0, 2000) || null;
     if (b.imageUrl !== undefined) patch.imageUrl = String(b.imageUrl || '') || null;
     if (b.color !== undefined) patch.color = /^#[0-9a-fA-F]{6}$/.test(String(b.color || '')) ? b.color : null;
+    if (patch.channelId) {
+      const err = await checkTextChannel(req.params.gid, patch.channelId);
+      if (err) return res.status(400).json({ error: err });
+    }
     const s = await require('../utils/goodbyeSettings').saveGoodbye(req.params.gid, patch);
     res.json({ ok: true, settings: s });
   });
