@@ -269,7 +269,7 @@ let RITEMS=[];let RBOARDS=[];let RBID='';let CHS=[{id:'',name:'— không dùng 
 let KTYPES=[];
 let WBTS=[];
 function renderWBtns(){$('w-bcount').textContent=WBTS.length;$('w-btns').innerHTML=WBTS.length?WBTS.map((b,n)=>'<div class=row style="padding:6px 0;border-bottom:1px solid #222"><span style="flex:1">'+(n+1)+'. <b>'+String(b.label||'').replace(/</g,'&lt;')+'</b> <span class=mut>'+String(b.url||'').replace(/</g,'&lt;')+'</span></span><button class=ghost data-n="'+n+'" style="margin:0;padding:4px 10px">Xóa</button></div>').join(''):'<p class=mut>Chưa có nút nào.</p>';document.querySelectorAll('#w-btns button').forEach(x=>x.onclick=()=>{WBTS.splice(parseInt(x.dataset.n,10),1);renderWBtns()})}
-$('w-btn-add').onclick=()=>{const l=$('w-btn-label').value.trim(),u=$('w-btn-url').value.trim();if(!l||!/^https?:\/\//i.test(u))return toast('Nhập chữ + link https');if(WBTS.length>=4)return toast('Tối đa 4 nút');WBTS.push({label:l.slice(0,80),url:u});$('w-btn-label').value='';$('w-btn-url').value='';renderWBtns()};
+$('w-btn-add').onclick=()=>{const l=$('w-btn-label').value.trim(),u=$('w-btn-url').value.trim();if(!l||!/^https?:\\/\\//i.test(u))return toast('Nhập chữ + link https');if(WBTS.length>=4)return toast('Tối đa 4 nút');WBTS.push({label:l.slice(0,80),url:u});$('w-btn-label').value='';$('w-btn-url').value='';renderWBtns()};
 function renderTypes(){$('k-count').textContent=KTYPES.length;$('k-types').innerHTML=KTYPES.length?KTYPES.map((t,n)=>'<div class=row style="padding:6px 0;border-bottom:1px solid #222"><span style="flex:1">'+(n+1)+'. '+(t.emoji||'')+' <b>'+String(t.label||'').replace(/</g,'&lt;')+'</b> <span class=mut>'+String(t.description||'').replace(/</g,'&lt;')+'</span></span><button class=ghost data-n="'+n+'" style="margin:0;padding:4px 10px">Xóa</button></div>').join(''):'<p class=mut>Trống = dùng 4 loại mặc định.</p>';document.querySelectorAll('#k-types button').forEach(b=>b.onclick=()=>{KTYPES.splice(parseInt(b.dataset.n,10),1);renderTypes()})}
 $('k-add').onclick=()=>{const l=$('k-add-label').value.trim();if(!l)return toast('Nhập tên loại');if(KTYPES.length>=10)return toast('Tối đa 10 loại');KTYPES.push({label:l.slice(0,25),description:$('k-add-desc').value.slice(0,100),emoji:$('k-add-emoji').value||'🎫'});$('k-add-label').value='';$('k-add-desc').value='';$('k-add-emoji').value='';renderTypes()};
 $('k-bladd').onclick=async()=>{const id=$('k-bl-id').value.trim();if(!id)return toast('Nhập ID user');try{await api('POST','/dashboard/api/guilds/'+G+'/tickets/blacklist',{userId:id,reason:$('k-bl-why').value});$('k-bl-id').value='';$('k-bl-why').value='';toast('Đã chặn');document.getElementById('t-t').click()}catch(e){toast('Lỗi: '+e.message)}};
@@ -294,9 +294,9 @@ let GNAME='server', CHMAP={};
 function escH(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function mdLite(s){
   let out=escH(s);
-  out=out.replace(/<#(\d+)>/g,(m,id)=>'#'+escH(CHMAP[id]||'kênh'));
-  out=out.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
-  return out.replace(/\n/g,'<br>');
+  out=out.replace(/<#(\\d+)>/g,(m,id)=>'#'+escH(CHMAP[id]||'kênh'));
+  out=out.replace(/\\*\\*(.+?)\\*\\*/g,'<b>$1</b>');
+  return out.replace(/\\n/g,'<br>');
 }
 function pvEmbed(el,title,desc,color,thumb,imgNote){
   document.getElementById(el).innerHTML='<small>Xem trước kiểu Discord</small><div class="pv-embed" style="border-left-color:'+escH(color||'#ff4d9d')+'">'+(thumb?'<img class="pv-thumb" src="'+escH(thumb)+'">':'')+'<div class="pv-title">'+mdLite(title||'(không tiêu đề)')+'</div><div class="pv-desc">'+mdLite(desc||'(trống)')+'</div>'+(imgNote?'<div><small>'+escH(imgNote)+'</small></div>':'')+'<div style="clear:both"></div></div>';
@@ -306,16 +306,16 @@ function fillVars(t,vars){let out=String(t||'');for(const k of Object.keys(vars)
 function chName(id,fb){return id?'<#'+id+'>':fb}
 function pvWelcome(){
   const v=sampleVars({role:chName($('w-role').value,'**role-sever**'),rules:chName($('w-rules').value,'**rule-discord**'),announce:chName($('w-ann').value,'**thông-báo**'),chat:chName($('w-chat').value,'**chat-chung**')});
-  const t=$('w-desc').value||'➔ Chào mừng {member} đã tham gia {server}.\n➔ Bạn là người thứ : {count}';
+  const t=$('w-desc').value||'➔ Chào mừng {member} đã tham gia {server}.\\n➔ Bạn là người thứ : {count}';
   pvEmbed('w-pv',$('w-title').value||('By '+GNAME),fillVars(t,v),$('w-color').value,null,($('w-banner').value||($('w-rainbow').value==='1'))?'🖼️ Có ảnh dưới embed':'');
 }
 function pvGoodbye(){
   const v=sampleVars({});
-  pvEmbed('g-pv',$('g-title').value||'👋 Tạm biệt Bạn',fillVars($('g-text').value||'👋 {user} vừa rời {server}. Hẹn gặp lại!'+'\n',v),$('g-color').value,null,'');
+  pvEmbed('g-pv',$('g-title').value||'👋 Tạm biệt Bạn',fillVars($('g-text').value||'👋 {user} vừa rời {server}. Hẹn gặp lại!',v),$('g-color').value,null,'');
 }
 function pvAnnounce(){
   const v=sampleVars({members:'186'});
-  const first=($('a-text').value||'').split(/\r?\n---\r?\n/)[0];
+  const first=($('a-text').value||'').split(/\\r?\\n---\\r?\\n/)[0];
   pvEmbed('a-pv',$('a-title').value||'📢 THÔNG BÁO',fillVars(first,v),$('a-color').value,null,'');
 }
 function pvTicket(){
