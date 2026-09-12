@@ -186,7 +186,7 @@ document.getElementById('t-s').onclick=e=>{t('t-s',['p-s','p-a'])};
 document.getElementById('t-cmd').onclick=e=>{t('t-cmd',['p-cmd']);loadCmds()};
 document.getElementById('t-set').onclick=e=>{t('t-set',['p-set'])};
 function t(tab,pages){if(!Array.isArray(pages))pages=[pages];document.querySelectorAll('.nav').forEach(x=>x.classList.remove('on'));document.getElementById(tab).classList.add('on');['p-ov','p-mod','p-am','p-w','p-l','p-x','p-m','p-t','p-a','p-s','p-r','p-g','p-o','p-u','p-v','p-cmd','p-set'].forEach(p=>document.getElementById(p).style.display='none');pages.forEach(p=>document.getElementById(p).style.display='block')}
-function opt(sel,list,cur,allowEmpty){const s=$(sel);s.innerHTML=(allowEmpty?'<option value="">— không dùng —</option>':'')+list.map(o=>'<option value="'+o.id+'">'+o.name.replace(/</g,'&lt;')+'</option>').join('');if(cur)s.value=cur}
+function opt(sel,list,cur,allowEmpty){const s=$(sel);s.innerHTML=(allowEmpty?'<option value="">— không dùng —</option>':'')+list.map(o=>'<option value="'+o.id+'">'+o.name.replace(/</g,'&lt;')+'</option>').join('');if(cur)s.value=cur;mkSearch(s)}
 let META=null;
 async function api(m,url,body){const r=await fetch(url,{method:m,headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||('Lỗi '+r.status));return d}
 (async()=>{
@@ -291,7 +291,7 @@ $('r-del').onclick=async()=>{if(!RBID)return;if(!confirm('Xóa bảng này? Tin 
 $('g-save').onclick=async()=>{try{await api('PUT','/dashboard/api/guilds/'+G+'/goodbye',{channelId:$('g-channel').value||null,title:$('g-title').value||null,text:$('g-text').value,imageUrl:$('g-image').value||null,color:$('g-color').value||null});toast('Đã lưu tin tạm biệt')}catch(e){toast('Lỗi: '+e.message)}};
 $('g-test').onclick=async()=>{try{const d=await api('POST','/dashboard/api/guilds/'+G+'/goodbye/test');toast('Đã gửi thử! Mở Discord xem');if(d.url)window.open(d.url,'_blank')}catch(e){toast('Lỗi: '+e.message+' (cần setup kênh trước)')}};
 $('o-save').onclick=async()=>{try{const tg={};document.querySelectorAll('#o-types input').forEach(c=>tg[c.dataset.k]=c.checked);const id=$('o-logid').value.trim()||$('o-channel').value||null;await api('PUT','/dashboard/api/guilds/'+G+'/logs',{channelId:id,toggles:tg});if($('o-logid').value.trim())$('o-logid').value='';toast('Đã lưu cấu hình log')}catch(e){toast('Lỗi: '+e.message)}};
-function optMulti(sel,list,cur){const s=$(sel);const set=new Set(cur||[]);s.innerHTML=list.map(o=>'<option value="'+o.id+'"'+(set.has(o.id)?' selected':'')+'>'+o.name.replace(/</g,'&lt;')+'</option>').join('')}
+function optMulti(sel,list,cur){const s=$(sel);const set=new Set(cur||[]);s.innerHTML=list.map(o=>'<option value="'+o.id+'"'+(set.has(o.id)?' selected':'')+'>'+o.name.replace(/</g,'&lt;')+'</option>').join('');mkSearch(s)}
 let GNAME='server', CHMAP={};
 function escH(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function mdLite(s){
@@ -328,6 +328,25 @@ function pvTicket(){
 ['a-title','a-text','a-color'].forEach(id=>document.getElementById(id).addEventListener('input',pvAnnounce));
 ['k-title','k-desc'].forEach(id=>document.getElementById(id).addEventListener('input',pvTicket));
 function selVals(sel){return Array.from($(sel).selectedOptions).map(o=>o.value)}
+function mkSearch(s){
+  if(!s)return;
+  if(s._filter){s._all=Array.from(s.options);applyFilter(s);return}
+  const inp=document.createElement('input');inp.placeholder='🔍 Gõ để tìm...';inp.style.marginBottom='4px';
+  inp.addEventListener('input',()=>applyFilter(s));
+  s.parentNode.insertBefore(inp,s);s._filter=inp;s._all=Array.from(s.options);applyFilter(s);
+}
+function applyFilter(s){
+  const inp=s._filter;if(!inp)return;
+  const q=inp.value.toLowerCase();
+  const all=s._all||Array.from(s.options);s._all=all;
+  const keepSet=new Set();
+  if(s.multiple){for(const o of Array.from(s.selectedOptions))keepSet.add(o.value)}
+  else{try{if(s.value)keepSet.add(s.value)}catch(e){}}
+  s.innerHTML='';
+  for(const o of all){if(!q||o.text.toLowerCase().indexOf(q)>=0)s.appendChild(o)}
+  for(const o of Array.from(s.options)){if(keepSet.has(o.value))o.selected=true}
+  if(!s.multiple){try{const vs=Array.from(keepSet);if(vs.length&&[...s.options].some(o=>o.value===vs[0]))s.value=vs[0]}catch(e){}}
+}
 async function loadOv(){try{const d=await api('GET','/dashboard/api/guilds/'+G+'/overview');$('ov-body').innerHTML='<div class=statgrid><div class=stat><b>'+d.members+'</b><span>thành viên</span></div><div class=stat><b>'+d.channels+'</b><span>kênh</span></div><div class=stat><b>'+d.roles+'</b><span>role</span></div><div class=stat><b>'+d.openTickets+'</b><span>ticket mở</span></div><div class=stat><b>'+d.boards+'</b><span>bảng role</span></div></div>';const go=[['t-w','👋 Welcome'],['t-mod','🛡️ Moderation'],['t-v','🎉 Giveaway'],['t-t','🎫 Ticket'],['t-o','📝 Logs']];$('ov-links').innerHTML=go.map(([t,l])=>'<button class=ghost data-t="'+t+'">'+l+'</button>').join('');document.querySelectorAll('#ov-links button').forEach(b=>b.onclick=()=>document.getElementById(b.dataset.t).click())}catch(e){$('ov-body').innerHTML='<p class=mut>Lỗi tải.</p>'}}
 $('md-go').onclick=async()=>{try{await api('POST','/dashboard/api/guilds/'+G+'/mod',{action:$('md-act').value,userId:$('md-user').value.trim(),reason:$('md-reason').value,minutes:parseInt($('md-mins').value||'10',10)});$('md-user').value='';toast('Đã thực hiện')}catch(e){toast('Lỗi: '+e.message+' (kiểm tra ID, quyền bot)')}};
 $('md-wgo').onclick=async()=>{try{const l=await api('GET','/dashboard/api/guilds/'+G+'/warns?userId='+encodeURIComponent($('md-wuser').value.trim()));$('md-warns').innerHTML=l.length?l.map((w,i)=>'<b>'+(i+1)+'.</b> '+String(w.reason||'').replace(/</g,'&lt;')+' <span class=mut>— '+(w.byTag||'').replace(/</g,'&lt;')+'</span>').join('<br>'):'Chưa có warn nào.'}catch(e){toast('Lỗi: '+e.message)}};
