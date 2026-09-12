@@ -203,6 +203,10 @@ const roleBoardSchema = new mongoose.Schema({
   exclusive: Boolean,
   maxPicks: Number,
   requiredRoleId: { type: String, default: null },
+  footer: { type: String, default: null },
+  thumbnailUrl: { type: String, default: null },
+  rainbowBar: Boolean,
+  placeholder: { type: String, default: null },
 });
 roleBoardSchema.index({ guildId: 1, name: 1 }, { unique: true });
 const RoleBoard = mongoose.models.RoleBoard || mongoose.model('RoleBoard', roleBoardSchema);

@@ -142,7 +142,7 @@ function buildSelect(board, withEmoji = true) {
   const max = board.maxPicks > 0 ? Math.min(board.maxPicks, items.length) : items.length;
   const menu = new StringSelectMenuBuilder()
     .setCustomId(`rps:${boardIdOf(board)}`)
-    .setPlaceholder('Chọn role...')
+    .setPlaceholder((board.placeholder || 'Chọn role...').slice(0, 150))
     .setMinValues(1)
     .setMaxValues(Math.max(1, max));
   for (const it of items) {
@@ -174,16 +174,29 @@ async function renderBoard(client, guildId, nameOrId) {
     return null;
   }
   const display = board.display || 'buttons';
+  const roleList = (board.items || []).map((it) => `<@&${it.roleId}>`).join('\n');
   const descNote = display === 'reactions'
     ? '\n\n_Thả reaction vào tin này để nhận role, bỏ reaction để gỡ._'
     : display === 'select' ? '\n\n_Chọn trong menu bên dưới (bấm lại để bỏ)._' : '';
+  const fillDesc = (t) => String(t || '')
+    .replaceAll('{roles}', roleList)
+    .replaceAll('{server}', guild.name)
+    .replaceAll('{members}', String(guild.memberCount ?? '?'));
+  const path = require('node:path');
+  const RAINBOW = path.join(__dirname, '..', '..', 'assets', 'rainbow.png');
+  const files = [];
   const data = {
     embeds: [embed({
       title: board.title || '🎮 CHỌN ROLE',
-      description: (board.description || 'Bấm nút bên dưới để nhận / bỏ role.') + descNote,
-      footer: guild.name,
+      description: fillDesc(board.description || 'Bấm nút bên dưới để nhận / bỏ role.') + descNote,
+      thumbnail: board.thumbnailUrl || guild.iconURL({ size: 256 }) || undefined,
+      footer: board.footer || guild.name,
     })],
   };
+  if (board.rainbowBar !== false) {
+    data.embeds[0].setImage('attachment://rainbow.png');
+    files.push({ attachment: RAINBOW, name: 'rainbow.png' });
+  }
   const bid = boardIdOf(board);
   const trySend = async (withEmoji) => {
     let rows = [];
@@ -198,9 +211,9 @@ async function renderBoard(client, guildId, nameOrId) {
     }
     if (board.messageId) {
       const msg = await ch.messages.fetch(board.messageId).catch(() => null);
-      if (msg) return msg.edit({ ...data, components: rows }).catch(() => null);
+      if (msg) return msg.edit({ ...data, files, components: rows }).catch(() => null);
     }
-    return ch.send({ ...data, components: rows }).catch(() => null);
+    return ch.send({ ...data, files, components: rows }).catch(() => null);
   };
   let msg = await trySend(true);
   if (!msg) msg = await trySend(false); // emoji lỗi → vẽ lại không emoji

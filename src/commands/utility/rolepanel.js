@@ -62,7 +62,11 @@ module.exports = {
       .addStringOption(o => o.setName('panel').setDescription('Tên bảng (trống = bảng duy nhất)').setMaxLength(50))
       .addChannelOption(o => o.setName('channel').setDescription('Chuyển sang kênh khác').addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement))
       .addStringOption(o => o.setName('title').setDescription('Tiêu đề mới').setMaxLength(100))
-      .addStringOption(o => o.setName('description').setDescription('Mô tả mới').setMaxLength(1000))
+      .addStringOption(o => o.setName('description').setDescription('Mô tả mới (biến {roles} {server} {members})').setMaxLength(1000))
+      .addStringOption(o => o.setName('footer').setDescription('Dòng chân mới').setMaxLength(100))
+      .addStringOption(o => o.setName('thumbnail').setDescription('Link ảnh góc phải'))
+      .addStringOption(o => o.setName('placeholder').setDescription('Chữ trong menu chọn').setMaxLength(150))
+      .addBooleanOption(o => o.setName('rainbow').setDescription('Gạch cầu vồng dưới bảng'))
       .addStringOption(o => o.setName('display').setDescription('Kiểu hiển thị').addChoices(
         { name: 'Nút bấm', value: 'buttons' },
         { name: 'Menu chọn', value: 'select' },
@@ -148,6 +152,10 @@ module.exports = {
       if (ch) { patch.channelId = ch.id; patch.messageId = null; }
       if (interaction.options.getString('title') !== null) patch.title = interaction.options.getString('title');
       if (interaction.options.getString('description') !== null) patch.description = interaction.options.getString('description');
+      if (interaction.options.getString('footer') !== null) patch.footer = interaction.options.getString('footer');
+      if (interaction.options.getString('thumbnail') !== null) patch.thumbnailUrl = interaction.options.getString('thumbnail');
+      if (interaction.options.getString('placeholder') !== null) patch.placeholder = interaction.options.getString('placeholder');
+      if (interaction.options.getBoolean('rainbow') !== null) patch.rainbowBar = interaction.options.getBoolean('rainbow');
       if (interaction.options.getString('display') !== null) patch.display = interaction.options.getString('display');
       if (interaction.options.getBoolean('exclusive') !== null) patch.exclusive = interaction.options.getBoolean('exclusive');
       if (interaction.options.getInteger('max') !== null) patch.maxPicks = interaction.options.getInteger('max');
