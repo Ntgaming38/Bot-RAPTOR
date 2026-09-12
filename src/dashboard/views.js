@@ -125,7 +125,7 @@ function guild(gid) {
 <button class="ghost" id="r-add">+ Thêm vào danh sách</button><br>
 <button id="r-save">Lưu + vẽ bảng</button><button class="ghost" id="r-del">Xóa bảng này</button><p class="mut">Member bấm nút để nhận, bấm lại để bỏ. Bot phải có quyền Manage Roles và role bot nằm trên các role này.</p></div>
 <div id="p-g" class="card" style="display:none"><h2>Tin nhắn tạm biệt</h2>
-<div><label>Kênh gửi tin tạm biệt</label><select id="g-channel"></select></div>
+<div><label id="lb-g">Kênh gửi tin tạm biệt</label><select id="g-channel"></select></div>
 <div><label>Tiêu đề</label><input id="g-title" placeholder="👋 Tạm biệt"></div>
 <div><label>Nội dung (biến {user} {tag} {server} {members})</label><textarea id="g-text" placeholder="👋 {user} vừa rời {server}. Hẹn gặp lại!"></textarea></div>
 <div><label>Ảnh (trống = avatar người rời)</label><input id="g-image" placeholder="https://..."></div>
@@ -194,6 +194,7 @@ async function api(m,url,body){const r=await fetch(url,{method:m,headers:{'Conte
     META=await api('GET','/dashboard/api/guilds/'+G+'/meta');
     GNAME=META.guild?.name||'server';CHMAP={};
     for(const c of (META.channels||[]).concat(META.categories||[]))CHMAP[c.id]=c.name;
+    try{document.getElementById('lb-g').textContent='Kênh gửi tin tạm biệt (tìm thấy '+(META.channels||[]).length+' kênh)'}catch(e){}
     const chs=META.channels, txt=[{id:'',name:'— không dùng —'}].concat(chs);CHS=txt;
     const fill=(id,v)=>opt(id,txt,v,true);
     const [w,l]=await Promise.all([api('GET','/dashboard/api/guilds/'+G+'/welcome'),api('GET','/dashboard/api/guilds/'+G+'/leaderboard')]);
