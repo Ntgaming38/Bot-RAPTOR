@@ -122,6 +122,13 @@ function mount(app) {
     const guild = await client.guilds.fetch(req.params.gid).catch(() => null);
     if (!guild) return res.status(404).json({ error: 'bot-not-in-guild' });
     const channels = await guild.channels.fetch().catch(() => guild.channels.cache);
+    const me = guild.members.me;
+    const canWrite = (ch) => {
+      try {
+        const p = ch.permissionsFor(me);
+        return !!(p?.has('ViewChannel') && p?.has('SendMessages'));
+      } catch { return false; }
+    };
     const list = [];
     const cats = [];
     const voice = [];
@@ -129,10 +136,11 @@ function mount(app) {
     for (const ch of channels.values()) {
       if (!ch) continue;
       // Hiện mọi loại kênh để không bao giờ thiếu (ghi rõ loại, chọn sai sẽ báo)
-      if (ch.type === 0 || ch.type === 5) list.push({ id: ch.id, name: ch.name, type: ch.type });
+      // Kênh bot thiếu quyền Xem/Gửi thì gắn cờ 🔒 để admin biết mà cấp
+      if (ch.type === 0 || ch.type === 5) list.push({ id: ch.id, name: ch.name, type: ch.type, lock: !canWrite(ch) });
       else if (ch.type === 4) cats.push({ id: ch.id, name: ch.name });
-      else if (ch.type === 2) { voice.push({ id: ch.id, name: ch.name }); list.push({ id: ch.id, name: `${ch.name} (voice)`, type: ch.type }); }
-      else if (ch.type === 13 || ch.type === 15) list.push({ id: ch.id, name: `${ch.name} (${KIND[ch.type]})`, type: ch.type });
+      else if (ch.type === 2) { voice.push({ id: ch.id, name: ch.name }); list.push({ id: ch.id, name: `${ch.name} (voice)`, type: ch.type, lock: !canWrite(ch) }); }
+      else if (ch.type === 13 || ch.type === 15) list.push({ id: ch.id, name: `${ch.name} (${KIND[ch.type]})`, type: ch.type, lock: !canWrite(ch) });
     }
     list.sort((a, b) => a.name.localeCompare(b.name));
     cats.sort((a, b) => a.name.localeCompare(b.name));
