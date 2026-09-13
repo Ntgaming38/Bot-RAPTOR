@@ -738,6 +738,16 @@ function mount(app) {
       channels: channels?.size ?? 0,
       roles: roles?.size ?? 0,
       openTickets, boards,
+      botPerms: (() => {
+        try {
+          const p = guild.members.me?.permissions;
+          if (!p) return null;
+          const want = ['Administrator', 'ManageGuild', 'ManageRoles', 'ManageChannels', 'ViewChannel', 'SendMessages', 'ManageMessages', 'KickMembers', 'BanMembers', 'ModerateMembers', 'ViewAuditLog', 'Connect', 'Speak'];
+          const has = {};
+          for (const k of want) { try { has[k] = p.has(k); } catch { has[k] = false; } }
+          return has;
+        } catch { return null; }
+      })(),
     });
   });
 
