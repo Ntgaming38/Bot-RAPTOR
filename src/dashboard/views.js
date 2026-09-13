@@ -23,7 +23,8 @@ select[multiple]{min-height:96px}.chk{display:flex;gap:8px;align-items:center;ma
 #toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#222836;border:1px solid #334;padding:10px 18px;border-radius:10px;display:none}`;
 
 function shell(title, body, extra = '') {
-  return `<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)} — RAPTOR Dashboard</title><style>${CSS}</style></head><body><div class="wrap">${body}<div id="toast"></div></div><script>function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',3000)}</script>${extra}</body></html>`;
+  const build = (process.env.RENDER_GIT_COMMIT || 'local').slice(0, 7);
+  return `<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)} — RAPTOR Dashboard</title><style>${CSS}</style></head><body><div class="wrap">${body}<div id="toast"></div><div id="errbox" style="display:none;position:fixed;top:12px;left:50%;transform:translateX(-50%);background:#5a2323;border:1px solid #a33;padding:10px 18px;border-radius:10px;max-width:90%;z-index:99"></div><div class="mut" style="text-align:center;margin:20px 0;font-size:12px">build ${esc(build)}</div></div><script>function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',6000)}window.addEventListener('error',function(e){const b=document.getElementById('errbox');if(b){b.style.display='block';b.textContent='Lỗi trang: '+(e.message||e.error)}});</script>${extra}</body></html>`;
 }
 
 function login() {
