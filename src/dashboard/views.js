@@ -335,7 +335,7 @@ function selVals(sel){return Array.from($(sel).selectedOptions).map(o=>o.value)}
 function mkSearch(s){
   if(!s)return;
   if(s._filter){s._all=Array.from(s.options);applyFilter(s);return}
-  const inp=document.createElement('input');inp.placeholder='🔍 Gõ để tìm...';inp.style.marginBottom='4px';
+  const inp=document.createElement('input');inp.placeholder='🔍 Gõ tên để lọc list bên dưới...';inp.title='Gõ để lọc, rồi click chọn 1 dòng trong list';inp.style.marginBottom='4px';
   inp.addEventListener('input',()=>applyFilter(s));
   s.parentNode.insertBefore(inp,s);s._filter=inp;s._all=Array.from(s.options);applyFilter(s);
 }
