@@ -1,5 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
+const { writeJsonAtomic } = require('./jsonStore');
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { embed } = require('./embeds');
 
@@ -13,8 +14,61 @@ function load() {
   } catch { return {}; }
 }
 function save(db) {
-  fs.mkdirSync(path.dirname(FILE), { recursive: true });
-  fs.writeFileSync(FILE, JSON.stringify(db, null, 2));
+  writeJsonAtomic(FILE, db);
+}
+
+// ===== Mongo (model Giveaway đã có trong db.js nhưng trước đây không nơi nào dùng,
+// giveaway vẫn ghi JSON nên mất khi Render restart dù đã set MONGODB_URI) =====
+function useMongo() {
+  try {
+    return require('../db').isMongo();
+  } catch { return false; }
+}
+
+function toDoc(g) {
+  return {
+    gid: g.id, guildId: g.guildId, channelId: g.channelId, messageId: g.messageId,
+    prize: g.prize, winnersCount: g.winnersCount, endsAt: g.endsAt,
+    entries: g.entries || [], ended: !!g.ended, hostId: g.hostId, hostTag: g.hostTag,
+  };
+}
+function fromDoc(d) {
+  if (!d) return null;
+  return {
+    id: d.gid, guildId: d.guildId, channelId: d.channelId, messageId: d.messageId,
+    prize: d.prize, winnersCount: d.winnersCount, endsAt: d.endsAt,
+    entries: d.entries || [], ended: !!d.ended, hostId: d.hostId, hostTag: d.hostTag,
+  };
+}
+
+async function getOne(id) {
+  if (useMongo()) {
+    const { Giveaway } = require('../db');
+    return fromDoc(await Giveaway.findOne({ gid: id }).lean().catch(() => null));
+  }
+  return load()[id] || null;
+}
+
+async function saveOne(g) {
+  if (useMongo()) {
+    const { Giveaway } = require('../db');
+    await Giveaway.updateOne({ gid: g.id }, { $set: toDoc(g) }, { upsert: true });
+    return;
+  }
+  const db = load();
+  db[g.id] = g;
+  save(db);
+}
+
+async function loadStore() {
+  if (useMongo()) {
+    const { Giveaway } = require('../db');
+    const docs = await Giveaway.find({}).lean().catch(() => []);
+    const out = {};
+    for (const d of docs) out[d.gid] = fromDoc(d);
+    return out;
+  }
+  return load();
 }
 
 function parseDuration(str) {
@@ -56,9 +110,13 @@ async function start(client, { guild, channel, prize, winnersCount, durationMs, 
   };
   const msg = await channel.send({ embeds: [giveawayEmbed(g)], components: [joinRow(g)] });
   g.messageId = msg.id;
-  db[id] = g;
-  save(db);
-  schedule(client, id);
+  if (useMongo()) {
+    await saveOne(g);
+  } else {
+    db[id] = g;
+    save(db);
+  }
+  await schedule(client, id);
   return g;
 }
 
@@ -80,16 +138,14 @@ async function fetchMessage(client, g) {
 }
 
 async function end(client, id, { reroll = false } = {}) {
-  const db = load();
-  const g = db[id];
+  const g = await getOne(id);
   if (!g) throw new Error('Không tìm thấy giveaway.');
   const msg = await fetchMessage(client, g);
   const winners = pickWinners(g);
 
   if (!reroll) {
     g.ended = true;
-    db[id] = g;
-    save(db);
+    await saveOne(g);
     if (timers.has(id)) { clearTimeout(timers.get(id)); timers.delete(id); }
   }
 
@@ -109,6 +165,22 @@ async function end(client, id, { reroll = false } = {}) {
 }
 
 async function handleJoin(interaction, id) {
+  if (useMongo()) {
+    // $addToSet nguyên tử: 2 người bấm gần nhau không ghi đè mất lượt của nhau
+    const { Giveaway } = require('../db');
+    const doc = await Giveaway.findOne({ gid: id }).lean().catch(() => null);
+    const g0 = fromDoc(doc);
+    if (!g0 || g0.ended) {
+      return interaction.reply({ content: '❌ Giveaway này đã kết thúc hoặc không tồn tại.', ephemeral: true });
+    }
+    if (g0.entries.includes(interaction.user.id)) {
+      return interaction.reply({ content: '⚠️ Bạn đã tham gia rồi!', ephemeral: true });
+    }
+    await Giveaway.updateOne({ gid: id }, { $addToSet: { entries: interaction.user.id } });
+    const fresh = fromDoc(await Giveaway.findOne({ gid: id }).lean().catch(() => null)) || g0;
+    await interaction.update({ embeds: [giveawayEmbed(fresh)], components: [joinRow(fresh)] }).catch(() => {});
+    return;
+  }
   const db = load();
   const g = db[id];
   if (!g || g.ended) {
@@ -124,10 +196,9 @@ async function handleJoin(interaction, id) {
   await interaction.update({ embeds: [giveawayEmbed(g)], components: [joinRow(g)] }).catch(() => {});
 }
 
-function schedule(client, id) {
+async function schedule(client, id) {
   if (timers.has(id)) clearTimeout(timers.get(id));
-  const db = load();
-  const g = db[id];
+  const g = await getOne(id);
   if (!g || g.ended) return;
   const delay = Math.max(0, g.endsAt - Date.now());
   const t = setTimeout(() => {
@@ -137,16 +208,20 @@ function schedule(client, id) {
   timers.set(id, t);
 }
 
-function restoreAll(client) {
-  const db = load();
+async function restoreAll(client) {
+  const db = await loadStore();
   for (const id of Object.keys(db)) {
-    if (!db[id].ended) schedule(client, id);
+    if (!db[id].ended) await schedule(client, id);
   }
   const pending = Object.values(db).filter(g => !g.ended).length;
   if (pending) console.log(`🎉 Khôi phục ${pending} giveaway đang chạy`);
 }
 
-function findByMessageId(messageId) {
+async function findByMessageId(messageId) {
+  if (useMongo()) {
+    const { Giveaway } = require('../db');
+    return fromDoc(await Giveaway.findOne({ messageId }).lean().catch(() => null));
+  }
   const db = load();
   return Object.values(db).find(g => g.messageId === messageId) || null;
 }

@@ -64,6 +64,12 @@ const ticketSchema = new mongoose.Schema({
   createdAt: Number,
   claimedBy: String,
   claimedTag: String,
+  // Các field runtime của tickets.js (thiếu các field này mongoose strict sẽ âm thầm bỏ khi lưu)
+  number: Number,
+  priority: String,
+  openingMessageId: String,
+  closed: Boolean,
+  lastActivity: Number,
 });
 const Ticket = mongoose.models.Ticket || mongoose.model('Ticket', ticketSchema);
 

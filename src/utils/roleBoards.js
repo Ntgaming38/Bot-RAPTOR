@@ -1,5 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
+const { writeJsonAtomic } = require('./jsonStore');
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { embed } = require('./embeds');
 
@@ -14,8 +15,7 @@ function loadAll() {
   } catch { return {}; }
 }
 function saveAll(db) {
-  fs.mkdirSync(path.dirname(FILE), { recursive: true });
-  fs.writeFileSync(FILE, JSON.stringify(db, null, 2));
+  writeJsonAtomic(FILE, db);
 }
 function useMongo() {
   try {

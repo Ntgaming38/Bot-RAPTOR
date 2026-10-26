@@ -14,6 +14,7 @@ module.exports = {
   group: 'nhạc',
   data: new SlashCommandBuilder().setName('skip').setDescription('Bỏ qua bài đang phát'),
   async execute(interaction, client) {
+    if (!(await require('../../music/helpers').requireSameVoice(interaction))) return;
     const queue = getQueue(interaction, client);
     if (!queue || !(queue.currentTrack || queue.current)) {
       return interaction.reply({ embeds: [errorEmbed('Không có gì đang phát.')], ephemeral: true });

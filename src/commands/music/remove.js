@@ -9,6 +9,7 @@ module.exports = {
     .setDescription('Xóa 1 bài trong hàng chờ')
     .addIntegerOption(o => o.setName('position').setDescription('Số thứ tự trong /queue (bài đang phát là số 0)').setRequired(true).setMinValue(1)),
   async execute(interaction, client) {
+    if (!(await require('../../music/helpers').requireSameVoice(interaction))) return;
     const queue = getQueue(interaction, client);
     if (!queue || !currentOf(queue)) {
       return interaction.reply({ embeds: [errorEmbed('Không có gì đang phát.')], ephemeral: true });

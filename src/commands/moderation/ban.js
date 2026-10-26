@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { successEmbed, errorEmbed } = require('../../utils/embeds');
+const { checkHierarchy } = require('../../utils/moderation');
 
 module.exports = {
   group: 'moderation',
@@ -15,6 +16,8 @@ module.exports = {
     const member = await interaction.guild.members.fetch(user.id).catch(() => null);
     if (!member) return interaction.reply({ embeds: [errorEmbed('Không tìm thấy người này trong server.')], ephemeral: true });
     if (!member.bannable) return interaction.reply({ embeds: [errorEmbed('Bot không thể ban người này (role cao hơn bot?).')], ephemeral: true });
+    const hierErr = checkHierarchy(interaction.member, member, interaction.guild);
+    if (hierErr) return interaction.reply({ embeds: [errorEmbed(hierErr)], ephemeral: true });
     await member.ban({ reason });
     // Log tự ghi ở event guildBanAdd (kèm mod + lý do) — không log ở đây để khỏi trùng
     await interaction.reply({ embeds: [successEmbed(`Đã ban **${user.tag}**\nLý do: ${reason}`)] });

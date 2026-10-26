@@ -725,7 +725,7 @@ function mount(app) {
     const roles = await guild.roles.fetch().catch(() => guild.roles.cache);
     let openTickets = 0;
     try {
-      openTickets = Object.values(require('../utils/tickets').load())
+      openTickets = Object.values(await require('../utils/tickets').loadStore())
         .filter((t) => t.guildId === req.params.gid && !t.closed).length;
     } catch {}
     let boards = 0;
@@ -766,6 +766,10 @@ function mount(app) {
       }
       const member = await guild.members.fetch(String(b.userId)).catch(() => null);
       if (!member) return res.status(400).json({ error: 'not-member' });
+      // Thứ bậc: người thao tác trên web cũng không phạt được người có role >= mình / chủ server
+      const actor = await guild.members.fetch(req.session.user.id).catch(() => null);
+      const hierErr = require('../utils/moderation').checkHierarchy(actor, member, guild, { blockBotTarget: action === 'warn' || action === 'timeout' });
+      if (hierErr) return res.status(403).json({ error: 'hierarchy', message: hierErr });
       if (action === 'ban') {
         if (!member.bannable) return res.status(400).json({ error: 'perm' });
         await member.ban({ reason });

@@ -6,6 +6,7 @@ module.exports = {
   group: 'nhạc',
   data: new SlashCommandBuilder().setName('shuffle').setDescription('Xáo trộn hàng chờ'),
   async execute(interaction, client) {
+    if (!(await require('../../music/helpers').requireSameVoice(interaction))) return;
     let q = null;
     try { q = useQueue(); } catch {}
     q = q || client?.player?.nodes?.get(interaction.guildId);
