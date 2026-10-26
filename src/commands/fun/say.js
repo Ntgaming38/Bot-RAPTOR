@@ -10,6 +10,7 @@ module.exports = {
   async execute(interaction) {
     const text = interaction.options.getString('text');
     await interaction.reply({ content: '✅ Đã gửi!', ephemeral: true });
-    await interaction.channel.send(text);
+    // parse: [] — bot không ping @everyone/role qua /say (người gọi có thể không có quyền Mention Everyone)
+    await interaction.channel.send({ content: text, allowedMentions: { parse: [] } });
   },
 };

@@ -8,6 +8,7 @@ module.exports = {
     .setName('clearqueue')
     .setDescription('Xóa hết bài chờ, giữ bài đang phát'),
   async execute(interaction, client) {
+    if (!(await require('../../music/helpers').requireSameVoice(interaction))) return;
     const queue = getQueue(interaction, client);
     if (!queue || !currentOf(queue)) {
       return interaction.reply({ embeds: [errorEmbed('Không có gì đang phát.')], ephemeral: true });

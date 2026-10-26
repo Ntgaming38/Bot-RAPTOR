@@ -6,6 +6,7 @@ module.exports = {
   group: 'nhạc',
   data: new SlashCommandBuilder().setName('stop').setDescription('Dừng nhạc và out voice'),
   async execute(interaction, client) {
+    if (!(await require('../../music/helpers').requireSameVoice(interaction))) return;
     let queue = null;
     try { queue = useQueue(); } catch {}
     queue = queue || client?.player?.nodes?.get(interaction.guildId);

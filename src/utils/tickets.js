@@ -1,5 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
+const { writeJsonAtomic } = require('./jsonStore');
 const {
   ActionRowBuilder, ButtonBuilder, ButtonStyle,
   ChannelType, PermissionFlagsBits,
@@ -57,8 +58,50 @@ function load() {
   } catch { return {}; }
 }
 function save(db) {
-  fs.mkdirSync(path.dirname(FILE), { recursive: true });
-  fs.writeFileSync(FILE, JSON.stringify(db, null, 2));
+  writeJsonAtomic(FILE, db);
+}
+
+// ===== Mongo (model Ticket đã có trong db.js nhưng trước đây tickets chỉ ghi JSON,
+// nên ticket đang mở vẫn mất khi Render restart dù đã set MONGODB_URI) =====
+// Mọi call site của load/save đều nằm trong hàm async, nên có bản async song song:
+// loadStore/saveStore tự chọn Mongo hoặc JSON. load/save đồng bộ giữ lại cho
+// isTicketChannel (chỉ đúng ở chế độ JSON) và tương thích cũ.
+function useMongo() {
+  try {
+    return require('../db').isMongo();
+  } catch { return false; }
+}
+
+async function loadStore() {
+  if (useMongo()) {
+    const { Ticket } = require('../db');
+    const docs = await Ticket.find({}).lean().catch(() => []);
+    const out = {};
+    for (const d of docs) {
+      const { _id, __v, ...rest } = d;
+      out[d.channelId] = rest;
+    }
+    return out;
+  }
+  return load();
+}
+
+async function saveStore(db) {
+  if (useMongo()) {
+    const { Ticket } = require('../db');
+    const ids = Object.keys(db);
+    const ops = ids.map((channelId) => ({
+      updateOne: {
+        filter: { channelId },
+        update: { $set: { ...db[channelId], channelId } },
+        upsert: true,
+      },
+    }));
+    if (ops.length) await Ticket.bulkWrite(ops);
+    await Ticket.deleteMany({ channelId: { $nin: ids } });
+    return;
+  }
+  save(db);
 }
 
 // ===== PANEL 1 NÚT "Mở Ticket" (kiểu tickets.bot trong hình) =====
@@ -139,11 +182,14 @@ function ticketRow(st) {
   return row;
 }
 
-function ratingRow(ownerId) {
+function ratingRow(ownerId, guildId, ticketChannelId) {
+  // customId mang guild + kênh ticket để handleRate ghi đúng phạm vi (trước đây chỉ có
+  // ownerId nên rating bị lưu theo user toàn cục, đè lẫn nhau giữa các server/ticket)
+  const suffix = guildId && ticketChannelId ? `${guildId}:${ticketChannelId}` : ownerId;
   const row = new ActionRowBuilder();
   for (let i = 1; i <= 5; i++) {
     row.addComponents(
-      new ButtonBuilder().setCustomId(`ticket-rate:${i}:${ownerId}`).setLabel(`${i}⭐`).setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(`ticket-rate:${i}:${suffix}`).setLabel(`${i}⭐`).setStyle(ButtonStyle.Secondary),
     );
   }
   return row;
@@ -159,7 +205,7 @@ async function handleSelect(interaction) {
   const types = getTypes(await getT(interaction.guildId));
   const type = types.find(t => t.id === typeId) || types[0];
 
-  const db = load();
+  const db = await loadStore();
   const existing = Object.entries(db).find(([, t]) => t.guildId === interaction.guildId && t.ownerId === interaction.user.id);
   if (existing) {
     return interaction.reply({ content: `⚠️ Bạn đã có ticket mở: <#${existing[0]}>`, ephemeral: true });
@@ -222,7 +268,7 @@ async function createTicket(interaction, type, reason) {
     permissionOverwrites: overwrites,
   }));
 
-  const db = load();
+  const db = await loadStore();
   db[channel.id] = {
     ownerId: interaction.user.id, ownerTag: interaction.user.tag,
     guildId: interaction.guildId, type: type.id, typeLabel: type.label,
@@ -230,7 +276,7 @@ async function createTicket(interaction, type, reason) {
     number, priority: st.defaultPriority || 'medium', closed: false,
     openingMessageId: null,
   };
-  save(db);
+  await saveStore(db);
 
   const opening = await channel.send({
     content: `${interaction.user} ${st.ticketStaffRoleId ? `<@&${st.ticketStaffRoleId}>` : ''}`,
@@ -238,7 +284,7 @@ async function createTicket(interaction, type, reason) {
     components: [ticketRow(st), pro.priorityRow(db[channel.id].priority)],
   });
   db[channel.id].openingMessageId = opening?.id || null;
-  save(db);
+  await saveStore(db);
 
   try {
     require('./logger').logMod(interaction.guild, `🎫 Mở ticket ${channel} (${type.label}) bởi ${interaction.user.tag}`, reason);
@@ -249,7 +295,7 @@ async function createTicket(interaction, type, reason) {
 
 // Tương thích nút cũ
 async function handleCreate(interaction) {
-  const db = load();
+  const db = await loadStore();
   const existing = Object.entries(db).find(([, t]) => t.guildId === interaction.guildId && t.ownerId === interaction.user.id);
   if (existing) {
     return interaction.reply({ content: `⚠️ Bạn đã có ticket mở: <#${existing[0]}>`, ephemeral: true });
@@ -285,9 +331,13 @@ async function generateTranscript(channel) {
 }
 
 async function handleTranscript(interaction) {
-  const db = load();
-  if (!db[interaction.channelId]) {
+  const db = await loadStore();
+  const t = db[interaction.channelId];
+  if (!t) {
     return interaction.reply({ embeds: [errorEmbed('Kênh này không phải ticket.')], ephemeral: true });
+  }
+  if (!(await canManageTicket(interaction, t))) {
+    return interaction.reply({ embeds: [errorEmbed('Chỉ chủ ticket hoặc staff mới xuất transcript.')], ephemeral: true });
   }
   await interaction.deferReply({ ephemeral: true });
   const { file, count } = await generateTranscript(interaction.channel);
@@ -305,7 +355,7 @@ async function canManageTicket(interaction, t) {
 }
 
 async function handleClose(interaction) {
-  const db = load();
+  const db = await loadStore();
   const t = db[interaction.channelId];
   if (!t) {
     return interaction.reply({ embeds: [errorEmbed('Kênh này không phải ticket.')], ephemeral: true });
@@ -324,7 +374,7 @@ async function handleClose(interaction) {
 }
 
 async function handleClaim(interaction) {
-  const db = load();
+  const db = await loadStore();
   const t = db[interaction.channelId];
   if (!t) {
     return interaction.reply({ embeds: [errorEmbed('Kênh này không phải ticket.')], ephemeral: true });
@@ -339,37 +389,47 @@ async function handleClaim(interaction) {
   t.claimedBy = interaction.user.id;
   t.claimedTag = interaction.user.tag;
   db[interaction.channelId] = t;
-  save(db);
+  await saveStore(db);
   await interaction.channel.setName(`${interaction.channel.name}-xuly`.slice(0, 90)).catch(() => {});
   await interaction.reply(`✋ ${interaction.user} đã nhận ticket này, <@${t.ownerId}> chờ chút nhé!`);
 }
 
 // ===== ĐÁNH GIÁ SAO =====
 async function handleRate(interaction) {
-  const [, stars] = (interaction.customId || '').split(':');
-  const n = parseInt(stars, 10);
+  // customId mới: ticket-rate:<sao>:<guildId>:<channelId> — bản cũ (chỉ ownerId) vẫn nhận,
+  // rơi vào khóa legacy:<userId> như trước.
+  const parts = (interaction.customId || '').split(':');
+  const n = parseInt(parts[1], 10);
   if (!n || n < 1 || n > 5) return;
+  const guildId = parts.length >= 4 ? parts[2] : null;
+  const channelId = parts.length >= 4 ? parts[3] : null;
   let db = {};
   try {
     if (fs.existsSync(RATINGS_FILE)) db = JSON.parse(fs.readFileSync(RATINGS_FILE, 'utf8'));
   } catch { db = {}; }
-  db[interaction.user.id] = { stars: n, at: Date.now() };
-  fs.mkdirSync(path.dirname(RATINGS_FILE), { recursive: true });
-  fs.writeFileSync(RATINGS_FILE, JSON.stringify(db, null, 2));
+  const key = guildId && channelId ? `${guildId}:${channelId}` : `legacy:${interaction.user.id}`;
+  db[key] = { guildId, channelId, userId: interaction.user.id, stars: n, at: Date.now() };
+  writeJsonAtomic(RATINGS_FILE, db);
   await interaction.update({ content: `Cảm ơn bạn đã đánh giá **${n}⭐**!`, components: [] }).catch(() => {});
+  // Chỉ log vào ĐÚNG server của ticket (trước đây vòng qua mọi guild bot tham gia,
+  // gửi log đánh giá sang cả kênh log của server khác)
   try {
-    const guilds = [...interaction.client.guilds.cache.values()];
-    for (const g of guilds) {
-      require('./logger').logMod(g, `⭐ ${interaction.user.tag} đánh giá ticket ${n}/5`).catch(() => {});
+    if (guildId) {
+      const g = interaction.client.guilds.cache.get(guildId);
+      if (g) require('./logger').logMod(g, `⭐ ${interaction.user.tag} đánh giá ticket ${n}/5`).catch(() => {});
     }
   } catch {}
 }
 
 // ===== QUẢN LÝ: add / remove / rename =====
 async function handleAdd(interaction, user) {
-  const db = load();
-  if (!db[interaction.channelId]) {
+  const db = await loadStore();
+  const t = db[interaction.channelId];
+  if (!t) {
     return interaction.reply({ embeds: [errorEmbed('Kênh này không phải ticket.')], ephemeral: true });
+  }
+  if (!(await canManageTicket(interaction, t))) {
+    return interaction.reply({ embeds: [errorEmbed('Chỉ chủ ticket hoặc staff mới thêm người vào ticket.')], ephemeral: true });
   }
   await interaction.channel.permissionOverwrites.edit(user.id, {
     ViewChannel: true, SendMessages: true, ReadMessageHistory: true,
@@ -378,18 +438,25 @@ async function handleAdd(interaction, user) {
 }
 
 async function handleRemove(interaction, user) {
-  const db = load();
+  const db = await loadStore();
   const t = db[interaction.channelId];
   if (!t) return interaction.reply({ embeds: [errorEmbed('Kênh này không phải ticket.')], ephemeral: true });
   if (user.id === t.ownerId) return interaction.reply({ embeds: [errorEmbed('Không thể xóa chủ ticket.')], ephemeral: true });
+  if (!(await canManageTicket(interaction, t))) {
+    return interaction.reply({ embeds: [errorEmbed('Chỉ chủ ticket hoặc staff mới xóa người khỏi ticket.')], ephemeral: true });
+  }
   await interaction.channel.permissionOverwrites.delete(user.id).catch(() => {});
   await interaction.reply(`✅ Đã xóa ${user} khỏi ticket.`);
 }
 
 async function handleRename(interaction, name) {
-  const db = load();
-  if (!db[interaction.channelId]) {
+  const db = await loadStore();
+  const t = db[interaction.channelId];
+  if (!t) {
     return interaction.reply({ embeds: [errorEmbed('Kênh này không phải ticket.')], ephemeral: true });
+  }
+  if (!(await canManageTicket(interaction, t))) {
+    return interaction.reply({ embeds: [errorEmbed('Chỉ chủ ticket hoặc staff mới đổi tên ticket.')], ephemeral: true });
   }
   const clean = name.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 90);
   await interaction.channel.setName(clean);
@@ -397,6 +464,8 @@ async function handleRename(interaction, name) {
 }
 
 function isTicketChannel(channelId) {
+  // LƯU Ý: bản đồng bộ này chỉ đọc JSON — ở chế độ Mongo nó không thấy ticket.
+  // Hiện không còn call site nào dùng; cần kiểm tra ticket thì dùng loadStore().
   return !!load()[channelId];
 }
 
@@ -440,5 +509,5 @@ module.exports = {
   handleSelect, handleModal, handleCreate, handleClose, handleClaim,
   handleTranscript, handleRate, handleAdd, handleRemove, handleRename,
   isTicketChannel, generateTranscript, lockPanelChannel, createPanelChannel,
-  load, save, getT, canManageTicket,
+  load, save, loadStore, saveStore, getT, canManageTicket,
 };

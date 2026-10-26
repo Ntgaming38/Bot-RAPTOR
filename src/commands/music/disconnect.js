@@ -9,6 +9,7 @@ module.exports = {
     .setName('disconnect')
     .setDescription('Bot rời kênh voice'),
   async execute(interaction, client) {
+    if (!(await require('../../music/helpers').requireSameVoice(interaction))) return;
     const queue = getQueue(interaction, client);
     const inVoice = interaction.guild.members.me?.voice?.channel;
     if (!queue && !inVoice) {

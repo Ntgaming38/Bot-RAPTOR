@@ -155,7 +155,7 @@ async function main() {
 
   // Khôi phục giveaway đang dở sau khi restart (24/24)
   try {
-    require('./utils/giveaways').restoreAll(client);
+    await require('./utils/giveaways').restoreAll(client);
   } catch (e) {
     console.warn('[giveaway restore]', e.message);
   }

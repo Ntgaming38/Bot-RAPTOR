@@ -1,5 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
+const { writeJsonAtomic } = require('./jsonStore');
 
 const FILE = path.join(__dirname, '..', '..', 'data', 'temp-roles.json');
 
@@ -11,8 +12,7 @@ function loadAll() {
   } catch { return []; }
 }
 function saveAll(list) {
-  fs.mkdirSync(path.dirname(FILE), { recursive: true });
-  fs.writeFileSync(FILE, JSON.stringify(list.slice(-500), null, 2));
+  writeJsonAtomic(FILE, list.slice(-500));
 }
 function useMongo() {
   try {

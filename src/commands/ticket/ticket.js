@@ -108,7 +108,7 @@ module.exports = {
     }
     if (sub === 'priority') {
       const level = interaction.options.getString('muc', true);
-      const db = tickets.load();
+      const db = await tickets.loadStore();
       const t = db[interaction.channelId];
       if (!t) return interaction.reply({ embeds: [errorEmbed('Kênh này không phải ticket.')], ephemeral: true });
       if (!(await tickets.canManageTicket(interaction, t))) {
@@ -116,7 +116,7 @@ module.exports = {
       }
       t.priority = level;
       db[interaction.channelId] = t;
-      tickets.save(db);
+      await tickets.saveStore(db);
       try {
         if (t.openingMessageId) {
           const msg = await interaction.channel.messages.fetch(t.openingMessageId).catch(() => null);

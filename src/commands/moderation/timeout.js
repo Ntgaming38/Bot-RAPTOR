@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { successEmbed, errorEmbed } = require('../../utils/embeds');
+const { checkHierarchy } = require('../../utils/moderation');
 
 module.exports = {
   group: 'moderation',
@@ -17,6 +18,8 @@ module.exports = {
     const member = await interaction.guild.members.fetch(user.id).catch(() => null);
     if (!member) return interaction.reply({ embeds: [errorEmbed('Không tìm thấy người này.')], ephemeral: true });
     if (!member.moderatable) return interaction.reply({ embeds: [errorEmbed('Bot không thể timeout người này.')], ephemeral: true });
+    const hierErr = checkHierarchy(interaction.member, member, interaction.guild, { blockBotTarget: true });
+    if (hierErr) return interaction.reply({ embeds: [errorEmbed(hierErr)], ephemeral: true });
     await member.timeout(minutes * 60 * 1000, reason);
     // Log tự ghi ở event guildMemberUpdate (kèm mod + thời gian) — không log ở đây để khỏi trùng
     await interaction.reply({ embeds: [successEmbed(`Đã timeout **${user.tag}** trong ${minutes} phút\nLý do: ${reason}`)] });

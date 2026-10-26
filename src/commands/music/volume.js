@@ -10,6 +10,7 @@ module.exports = {
     .setDescription('Chỉnh âm lượng')
     .addIntegerOption(o => o.setName('volume').setDescription(`0-${config.maxVolume}`).setRequired(true).setMinValue(0).setMaxValue(config.maxVolume)),
   async execute(interaction, client) {
+    if (!(await require('../../music/helpers').requireSameVoice(interaction))) return;
     let q = null;
     try { q = useQueue(); } catch {}
     q = q || client?.player?.nodes?.get(interaction.guildId);

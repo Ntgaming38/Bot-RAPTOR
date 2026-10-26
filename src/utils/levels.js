@@ -1,5 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
+const { writeJsonAtomic } = require('./jsonStore');
 const config = require('../config');
 
 const FILE = path.join(__dirname, '..', '..', 'data', 'levels.json');
@@ -11,8 +12,7 @@ function load() {
   } catch { return {}; }
 }
 function save(db) {
-  fs.mkdirSync(path.dirname(FILE), { recursive: true });
-  fs.writeFileSync(FILE, JSON.stringify(db));
+  writeJsonAtomic(FILE, db);
 }
 
 function useMongo() {

@@ -22,6 +22,23 @@ async function requireVoice(interaction) {
   return channel;
 }
 
+// Dùng cho các lệnh ĐIỀU KHIỂN nhạc (skip/stop/volume/pause/...): người gọi phải đang
+// ở CÙNG kênh voice với bot. Trước đây chỉ /play kiểm tra voice, ai trong server cũng
+// stop/skip/vặn volume được dù không nghe. Trả về true nếu hợp lệ (đã tự reply lỗi khi không).
+async function requireSameVoice(interaction) {
+  const myChannel = interaction.member?.voice?.channel;
+  if (!myChannel) {
+    await interaction.reply({ embeds: [errorEmbed('Bạn phải vào kênh voice trước đã!')], ephemeral: true }).catch(() => {});
+    return false;
+  }
+  const botChannel = interaction.guild?.members?.me?.voice?.channel;
+  if (botChannel && botChannel.id !== myChannel.id) {
+    await interaction.reply({ embeds: [errorEmbed('Bạn phải ở cùng kênh voice với bot mới điều khiển nhạc được.')], ephemeral: true }).catch(() => {});
+    return false;
+  }
+  return true;
+}
+
 function getQueue(interaction, client) {
   try {
     const q = useQueue(interaction.guildId);
@@ -78,4 +95,4 @@ function playerOf(client) {
   }
 }
 
-module.exports = { requireVoice, getQueue, currentOf, upcomingOf, trackTitle, friendlyPlayError, playerOf };
+module.exports = { requireVoice, requireSameVoice, getQueue, currentOf, upcomingOf, trackTitle, friendlyPlayError, playerOf };

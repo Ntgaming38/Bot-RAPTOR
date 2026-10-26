@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { successEmbed, errorEmbed, embed } = require('../../utils/embeds');
 const { addWarn, listWarns, clearWarns } = require('../../utils/warns');
+const { checkHierarchy } = require('../../utils/moderation');
 
 module.exports = {
   group: 'moderation',
@@ -27,6 +28,14 @@ module.exports = {
     const guildId = interaction.guildId;
 
     if (sub === 'add') {
+      // Thứ bậc: không warn người có role >= mình, không warn chủ server/bot
+      const targetMember = await interaction.guild.members.fetch(user.id).catch(() => null);
+      if (targetMember) {
+        const hierErr = checkHierarchy(interaction.member, targetMember, interaction.guild, { blockBotTarget: true });
+        if (hierErr) return interaction.reply({ embeds: [errorEmbed(hierErr)], ephemeral: true });
+      } else if (user.bot) {
+        return interaction.reply({ embeds: [errorEmbed('Không áp dụng với bot.')], ephemeral: true });
+      }
       const reason = interaction.options.getString('reason') || 'Không có lý do';
       const count = await addWarn(guildId, user.id, interaction.user.id, interaction.user.tag, reason);
       try {

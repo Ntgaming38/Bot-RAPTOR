@@ -42,7 +42,7 @@ module.exports = {
     }
     if (sub === 'end' || sub === 'reroll') {
       const mid = interaction.options.getString('message_id', true);
-      const found = gw.findByMessageId(mid);
+      const found = await gw.findByMessageId(mid);
       if (!found) return interaction.reply({ embeds: [errorEmbed('Không tìm thấy giveaway với message ID này.')], ephemeral: true });
       await interaction.deferReply();
       const { winners } = await gw.end(client, found.id, { reroll: sub === 'reroll' });
