@@ -17,16 +17,54 @@ button{background:var(--pri);color:#fff;border:0;border-radius:10px;padding:10px
 button:hover{background:var(--pri-d)}
 button.ghost{background:#fff;color:var(--ink);border:1px solid var(--border)}button.ghost:hover{background:#f0f0f2}button:disabled{opacity:.5}
 a{color:var(--pri)}.tabs{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}.tab{padding:8px 14px;border-radius:999px;background:#eef0f3;cursor:pointer;font-weight:500}.tab.on{background:var(--pri);color:#fff}
-.layout{display:flex;gap:18px;align-items:flex-start}
-.side{position:sticky;top:16px;width:232px;flex:0 0 232px;background:var(--side);border-radius:14px;padding:14px 10px;display:flex;flex-direction:column;gap:3px;max-height:calc(100vh - 32px);overflow-y:auto}
-.side .brand{display:flex;align-items:center;gap:9px;padding:2px 8px 12px;border-bottom:1px solid var(--side2);margin-bottom:8px}
-.side .blogo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--pri),#f0662a);display:flex;align-items:center;justify-content:center;font-size:17px}
-.side .brand b{font-family:'Outfit';color:#fff;font-size:16px;display:block;line-height:1.1}
+.layout{display:flex;gap:18px;align-items:flex-start;position:relative}
+.ambient{position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(720px 480px at 6% -6%,rgba(214,61,32,.10),transparent 62%),radial-gradient(680px 520px at 16% 108%,rgba(233,195,60,.12),transparent 60%),radial-gradient(760px 560px at 100% 100%,rgba(74,222,128,.07),transparent 60%)}
+.side{position:sticky;top:16px;z-index:6;width:240px;flex:0 0 240px;background:linear-gradient(165deg,rgba(38,40,48,.90),rgba(13,14,19,.88) 55%,rgba(20,22,28,.90));-webkit-backdrop-filter:blur(22px) saturate(160%);backdrop-filter:blur(22px) saturate(160%);border:1px solid rgba(20,20,30,.35);border-radius:24px;box-shadow:0 24px 60px rgba(10,10,25,.35),inset 0 1px 0 rgba(255,255,255,.14);padding:14px 12px;display:flex;flex-direction:column;gap:3px;max-height:calc(100vh - 32px);overflow-y:auto;overflow-x:hidden;transition:width .18s ease,flex-basis .18s ease}
+.side .brand{display:flex;align-items:center;gap:10px;padding:2px 6px 12px;border-bottom:1px solid rgba(255,255,255,.10);margin-bottom:8px}
+.side .blogo-img{width:38px;height:38px;border-radius:11px;object-fit:cover;flex:0 0 38px;box-shadow:0 4px 14px rgba(214,61,32,.45)}
+.side .brand b{font-family:'Outfit';color:#fff;font-size:17px;letter-spacing:.06em;display:block;line-height:1.1}
 .side .brand small{color:#8a94a8;font-size:11px}
-.nav{padding:9px 11px;border-radius:8px;cursor:pointer;color:var(--sideink);font-size:14px;font-weight:500;border-left:3px solid transparent}
-.nav:hover{background:var(--side2);color:#fff}.nav.on{background:var(--side2);color:var(--gold);border-left-color:var(--gold)}
+.achip{display:flex;align-items:center;gap:10px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.05);border-radius:16px;padding:7px 10px;margin:0 2px 10px;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+.achip img,.achip .afb{width:40px;height:40px;border-radius:50%;flex:0 0 40px;object-fit:cover;border:2px solid rgba(233,195,60,.75);background:#fff}
+.achip .afb{display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--pri);background:#ffe9e4}
+.achip .anm{color:#fff;font-weight:600;font-size:14px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.achip .asub{color:#9aa3b2;font-size:11px}
+.nav{display:flex;align-items:center;gap:10px;height:38px;padding:0 12px;border-radius:12px;cursor:pointer;color:#c6cdd9;font-size:14px;font-weight:500;border:1px solid transparent;white-space:nowrap}
+.nav .nic{font-size:15px;width:20px;text-align:center;flex:0 0 20px}
+.nav:hover{background:rgba(255,255,255,.05);color:#fff}
+.nav.on{background:linear-gradient(120deg,rgba(255,255,255,.16),rgba(255,255,255,.07));border-color:rgba(255,255,255,.18);box-shadow:0 8px 22px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.20);color:#fff;font-weight:600}
+.nav.on .nic{filter:drop-shadow(0 0 6px rgba(233,195,60,.9))}
+.side .logout{margin-top:auto;display:flex;align-items:center;gap:10px;height:42px;padding:0 12px;border-radius:12px;border:1px solid rgba(239,68,68,.35);background:rgba(239,68,68,.12);color:#fca5a5;font-weight:600;font-size:14px;text-decoration:none;white-space:nowrap}
+.side .logout:hover{background:rgba(239,68,68,.22);color:#fecaca}
+.side .backlink{display:flex;align-items:center;gap:10px;height:38px;padding:0 12px;border-radius:12px;color:#c6cdd9;font-size:14px;text-decoration:none;white-space:nowrap}
+.side .backlink:hover{background:rgba(255,255,255,.05);color:#fff}
+#rail-btn{position:absolute;top:24px;right:-13px;width:26px;height:26px;border-radius:50%;background:linear-gradient(165deg,rgba(38,40,48,.92),rgba(13,14,19,.9));border:1px solid rgba(255,255,255,.25);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;margin:0;padding:0;z-index:5;box-shadow:0 6px 16px rgba(0,0,0,.4)}
+#rail-btn:hover{background:#1a2438}
+.layout.rail .side{width:78px;flex-basis:78px;padding:14px 10px}
+.layout.rail .side .brand{justify-content:center;padding-bottom:12px}
+.layout.rail .side .brand .btxt,.layout.rail .achip .atxt,.layout.rail .nav .nlb,.layout.rail .side .logout .nlb,.layout.rail .side .backlink .nlb{display:none}
+.layout.rail .achip{justify-content:center;border-color:transparent;background:transparent;box-shadow:none;padding:4px 0}
+.layout.rail .nav,.layout.rail .side .logout,.layout.rail .side .backlink{justify-content:center;padding:0}
+.mbar{display:none}
+.scrim{display:none}
+@media(max-width:900px){.mbar{display:flex;align-items:center;gap:10px;position:sticky;top:10px;z-index:40;background:linear-gradient(165deg,rgba(38,40,48,.92),rgba(13,14,19,.9));border:1px solid rgba(20,20,30,.35);border-radius:18px;padding:9px 12px;margin-bottom:14px;box-shadow:0 16px 40px rgba(10,10,25,.35)}
+.mbar img{width:32px;height:32px;border-radius:9px;object-fit:cover}
+.mbar b{font-family:'Outfit';color:#fff;letter-spacing:.06em;font-size:15px}
+.mbar button{margin:0 0 0 auto;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);width:38px;height:38px;border-radius:11px;font-size:16px;padding:0}
+.layout{display:block}
+.side{position:fixed;top:12px;bottom:12px;left:12px;height:auto;width:264px;flex:none;z-index:60;transform:translateX(-115%);transition:transform .22s ease;max-height:none}
+.side.open{transform:none}
+#rail-btn{display:none}
+.scrim{display:none;position:fixed;inset:0;background:rgba(10,10,20,.45);z-index:55}
+.scrim.on{display:block}
+.layout.rail .side{width:264px;flex:none;padding:14px 12px}
+.layout.rail .side .brand{justify-content:flex-start}
+.layout.rail .side .brand .btxt,.layout.rail .achip .atxt,.layout.rail .nav .nlb,.layout.rail .side .logout .nlb,.layout.rail .side .backlink .nlb{display:block}
+.layout.rail .achip{justify-content:flex-start;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.05);box-shadow:inset 0 1px 0 rgba(255,255,255,.12);padding:7px 10px}
+.layout.rail .nav,.layout.rail .side .logout,.layout.rail .side .backlink{justify-content:flex-start;padding:0 12px}
+.layout.rail .side .logout{padding:0 12px}}
 main{flex:1;min-width:0}main .card:first-child{margin-top:0}
-@media(max-width:900px){.layout{flex-direction:column}.side{position:sticky;top:0;width:100%;flex:none;flex-direction:row;overflow-x:auto;overflow-y:hidden;max-height:none;border-radius:0 0 14px 14px;z-index:9}.side .brand{display:none}.nav{white-space:nowrap;border-left:0;border-bottom:3px solid transparent}.nav.on{border-bottom-color:var(--gold)}}
+
 .statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:12px 0}.stat{background:#f4f5f7;border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center}.stat b{font-family:'Outfit';font-size:24px;display:block}.stat span{font-size:12px;color:var(--mut)}
 select[multiple]{min-height:96px}.chk{display:flex;gap:8px;align-items:center;margin:8px 0;font-size:14px}.chk input{width:auto}
 .pv{background:#1e1f22;color:#e6e8ec;border:1px solid #262b36;border-radius:10px;padding:12px;margin-top:4px}.pv small{color:#9aa3b2}.pv-embed{background:#2b2d31;border-radius:8px;padding:12px 14px;border-left:4px solid #ff4d9d;margin-top:8px;overflow:hidden}.pv-title{font-weight:700;margin-bottom:6px}.pv-desc{font-size:14px;white-space:pre-wrap;word-break:break-word}.pv-thumb{float:right;width:72px;height:72px;border-radius:8px;margin-left:10px;background:#17181c}.pv-img{width:100%;border-radius:8px;margin-top:10px}
@@ -70,7 +108,7 @@ a{text-decoration:none;color:inherit}
 header{position:sticky;top:0;z-index:20;background:rgba(12,19,34,.92);backdrop-filter:blur(8px);color:#dbe1ec}
 .navbar{display:flex;align-items:center;gap:26px;height:64px}
 .logo{display:flex;align-items:center;gap:10px;font-family:'Outfit';font-weight:800;font-size:20px;color:#fff}
-.logo .ic{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--primary),#f0662a);display:flex;align-items:center;justify-content:center;font-size:19px}
+.logo .ic{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--primary),#f0662a);display:flex;align-items:center;justify-content:center;font-size:19px}.logo .ic-img{width:36px;height:36px;border-radius:10px;object-fit:cover}
 .navbar nav{display:flex;gap:22px;font-weight:500;font-size:14.5px}
 .navbar nav a:hover{color:var(--gold)}
 .navbar .sp{flex:1}
@@ -151,7 +189,7 @@ footer{border-top:1px solid var(--border);background:#fff;color:var(--mut);font-
 
 <header>
   <div class="wrap navbar">
-    <a class="logo" href="#"><span class="ic">🦖</span> RAPTOR</a>
+    <a class="logo" href="#"><img class="ic-img" src="/dashboard/logo.jpg" alt="RAPTOR"> RAPTOR</a>
     <nav>
       <a href="#features">Tính năng</a>
       <a href="#">Lệnh</a>
@@ -271,7 +309,7 @@ footer{border-top:1px solid var(--border);background:#fff;color:var(--mut);font-
 
 <footer>
   <div class="wrap foot-in">
-    <a class="logo" href="#" style="color:var(--ink)"><span class="ic">🦖</span> RAPTOR</a>
+    <a class="logo" href="#" style="color:var(--ink)"><img class="ic-img" src="/dashboard/logo.jpg" alt="RAPTOR"> RAPTOR</a>
     <span>Bot Discord đa năng — chào mừng, ticket, cấp độ, nhạc & kiểm duyệt.</span>
     <span style="flex:1"></span>
     <a href="#features">Tính năng</a><a href="#">Lệnh</a><a href="#">Hỗ trợ</a>
@@ -300,8 +338,10 @@ fetch('/dashboard/api/me').then(r=>r.json()).then(d=>{
 </script>`);
 }
 
-function guild(gid) {
-  return shell('Tùy chỉnh server', `<a href="/dashboard" class="mut">← Tất cả server</a><h1>⚙️ Tùy chỉnh</h1><div class="layout"><aside class="side"><div class="brand"><span class="blogo">🦖</span><span><b>RAPTOR</b><small>Dashboard</small></span></div><div class="nav on" id="t-ov">📊 Overview</div><div class="nav" id="t-mod">🛡️ Moderation</div><div class="nav" id="t-am">🤖 AutoMod</div><div class="nav" id="t-o">📝 Logs</div><div class="nav" id="t-w">👋 Welcome</div><div class="nav" id="t-g">👋 Goodbye</div><div class="nav" id="t-x">🏆 Leveling</div><div class="nav" id="t-v">🎉 Giveaway</div><div class="nav" id="t-t">🎫 Ticket</div><div class="nav" id="t-r">🎭 Roles</div><div class="nav" id="t-u">🎵 Music</div><div class="nav" id="t-s">📈 Server Stats</div><div class="nav" id="t-cmd">⌨️ Commands</div><div class="nav" id="t-set">⚙️ Settings</div></aside><main id="main">
+function guild(gid, user) {
+  const uname = user?.username || 'RAPTOR';
+  const uav = user?.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=64` : '';
+  return shell('Tùy chỉnh server', `<div class="ambient"></div><div class="mbar"><img src="/dashboard/logo.jpg" alt="RAPTOR"><b>RAPTOR</b><span style="color:#8a94a8;font-size:12px">Dashboard</span><button id="mbar-btn" aria-label="Mở menu">☰</button></div><div class="scrim" id="scrim"></div><div class="layout" id="layout"><aside class="side" id="side"><button id="rail-btn" title="Thu gọn / mở rộng">❮</button><div class="brand"><img class="blogo-img" src="/dashboard/logo.jpg" alt="RAPTOR"><span class="btxt"><b>RAPTOR</b><small>Dashboard</small></span></div><div class="achip">${uav ? `<img src="${esc(uav)}" alt="">` : `<span class="afb">${esc(uname.slice(0, 1).toUpperCase())}</span>`}<span class="atxt"><span class="anm">${esc(uname)}</span><br><span class="asub">Đã đăng nhập Discord</span></span></div><div class="nav on" id="t-ov" title="Overview"><span class="nic">📊</span><span class="nlb">Overview</span></div><div class="nav" id="t-mod" title="Moderation"><span class="nic">🛡️</span><span class="nlb">Moderation</span></div><div class="nav" id="t-am" title="AutoMod"><span class="nic">🤖</span><span class="nlb">AutoMod</span></div><div class="nav" id="t-o" title="Logs"><span class="nic">📝</span><span class="nlb">Logs</span></div><div class="nav" id="t-w" title="Welcome"><span class="nic">👋</span><span class="nlb">Welcome</span></div><div class="nav" id="t-g" title="Goodbye"><span class="nic">👋</span><span class="nlb">Goodbye</span></div><div class="nav" id="t-x" title="Leveling"><span class="nic">🏆</span><span class="nlb">Leveling</span></div><div class="nav" id="t-v" title="Giveaway"><span class="nic">🎉</span><span class="nlb">Giveaway</span></div><div class="nav" id="t-t" title="Ticket"><span class="nic">🎫</span><span class="nlb">Ticket</span></div><div class="nav" id="t-r" title="Roles"><span class="nic">🎭</span><span class="nlb">Roles</span></div><div class="nav" id="t-u" title="Music"><span class="nic">🎵</span><span class="nlb">Music</span></div><div class="nav" id="t-s" title="Server Stats"><span class="nic">📈</span><span class="nlb">Server Stats</span></div><div class="nav" id="t-cmd" title="Commands"><span class="nic">⌨️</span><span class="nlb">Commands</span></div><div class="nav" id="t-set" title="Settings"><span class="nic">⚙️</span><span class="nlb">Settings</span></div><a class="backlink" href="/dashboard"><span class="nic">🏠</span><span class="nlb">Tất cả server</span></a><a class="logout" href="/dashboard/logout"><span class="nic">🚪</span><span class="nlb">Đăng xuất</span></a></aside><main id="main">
 <div id="p-w" class="card"><h2>Welcome (giống BotGhost)</h2>
 <div class="grid"><div><label>Kênh gửi welcome</label><select id="w-channel"></select></div><div><label>Tiêu đề (VD: By RAPTOR)</label><input id="w-title" placeholder="Để trống = theo tên server"></div>
 <div><label>Kênh chọn role ✅</label><select id="w-role"></select></div><div><label>Kênh luật</label><select id="w-rules"></select></div>
@@ -457,6 +497,7 @@ function guild(gid) {
 <button id="set-save">Lưu</button></div></main></div>`, `<script>
 const G='${esc(gid)}';
 const $=id=>document.getElementById(id);
+try{const L=document.getElementById('layout'),SD=document.getElementById('side'),RB=document.getElementById('rail-btn'),SC=document.getElementById('scrim');if(localStorage.getItem('raptor-rail')==='1'){L.classList.add('rail');RB.textContent='❯'}RB.onclick=()=>{const on=L.classList.toggle('rail');RB.textContent=on?'❯':'❮';localStorage.setItem('raptor-rail',on?'1':'0')};const closeSide=()=>{SD.classList.remove('open');SC.classList.remove('on')};document.getElementById('mbar-btn').onclick=()=>{SD.classList.add('open');SC.classList.add('on')};SC.onclick=closeSide;document.querySelectorAll('.side .nav').forEach(n=>n.addEventListener('click',()=>{if(window.innerWidth<=900)closeSide()}));}catch(e){}
 document.getElementById('t-ov').onclick=e=>{t('t-ov',['p-ov'])};
 document.getElementById('t-mod').onclick=e=>{t('t-mod',['p-mod','p-m'])};
 document.getElementById('t-am').onclick=e=>{t('t-am',['p-am'])};
