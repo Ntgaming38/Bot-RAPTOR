@@ -871,7 +871,11 @@ function mount(app) {
 
   // --- Pages ---
   app.get('/dashboard', (req, res) => {
-    if (!req.session?.user) return res.send(views.login());
+    if (!req.session?.user) {
+      const cfg = require('../config');
+      const invite = cfg.clientId ? `https://discord.com/oauth2/authorize?client_id=${cfg.clientId}&permissions=8&scope=bot%20applications.commands` : null;
+      return res.send(views.landing(invite));
+    }
     res.send(views.home(req.session.user));
   });
   app.get('/dashboard/:gid', (req, res) => {
