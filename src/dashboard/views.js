@@ -2,33 +2,288 @@ function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-const CSS = `*{box-sizing:border-box}body{margin:0;background:#0f1115;color:#e6e8ec;font-family:system-ui,sans-serif}
-.wrap{max-width:900px;margin:0 auto;padding:24px}
-.card{background:#171a21;border:1px solid #262b36;border-radius:12px;padding:20px;margin:16px 0}
-h1{font-size:22px;margin:8px 0 4px}h2{font-size:17px;margin:18px 0 8px;color:#b9c0cc}
-.mut{color:#9aa3b2}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-label{display:block;font-size:13px;color:#9aa3b2;margin:12px 0 4px}
-input,select,textarea{width:100%;background:#0f1115;color:#e6e8ec;border:1px solid #2c3340;border-radius:8px;padding:9px 10px;font-size:14px}
-textarea{min-height:120px;resize:vertical;font-family:inherit}
+const CSS = `:root{--bg:#f6f6f7;--card:#fff;--border:#e3e4e8;--ink:#1c1f26;--mut:#6d7280;--pri:#d63d20;--pri-d:#b93218;--gold:#e9c33c;--side:#0c1322;--side2:#1a2438;--sideink:#c6cdd9}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif}
+.wrap{max-width:1240px;margin:0 auto;padding:22px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin:16px 0;box-shadow:0 1px 2px rgba(16,20,30,.04)}
+h1{font-family:'Outfit','Inter',sans-serif;font-size:24px;margin:8px 0 4px}h2{font-family:'Outfit','Inter',sans-serif;font-size:18px;margin:18px 0 8px;color:var(--ink)}h3{font-family:'Outfit','Inter',sans-serif;font-size:15px;margin:16px 0 6px}
+.mut{color:var(--mut)}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+label{display:block;font-size:13px;font-weight:600;color:#4a4f5a;margin:12px 0 4px}
+input,select,textarea{width:100%;background:#fff;color:var(--ink);border:1px solid var(--border);border-radius:10px;padding:9px 11px;font-size:14px;font-family:inherit}
+input:focus,select:focus,textarea:focus{outline:2px solid #f3b8a9;border-color:var(--pri)}
+textarea{min-height:120px;resize:vertical}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}@media(max-width:700px){.grid{grid-template-columns:1fr}}
-button{background:#5865f2;color:#fff;border:0;border-radius:8px;padding:10px 16px;font-size:14px;cursor:pointer;margin:14px 8px 0 0}
-button.ghost{background:#262b36}button:disabled{opacity:.5}
-a{color:#8b9cf9}.tabs{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}.tab{padding:8px 14px;border-radius:8px;background:#262b36;cursor:pointer}.tab.on{background:#5865f2;color:#fff}
-.layout{display:flex;gap:16px;align-items:flex-start}.side{position:sticky;top:12px;min-width:180px;background:#171a21;border:1px solid #262b36;border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:4px}.nav{padding:9px 12px;border-radius:8px;cursor:pointer;color:#b9c0cc;font-size:14px}.nav.on{background:#5865f2;color:#fff}main{flex:1;min-width:0}main .card:first-child{margin-top:0}@media(max-width:800px){.layout{flex-direction:column}.side{position:static;flex-direction:row;flex-wrap:wrap;min-width:0;width:100%}}
-.statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:12px 0}.stat{background:#0f1115;border:1px solid #262b36;border-radius:10px;padding:12px;text-align:center}.stat b{font-size:22px;display:block}.stat span{font-size:12px;color:#9aa3b2}
+button{background:var(--pri);color:#fff;border:0;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer;margin:14px 8px 0 0}
+button:hover{background:var(--pri-d)}
+button.ghost{background:#fff;color:var(--ink);border:1px solid var(--border)}button.ghost:hover{background:#f0f0f2}button:disabled{opacity:.5}
+a{color:var(--pri)}.tabs{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}.tab{padding:8px 14px;border-radius:999px;background:#eef0f3;cursor:pointer;font-weight:500}.tab.on{background:var(--pri);color:#fff}
+.layout{display:flex;gap:18px;align-items:flex-start}
+.side{position:sticky;top:16px;width:232px;flex:0 0 232px;background:var(--side);border-radius:14px;padding:14px 10px;display:flex;flex-direction:column;gap:3px;max-height:calc(100vh - 32px);overflow-y:auto}
+.side .brand{display:flex;align-items:center;gap:9px;padding:2px 8px 12px;border-bottom:1px solid var(--side2);margin-bottom:8px}
+.side .blogo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--pri),#f0662a);display:flex;align-items:center;justify-content:center;font-size:17px}
+.side .brand b{font-family:'Outfit';color:#fff;font-size:16px;display:block;line-height:1.1}
+.side .brand small{color:#8a94a8;font-size:11px}
+.nav{padding:9px 11px;border-radius:8px;cursor:pointer;color:var(--sideink);font-size:14px;font-weight:500;border-left:3px solid transparent}
+.nav:hover{background:var(--side2);color:#fff}.nav.on{background:var(--side2);color:var(--gold);border-left-color:var(--gold)}
+main{flex:1;min-width:0}main .card:first-child{margin-top:0}
+@media(max-width:900px){.layout{flex-direction:column}.side{position:sticky;top:0;width:100%;flex:none;flex-direction:row;overflow-x:auto;overflow-y:hidden;max-height:none;border-radius:0 0 14px 14px;z-index:9}.side .brand{display:none}.nav{white-space:nowrap;border-left:0;border-bottom:3px solid transparent}.nav.on{border-bottom-color:var(--gold)}}
+.statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:12px 0}.stat{background:#f4f5f7;border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center}.stat b{font-family:'Outfit';font-size:24px;display:block}.stat span{font-size:12px;color:var(--mut)}
 select[multiple]{min-height:96px}.chk{display:flex;gap:8px;align-items:center;margin:8px 0;font-size:14px}.chk input{width:auto}
-.pv{background:#111214;border:1px solid #262b36;border-radius:10px;padding:12px;margin-top:4px}.pv small{color:#9aa3b2}.pv-embed{background:#2b2d31;border-radius:8px;padding:12px 14px;border-left:4px solid #ff4d9d;margin-top:8px;overflow:hidden}.pv-title{font-weight:700;margin-bottom:6px}.pv-desc{font-size:14px;white-space:pre-wrap;word-break:break-word}.pv-thumb{float:right;width:72px;height:72px;border-radius:8px;margin-left:10px;background:#1e1f22}.pv-img{width:100%;border-radius:8px;margin-top:10px}
-.srv{display:flex;gap:12px;align-items:center;padding:12px;border:1px solid #262b36;border-radius:10px;margin:10px 0;text-decoration:none;color:inherit}
-.srv img{width:44px;height:44px;border-radius:50%;background:#262b36}.badge{font-size:11px;padding:2px 8px;border-radius:20px;background:#2c3340}.badge.ok{background:#1d4d2b;color:#7de2a8}.badge.no{background:#5a2b2b;color:#f2a3a3}
-#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#222836;border:1px solid #334;padding:10px 18px;border-radius:10px;display:none}`;
+.pv{background:#1e1f22;color:#e6e8ec;border:1px solid #262b36;border-radius:10px;padding:12px;margin-top:4px}.pv small{color:#9aa3b2}.pv-embed{background:#2b2d31;border-radius:8px;padding:12px 14px;border-left:4px solid #ff4d9d;margin-top:8px;overflow:hidden}.pv-title{font-weight:700;margin-bottom:6px}.pv-desc{font-size:14px;white-space:pre-wrap;word-break:break-word}.pv-thumb{float:right;width:72px;height:72px;border-radius:8px;margin-left:10px;background:#17181c}.pv-img{width:100%;border-radius:8px;margin-top:10px}
+.srv{display:flex;gap:12px;align-items:center;padding:12px;background:#fff;border:1px solid var(--border);border-radius:12px;margin:10px 0;text-decoration:none;color:inherit}.srv:hover{border-color:var(--gold)}
+.srv img{width:44px;height:44px;border-radius:50%;background:#eef0f3}.badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:#eef0f3;color:#4a4f5a}.badge.ok{background:#e2f5ea;color:#12703d}.badge.no{background:#fdeaea;color:#a52a14}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--side);color:#fff;border:1px solid var(--side2);padding:10px 18px;border-radius:10px;display:none;z-index:99;box-shadow:0 8px 24px rgba(0,0,0,.25)}`;
 
 function shell(title, body, extra = '') {
   const build = (process.env.RENDER_GIT_COMMIT || 'local').slice(0, 7);
-  return `<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)} — RAPTOR Dashboard</title><style>${CSS}</style></head><body><div class="wrap">${body}<div id="toast"></div><div id="errbox" style="display:none;position:fixed;top:12px;left:50%;transform:translateX(-50%);background:#5a2323;border:1px solid #a33;padding:10px 18px;border-radius:10px;max-width:90%;z-index:99"></div><div class="mut" style="text-align:center;margin:20px 0;font-size:12px">build ${esc(build)}</div></div><script>function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',6000)}window.addEventListener('error',function(e){const b=document.getElementById('errbox');if(b){b.style.display='block';b.textContent='Lỗi trang: '+(e.message||e.error)}});</script>${extra}</body></html>`;
+  return `<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)} — RAPTOR Dashboard</title><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet"><style>${CSS}</style></head><body><div class="wrap">${body}<div id="toast"></div><div id="errbox" style="display:none;position:fixed;top:12px;left:50%;transform:translateX(-50%);background:#fdeaea;border:1px solid #e5a49c;color:#7a1f10;padding:10px 18px;border-radius:10px;max-width:90%;z-index:99"></div><div class="mut" style="text-align:center;margin:20px 0;font-size:12px">build ${esc(build)}</div></div><script>function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',6000)}window.addEventListener('error',function(e){const b=document.getElementById('errbox');if(b){b.style.display='block';b.textContent='Lỗi trang: '+(e.message||e.error)}});</script>${extra}</body></html>`;
+}
+
+function landing(inviteUrl) {
+  const invite = inviteUrl || '/dashboard/login';
+  return `<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAPTOR — Bot Discord đa năng</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f6f7; --card:#fff; --border:#e3e4e8; --ink:#1c1f26; --mut:#6d7280;
+  --primary:#d63d20; --primary-dark:#b93218; --gold:#e9c33c; --gold-soft:#fdf3d3;
+  --navy:#0c1322; --navy2:#131f38; --ok:#1d9d57;
+  --radius:12px;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Inter',system-ui,sans-serif;color:var(--ink);background:var(--bg)}
+h1,h2,h3{font-family:'Outfit','Inter',sans-serif;margin:0}
+a{text-decoration:none;color:inherit}
+.btn{display:inline-block;background:var(--primary);color:#fff;font-weight:600;padding:13px 26px;border-radius:var(--radius);border:0;cursor:pointer;font-size:15px}
+.btn:hover{background:var(--primary-dark)}
+.btn.light{background:#fff;color:var(--ink);border:1px solid var(--border)}
+.btn.gold{background:var(--gold);color:#231d05}
+.btn.blurple{background:#5865f2;color:#fff}
+.wrap{max-width:1140px;margin:0 auto;padding:0 20px}
+/* ===== Navbar ===== */
+header{position:sticky;top:0;z-index:20;background:rgba(12,19,34,.92);backdrop-filter:blur(8px);color:#dbe1ec}
+.navbar{display:flex;align-items:center;gap:26px;height:64px}
+.logo{display:flex;align-items:center;gap:10px;font-family:'Outfit';font-weight:800;font-size:20px;color:#fff}
+.logo .ic{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--primary),#f0662a);display:flex;align-items:center;justify-content:center;font-size:19px}
+.navbar nav{display:flex;gap:22px;font-weight:500;font-size:14.5px}
+.navbar nav a:hover{color:var(--gold)}
+.navbar .sp{flex:1}
+.lang{font-size:13px;color:#9aa5ba;border:1px solid #2a3852;padding:6px 10px;border-radius:8px}
+.btn-login{background:var(--gold);color:#231d05;font-weight:700;padding:9px 18px;border-radius:9px;font-size:14px}
+/* ===== Hero ===== */
+.hero{background:radial-gradient(1000px 480px at 75% -10%,#27406e 0%,transparent 60%),linear-gradient(180deg,var(--navy) 0%,var(--navy2) 100%);color:#e8ecf4;overflow:hidden}
+.hero-in{display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center;padding:72px 0 84px}
+.badge{display:inline-block;background:rgba(233,195,60,.14);border:1px solid rgba(233,195,60,.45);color:var(--gold);font-size:13px;font-weight:600;padding:5px 12px;border-radius:999px;margin-bottom:18px}
+.hero h1{font-size:46px;line-height:1.12;font-weight:800;color:#fff}
+.hero h1 .hl{color:var(--gold)}
+.hero p{font-size:17px;color:#aeb8ca;line-height:1.6;margin:18px 0 28px;max-width:520px}
+.hero .cta{display:flex;gap:12px;flex-wrap:wrap}
+.hero .note{margin-top:16px;font-size:13px;color:#7e8aa0}
+/* Thẻ mock Discord */
+.stage{position:relative;min-height:340px}
+.mock{position:absolute;background:#1e2432;border:1px solid #2e3850;border-radius:14px;box-shadow:0 24px 50px rgba(0,0,0,.45);padding:16px;color:#d5dae4}
+.mock .mhead{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.mav{width:36px;height:36px;border-radius:50%;flex:0 0 36px}
+.mname{font-weight:700;color:#fff;font-size:14px}
+.mname .bot{font-size:10px;background:#5865f2;color:#fff;border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:2px}
+.mtime{color:#7e8aa0;font-size:11px;font-weight:400;margin-left:6px}
+.embed{border-left:4px solid var(--gold);background:#171c29;border-radius:8px;padding:12px 14px}
+.embed b{color:#fff;display:block;margin-bottom:4px}
+.embed span{font-size:13.5px;color:#aeb8ca;line-height:1.5}
+.mock.welcome{width:88%;left:0;top:6px;transform:rotate(-1.5deg)}
+.mock.level{width:64%;right:0;bottom:0;transform:rotate(1.2deg)}
+.lvlbar{height:10px;background:#0f141f;border-radius:99px;overflow:hidden;margin-top:8px}
+.lvlbar i{display:block;height:100%;width:72%;background:linear-gradient(90deg,var(--gold),#f0662a)}
+/* ===== Stats ===== */
+.stats{background:#fff;border-bottom:1px solid var(--border)}
+.stats-in{display:grid;grid-template-columns:repeat(4,1fr);text-align:center;padding:26px 0}
+.stats b{font-family:'Outfit';font-size:28px;display:block}
+.stats span{color:var(--mut);font-size:13.5px}
+/* ===== Features ===== */
+.features{padding:74px 0 10px}
+.features .head{text-align:center;max-width:640px;margin:0 auto 46px}
+.features .head h2{font-size:32px;margin-bottom:10px}
+.features .head p{color:var(--mut);font-size:16px;line-height:1.6}
+.feat{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;margin-bottom:74px}
+.feat.rev .vis{order:2}
+.feat .tag{color:var(--primary);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.8px}
+.feat h3{font-size:27px;margin:8px 0 10px}
+.feat p{color:var(--mut);font-size:15.5px;line-height:1.65;margin:0}
+.vis{background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 30px rgba(16,20,30,.07);padding:20px}
+.vis .embed{border-left-color:var(--primary);background:#f4f5f7}
+.vis .embed span{color:#5b6270}
+.vis .mname{color:var(--ink)}
+.vis .mtime{color:#9aa0ad}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.chip{background:#eef0f3;border-radius:999px;padding:6px 12px;font-size:13px;font-weight:500}
+.chip.g{background:var(--gold-soft);color:#7a5d08}
+.tgl{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #eef0f2;font-size:14.5px}
+.tgl:last-child{border:0}
+.sw{margin-left:auto;width:40px;height:22px;border-radius:99px;background:var(--primary);position:relative;flex:0 0 40px}
+.sw:before{content:"";position:absolute;width:16px;height:16px;background:#fff;border-radius:50%;top:3px;right:3px}
+.sw.off{background:#d6d8de}.sw.off:before{right:auto;left:3px}
+/* ===== CTA cuối ===== */
+.cta-band{background:linear-gradient(135deg,var(--navy),var(--navy2));border-radius:20px;color:#fff;text-align:center;padding:52px 24px;margin:6px 0 70px}
+.cta-band h2{font-size:30px;margin-bottom:10px}
+.cta-band p{color:#aeb8ca;margin:0 0 24px}
+footer{border-top:1px solid var(--border);background:#fff;color:var(--mut);font-size:13.5px}
+.foot-in{display:flex;gap:20px;align-items:center;padding:22px 0;flex-wrap:wrap}
+@media(max-width:900px){
+  .navbar nav{display:none}
+  .hero-in{grid-template-columns:1fr;padding:48px 0 60px}
+  .hero h1{font-size:32px}
+  .lang{display:none}
+  .stage{min-height:0;margin-top:6px;display:flex;flex-direction:column;gap:12px}
+  .mock{position:relative;width:100%;left:auto;right:auto;top:auto;bottom:auto;transform:none}
+  .stats-in{grid-template-columns:1fr 1fr;gap:18px}
+  .feat{grid-template-columns:1fr;gap:20px;margin-bottom:52px}
+  .feat.rev .vis{order:0}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap navbar">
+    <a class="logo" href="#"><span class="ic">🦖</span> RAPTOR</a>
+    <nav>
+      <a href="#features">Tính năng</a>
+      <a href="#">Lệnh</a>
+      <a href="#">Máy chủ hỗ trợ</a>
+      <a href="#">Cộng đồng</a>
+    </nav>
+    <span class="sp"></span>
+    <span class="lang">🌐 Tiếng Việt</span>
+    <a class="btn-login" href="/dashboard/login">Đăng nhập</a>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap hero-in">
+    <div>
+      <span class="badge">✨ Mới: Hệ thống Ticket chuyên nghiệp</span>
+      <h1>Xây dựng một server Discord <span class="hl">chuyên nghiệp!</span></h1>
+      <p>Một bot toàn năng cho mọi việc — chào mừng thành viên, ticket hỗ trợ, cấp độ, giveaway, nhạc và kiểm duyệt — tất cả tùy chỉnh ngay trên dashboard, không cần gõ lệnh cấu hình.</p>
+      <div class="cta">
+        <a class="btn blurple" href="__INVITE__" target="_blank" rel="noopener">➕ Thêm vào Discord</a>
+        <a class="btn gold" href="/dashboard">Mở Dashboard</a>
+      </div>
+      <p class="note">Miễn phí · Không cần thẻ · Cài đặt trong 1 phút</p>
+    </div>
+    <div class="stage">
+      <div class="mock welcome">
+        <div class="mhead"><div class="mav" style="background:linear-gradient(135deg,#d63d20,#f0662a)"></div><div class="mname">RAPTOR<span class="bot">BOT</span><span class="mtime">hôm nay lúc 09:41</span></div></div>
+        <div class="embed"><b>👋 Chào mừng @Nguyễn Trọng Thủy!</b><span>Chào mừng bạn đến với <b style="display:inline;color:#fff">RAPTOR Community</b> — bạn là thành viên thứ 1.248. Đọc #nội-quy và chọn role ở #chọn-role nhé!</span></div>
+      </div>
+      <div class="mock level">
+        <div class="mhead"><div class="mav" style="background:linear-gradient(135deg,#5865f2,#8b5cf6)"></div><div class="mname">khoa.pro<span class="mtime">Cấp 24</span></div></div>
+        <div style="font-size:13px;color:#aeb8ca">XP: 18.420 / 25.500</div>
+        <div class="lvlbar"><i></i></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stats">
+  <div class="wrap stats-in">
+    <div><b>24/7</b><span>Online không nghỉ</span></div>
+    <div><b>40+</b><span>Lệnh sẵn dùng</span></div>
+    <div><b>14</b><span>Module tùy chỉnh</span></div>
+    <div><b>100%</b><span>Miễn phí</span></div>
+  </div>
+</section>
+
+<section class="features wrap" id="features">
+  <div class="head">
+    <h2>Tính năng nổi bật</h2>
+    <p>Mọi thứ một server cần để vận hành chuyên nghiệp — bật tắt và chỉnh sửa từng module ngay trên dashboard.</p>
+  </div>
+
+  <div class="feat">
+    <div class="vis">
+      <div class="mhead"><div class="mav" style="background:linear-gradient(135deg,#d63d20,#f0662a)"></div><div class="mname">RAPTOR<span class="mtime">tin nhắn chào</span></div></div>
+      <div class="embed"><b>👋 Xin chào thành viên mới!</b><span>Thẻ chào có tên + avatar của từng người, nền tùy đổi — giống cách ProBot làm, nhưng là của server bạn.</span></div>
+      <div class="chips"><span class="chip g">Ảnh nền tùy chỉnh</span><span class="chip">Biến {user} {count}</span><span class="chip">Kênh riêng</span></div>
+    </div>
+    <div>
+      <div class="tag">Tin nhắn chào mừng</div>
+      <h3>Đón thành viên mới một cách cá tính</h3>
+      <p>Thiết lập chào mừng với hình ảnh, tên và ảnh hồ sơ của người dùng, kèm tin nhắn tạm biệt khi ai đó rời server. Tất cả chỉnh trong vài cú bấm trên dashboard.</p>
+    </div>
+  </div>
+
+  <div class="feat rev">
+    <div class="vis">
+      <div class="tgl">🎫 Tạo ticket bằng nút bấm <span class="sw"></span></div>
+      <div class="tgl">⭐ Đánh giá sao sau hỗ trợ <span class="sw"></span></div>
+      <div class="tgl">🕐 Tự đóng ticket không hoạt động <span class="sw off"></span></div>
+      <div class="tgl">📄 Transcript lưu trữ <span class="sw"></span></div>
+    </div>
+    <div>
+      <div class="tag">Hệ thống Ticket</div>
+      <h3>Hỗ trợ thành viên như một đội ngũ thật</h3>
+      <p>Panel ticket bằng nút bấm, phân loại theo nhu cầu, nhân viên nhận hỗ trợ, chấm sao sau khi đóng và bản ghi đầy đủ — thay cho cảnh @tag nhau lộn xộn trong kênh chat.</p>
+    </div>
+  </div>
+
+  <div class="feat">
+    <div class="vis">
+      <div class="mhead"><div class="mav" style="background:linear-gradient(135deg,#5865f2,#8b5cf6)"></div><div class="mname">BXH tuần này<span class="mtime">Leveling</span></div></div>
+      <div class="tgl">🥇 @khoa.pro — Cấp 24 <b style="margin-left:auto">18.420 XP</b></div>
+      <div class="tgl">🥈 @linh.xinh — Cấp 21 <b style="margin-left:auto">15.975 XP</b></div>
+      <div class="tgl">🥉 @tuan.dev — Cấp 19 <b style="margin-left:auto">13.260 XP</b></div>
+    </div>
+    <div>
+      <div class="tag">Hệ thống cấp độ</div>
+      <h3>Thưởng nóng cho thành viên năng động nhất</h3>
+      <p>XP theo mức hoạt động, thông báo lên cấp, bảng xếp hạng riêng cho từng server. Thành viên có lý do quay lại mỗi ngày, server không bao giờ "chết".</p>
+    </div>
+  </div>
+
+  <div class="feat rev">
+    <div class="vis">
+      <div class="chips" style="margin-top:0">
+        <span class="chip">🛡️ Ban / Kick / Timeout</span><span class="chip">🤖 AutoMod lọc từ cấm</span>
+        <span class="chip">🎵 Nhạc YouTube / SoundCloud</span><span class="chip g">🎉 Giveaway</span>
+        <span class="chip">🎭 Bảng chọn role</span><span class="chip">📝 Log kiểu ProBot</span>
+      </div>
+    </div>
+    <div>
+      <div class="tag">Và nhiều hơn nữa</div>
+      <h3>Kiểm duyệt, nhạc, giveaway — đủ cả</h3>
+      <p>Kiểm duyệt có kiểm tra thứ bậc role, AutoMod chống spam, phát nhạc trong kênh thoại, giveaway tự chọn người thắng và nhật ký hoạt động chi tiết cho admin.</p>
+    </div>
+  </div>
+
+  <div class="cta-band">
+    <h2>Sẵn sàng nâng cấp server của bạn?</h2>
+    <p>Thêm RAPTOR vào Discord và mở dashboard để tùy chỉnh ngay.</p>
+    <a class="btn blurple" href="__INVITE__" target="_blank" rel="noopener">➕ Thêm vào Discord</a>
+    <a class="btn gold" href="/dashboard" style="margin-left:10px">Mở Dashboard</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-in">
+    <a class="logo" href="#" style="color:var(--ink)"><span class="ic">🦖</span> RAPTOR</a>
+    <span>Bot Discord đa năng — chào mừng, ticket, cấp độ, nhạc & kiểm duyệt.</span>
+    <span style="flex:1"></span>
+    <a href="#features">Tính năng</a><a href="#">Lệnh</a><a href="#">Hỗ trợ</a>
+  </div>
+</footer>
+</body>
+</html>
+`.replaceAll('__INVITE__', invite);
 }
 
 function login() {
-  return shell('Đăng nhập', `<div class="card"><h1>🤖 RAPTOR Dashboard</h1><p class="mut">Đăng nhập bằng Discord để tùy chỉnh bot trên các server bạn quản lý.</p><a href="/dashboard/login"><button>Đăng nhập bằng Discord</button></a></div>`);
+  return landing(null);
 }
 
 function home(user) {
@@ -46,7 +301,7 @@ fetch('/dashboard/api/me').then(r=>r.json()).then(d=>{
 }
 
 function guild(gid) {
-  return shell('Tùy chỉnh server', `<a href="/dashboard" class="mut">← Tất cả server</a><h1>⚙️ Tùy chỉnh</h1><div class="layout"><aside class="side"><div class="nav on" id="t-ov">📊 Overview</div><div class="nav" id="t-mod">🛡️ Moderation</div><div class="nav" id="t-am">🤖 AutoMod</div><div class="nav" id="t-o">📝 Logs</div><div class="nav" id="t-w">👋 Welcome</div><div class="nav" id="t-g">👋 Goodbye</div><div class="nav" id="t-x">🏆 Leveling</div><div class="nav" id="t-v">🎉 Giveaway</div><div class="nav" id="t-t">🎫 Ticket</div><div class="nav" id="t-r">🎭 Roles</div><div class="nav" id="t-u">🎵 Music</div><div class="nav" id="t-s">📈 Server Stats</div><div class="nav" id="t-cmd">⌨️ Commands</div><div class="nav" id="t-set">⚙️ Settings</div></aside><main id="main">
+  return shell('Tùy chỉnh server', `<a href="/dashboard" class="mut">← Tất cả server</a><h1>⚙️ Tùy chỉnh</h1><div class="layout"><aside class="side"><div class="brand"><span class="blogo">🦖</span><span><b>RAPTOR</b><small>Dashboard</small></span></div><div class="nav on" id="t-ov">📊 Overview</div><div class="nav" id="t-mod">🛡️ Moderation</div><div class="nav" id="t-am">🤖 AutoMod</div><div class="nav" id="t-o">📝 Logs</div><div class="nav" id="t-w">👋 Welcome</div><div class="nav" id="t-g">👋 Goodbye</div><div class="nav" id="t-x">🏆 Leveling</div><div class="nav" id="t-v">🎉 Giveaway</div><div class="nav" id="t-t">🎫 Ticket</div><div class="nav" id="t-r">🎭 Roles</div><div class="nav" id="t-u">🎵 Music</div><div class="nav" id="t-s">📈 Server Stats</div><div class="nav" id="t-cmd">⌨️ Commands</div><div class="nav" id="t-set">⚙️ Settings</div></aside><main id="main">
 <div id="p-w" class="card"><h2>Welcome (giống BotGhost)</h2>
 <div class="grid"><div><label>Kênh gửi welcome</label><select id="w-channel"></select></div><div><label>Tiêu đề (VD: By RAPTOR)</label><input id="w-title" placeholder="Để trống = theo tên server"></div>
 <div><label>Kênh chọn role ✅</label><select id="w-role"></select></div><div><label>Kênh luật</label><select id="w-rules"></select></div>
@@ -254,7 +509,7 @@ async function api(m,url,body){const r=await fetch(url,{method:m,headers:{'Conte
     try{
       const bl=await api('GET','/dashboard/api/guilds/'+G+'/tickets/blacklist');
       $('k-blcount').textContent=bl.length;
-      $('k-bl').innerHTML=bl.length?bl.map(e=>'<div class=row style="padding:6px 0;border-bottom:1px solid #222"><span style="flex:1">&lt;@'+e.userId+'&gt; <span class=mut>'+String(e.reason||'').replace(/</g,'&lt;')+'</span></span><button class=ghost data-u="'+e.userId+'" style="margin:0;padding:4px 10px">Gỡ</button></div>').join(''):'<p class=mut>Trống.</p>';
+      $('k-bl').innerHTML=bl.length?bl.map(e=>'<div class=row style="padding:6px 0;border-bottom:1px solid #e8eaee"><span style="flex:1">&lt;@'+e.userId+'&gt; <span class=mut>'+String(e.reason||'').replace(/</g,'&lt;')+'</span></span><button class=ghost data-u="'+e.userId+'" style="margin:0;padding:4px 10px">Gỡ</button></div>').join(''):'<p class=mut>Trống.</p>';
       document.querySelectorAll('#k-bl button').forEach(b=>b.onclick=async()=>{await api('DELETE','/dashboard/api/guilds/'+G+'/tickets/blacklist/'+b.dataset.u);toast('Đã gỡ chặn');document.getElementById('t-t').click()});
     }catch(e){}
     KTYPES=(st.ticketTypes||[]).map(t=>({label:t.label||'',description:t.description||'',emoji:t.emoji||''}));renderTypes();
@@ -287,7 +542,7 @@ async function api(m,url,body){const r=await fetch(url,{method:m,headers:{'Conte
     $('am-count').value=am.spamCount||5;$('am-secs').value=am.spamSecs||5;$('am-mins').value=am.timeoutMin||10;
     $('am-caps-pct').value=am.capsPercent||70;$('am-caps-len').value=am.capsMinLen||10;$('am-mention-count').value=am.mentionCount||5;
     for(const r of ['words','invites','links','spam','caps','mentions'])$('am-act-'+r).value=(am.actions&&am.actions[r])||am.action||'delete';
-    $('am-url-wl').value=(am.urlWhitelist||[]).join('\n');$('am-url-bl').value=(am.urlBlacklist||[]).join('\n');
+    $('am-url-wl').value=(am.urlWhitelist||[]).join('\\n');$('am-url-bl').value=(am.urlBlacklist||[]).join('\\n');
     optMulti('am-imgch',txt,am.onlyImageChannels||[]);optMulti('am-ytch',txt,am.onlyYoutubeChannels||[]);
     optMulti('am-xch',txt,am.exemptChannels||[]);optMulti('am-xr',META.roles,am.exemptRoles||[]);
     const ar=st.antiraid||{};$('ar-on').checked=!!ar.enabled;$('ar-age').value=String(ar.ageDays??7);$('ar-count').value=ar.count||5;$('ar-secs').value=ar.windowSecs||30;$('ar-act').value=ar.action||'timeout';$('ar-mins').value=ar.timeoutMin||60;
@@ -309,11 +564,11 @@ $('s-multi').onclick=async()=>{try{const d=await api('POST','/dashboard/api/guil
 let RITEMS=[];let RBOARDS=[];let RBID='';let CHS=[{id:'',name:'— không dùng —'}];
 let KTYPES=[];
 let LROLES=[];
-function renderLroles(){$('x-roles').innerHTML=LROLES.length?LROLES.slice().sort((a,b)=>a.level-b.level).map((r)=>{const i=LROLES.indexOf(r);return '<div class=row style="padding:6px 0;border-bottom:1px solid #222"><span style="flex:1">Level <b>'+r.level+'</b> → <b>'+rName(r.roleId).replace(/</g,'&lt;')+'</b></span><button class=ghost data-n="'+i+'" style="margin:0;padding:4px 10px">Xóa</button></div>'}).join(''):'<p class=mut>Chưa có mốc nào.</p>';document.querySelectorAll('#x-roles button').forEach(b=>b.onclick=()=>{LROLES.splice(parseInt(b.dataset.n,10),1);renderLroles()})}
+function renderLroles(){$('x-roles').innerHTML=LROLES.length?LROLES.slice().sort((a,b)=>a.level-b.level).map((r)=>{const i=LROLES.indexOf(r);return '<div class=row style="padding:6px 0;border-bottom:1px solid #e8eaee"><span style="flex:1">Level <b>'+r.level+'</b> → <b>'+rName(r.roleId).replace(/</g,'&lt;')+'</b></span><button class=ghost data-n="'+i+'" style="margin:0;padding:4px 10px">Xóa</button></div>'}).join(''):'<p class=mut>Chưa có mốc nào.</p>';document.querySelectorAll('#x-roles button').forEach(b=>b.onclick=()=>{LROLES.splice(parseInt(b.dataset.n,10),1);renderLroles()})}
 let WBTS=[];
-function renderWBtns(){$('w-bcount').textContent=WBTS.length;$('w-btns').innerHTML=WBTS.length?WBTS.map((b,n)=>'<div class=row style="padding:6px 0;border-bottom:1px solid #222"><span style="flex:1">'+(n+1)+'. <b>'+String(b.label||'').replace(/</g,'&lt;')+'</b> <span class=mut>'+String(b.url||'').replace(/</g,'&lt;')+'</span></span><button class=ghost data-n="'+n+'" style="margin:0;padding:4px 10px">Xóa</button></div>').join(''):'<p class=mut>Chưa có nút nào.</p>';document.querySelectorAll('#w-btns button').forEach(x=>x.onclick=()=>{WBTS.splice(parseInt(x.dataset.n,10),1);renderWBtns()})}
+function renderWBtns(){$('w-bcount').textContent=WBTS.length;$('w-btns').innerHTML=WBTS.length?WBTS.map((b,n)=>'<div class=row style="padding:6px 0;border-bottom:1px solid #e8eaee"><span style="flex:1">'+(n+1)+'. <b>'+String(b.label||'').replace(/</g,'&lt;')+'</b> <span class=mut>'+String(b.url||'').replace(/</g,'&lt;')+'</span></span><button class=ghost data-n="'+n+'" style="margin:0;padding:4px 10px">Xóa</button></div>').join(''):'<p class=mut>Chưa có nút nào.</p>';document.querySelectorAll('#w-btns button').forEach(x=>x.onclick=()=>{WBTS.splice(parseInt(x.dataset.n,10),1);renderWBtns()})}
 $('w-btn-add').onclick=()=>{const l=$('w-btn-label').value.trim(),u=$('w-btn-url').value.trim();if(!l||!/^https?:\\/\\//i.test(u))return toast('Nhập chữ + link https');if(WBTS.length>=4)return toast('Tối đa 4 nút');WBTS.push({label:l.slice(0,80),url:u});$('w-btn-label').value='';$('w-btn-url').value='';renderWBtns()};
-function renderTypes(){$('k-count').textContent=KTYPES.length;$('k-types').innerHTML=KTYPES.length?KTYPES.map((t,n)=>'<div class=row style="padding:6px 0;border-bottom:1px solid #222"><span style="flex:1">'+(n+1)+'. '+(t.emoji||'')+' <b>'+String(t.label||'').replace(/</g,'&lt;')+'</b> <span class=mut>'+String(t.description||'').replace(/</g,'&lt;')+'</span></span><button class=ghost data-n="'+n+'" style="margin:0;padding:4px 10px">Xóa</button></div>').join(''):'<p class=mut>Trống = dùng 4 loại mặc định.</p>';document.querySelectorAll('#k-types button').forEach(b=>b.onclick=()=>{KTYPES.splice(parseInt(b.dataset.n,10),1);renderTypes()})}
+function renderTypes(){$('k-count').textContent=KTYPES.length;$('k-types').innerHTML=KTYPES.length?KTYPES.map((t,n)=>'<div class=row style="padding:6px 0;border-bottom:1px solid #e8eaee"><span style="flex:1">'+(n+1)+'. '+(t.emoji||'')+' <b>'+String(t.label||'').replace(/</g,'&lt;')+'</b> <span class=mut>'+String(t.description||'').replace(/</g,'&lt;')+'</span></span><button class=ghost data-n="'+n+'" style="margin:0;padding:4px 10px">Xóa</button></div>').join(''):'<p class=mut>Trống = dùng 4 loại mặc định.</p>';document.querySelectorAll('#k-types button').forEach(b=>b.onclick=()=>{KTYPES.splice(parseInt(b.dataset.n,10),1);renderTypes()})}
 $('x-role-add').onclick=()=>{const lv=parseInt($('x-role-lv').value||'0',10),rid=$('x-role-role').value;if(!lv||lv<1)return toast('Nhập level hợp lệ');if(!rid)return toast('Chọn role đã');if(LROLES.length>=25)return toast('Tối đa 25 mốc');if(LROLES.some(r=>r.level===lv))return toast('Đã có mốc level này');LROLES.push({level:lv,roleId:rid});$('x-role-lv').value='';renderLroles()};
 $('k-add').onclick=()=>{const l=$('k-add-label').value.trim();if(!l)return toast('Nhập tên loại');if(KTYPES.length>=10)return toast('Tối đa 10 loại');KTYPES.push({label:l.slice(0,25),description:$('k-add-desc').value.slice(0,100),emoji:$('k-add-emoji').value||'🎫'});$('k-add-label').value='';$('k-add-desc').value='';$('k-add-emoji').value='';renderTypes()};
 $('k-bladd').onclick=async()=>{const id=$('k-bl-id').value.trim();if(!id)return toast('Nhập ID user');try{await api('POST','/dashboard/api/guilds/'+G+'/tickets/blacklist',{userId:id,reason:$('k-bl-why').value});$('k-bl-id').value='';$('k-bl-why').value='';toast('Đã chặn');document.getElementById('t-t').click()}catch(e){toast('Lỗi: '+e.message)}};
@@ -321,8 +576,8 @@ $('k-stats').onclick=async()=>{try{const s=await api('GET','/dashboard/api/guild
 function rName(id){const r=(META.roles||[]).find(x=>x.id===id);return r?r.name:id}
 function renderBoards(){opt('r-board',RBOARDS.map(b=>({id:String(b.id||b._id),name:b.name+' ('+(b.itemCount||0)+')'})),RBID)}
 async function loadBoard(){if(!RBID){$('r-channel').value='';$('r-title').value='';$('r-desc').value='';RITEMS=[];renderItems();return}try{const b=await api('GET','/dashboard/api/guilds/'+G+'/roleboards/'+RBID);opt('r-channel',CHS,b.channelId,true);$('r-title').value=b.title||'';$('r-desc').value=b.description||'';RITEMS=(b.items||[]).map(i=>({roleId:i.roleId,label:i.label||'',emoji:i.emoji||''}));renderItems();$('r-display').value=b.display||'buttons';opt('r-req',[{id:'',name:'— không cần —'}].concat(META.roles),b.requiredRoleId,true);$('r-excl').checked=!!b.exclusive;$('r-max').value=b.maxPicks||0;$('r-footer').value=b.footer||'';$('r-thumb').value=b.thumbnailUrl||'';$('r-ph').value=b.placeholder||'';$('r-rainbow').value=b.rainbowBar===false?'0':'1';opt('r-tmp-role',META.roles);loadTmp()}catch(e){toast('Lỗi tải bảng: '+e.message)}}
-async function loadTmp(){try{const l=await api('GET','/dashboard/api/guilds/'+G+'/temproles');$('r-tmp-list').innerHTML=l.length?l.map(e=>'<div class=row style="padding:6px 0;border-bottom:1px solid #222"><span style="flex:1">&lt;@'+e.userId+'&gt; — <b>'+rName(e.roleId).replace(/</g,'&lt;')+'</b> <span class=mut>hết hạn <t:'+Math.floor(e.expiresAt/1000)+':R></span></span><button class=ghost data-u="'+e.userId+'" data-r="'+e.roleId+'" style="margin:0;padding:4px 10px">Gỡ</button></div>').join(''):'<p class=mut>Không có role tạm nào.</p>';document.querySelectorAll('#r-tmp-list button').forEach(x=>x.onclick=async()=>{await api('DELETE','/dashboard/api/guilds/'+G+'/temproles?userId='+x.dataset.u+'&roleId='+x.dataset.r);loadTmp()})}catch(e){}}
-function renderItems(){$('r-count').textContent=RITEMS.length;$('r-items').innerHTML=RITEMS.length?RITEMS.map((i,n)=>'<div class=row style="padding:6px 0;border-bottom:1px solid #222"><span style="flex:1">'+(n+1)+'. <b>'+rName(i.roleId).replace(/</g,'&lt;')+'</b> '+(i.emoji||'')+' — nút: <b>'+(i.label||rName(i.roleId)).replace(/</g,'&lt;')+'</b></span><button class=ghost data-n="'+n+'" style="margin:0;padding:4px 10px">Xóa</button></div>').join(''):'<p class=mut>Chưa có role nào.</p>';document.querySelectorAll('#r-items button').forEach(b=>b.onclick=()=>{RITEMS.splice(parseInt(b.dataset.n,10),1);renderItems()})}
+async function loadTmp(){try{const l=await api('GET','/dashboard/api/guilds/'+G+'/temproles');$('r-tmp-list').innerHTML=l.length?l.map(e=>'<div class=row style="padding:6px 0;border-bottom:1px solid #e8eaee"><span style="flex:1">&lt;@'+e.userId+'&gt; — <b>'+rName(e.roleId).replace(/</g,'&lt;')+'</b> <span class=mut>hết hạn <t:'+Math.floor(e.expiresAt/1000)+':R></span></span><button class=ghost data-u="'+e.userId+'" data-r="'+e.roleId+'" style="margin:0;padding:4px 10px">Gỡ</button></div>').join(''):'<p class=mut>Không có role tạm nào.</p>';document.querySelectorAll('#r-tmp-list button').forEach(x=>x.onclick=async()=>{await api('DELETE','/dashboard/api/guilds/'+G+'/temproles?userId='+x.dataset.u+'&roleId='+x.dataset.r);loadTmp()})}catch(e){}}
+function renderItems(){$('r-count').textContent=RITEMS.length;$('r-items').innerHTML=RITEMS.length?RITEMS.map((i,n)=>'<div class=row style="padding:6px 0;border-bottom:1px solid #e8eaee"><span style="flex:1">'+(n+1)+'. <b>'+rName(i.roleId).replace(/</g,'&lt;')+'</b> '+(i.emoji||'')+' — nút: <b>'+(i.label||rName(i.roleId)).replace(/</g,'&lt;')+'</b></span><button class=ghost data-n="'+n+'" style="margin:0;padding:4px 10px">Xóa</button></div>').join(''):'<p class=mut>Chưa có role nào.</p>';document.querySelectorAll('#r-items button').forEach(b=>b.onclick=()=>{RITEMS.splice(parseInt(b.dataset.n,10),1);renderItems()})}
 $('r-add').onclick=()=>{const id=$('r-add-role').value;if(!id)return toast('Chọn role đã');if(RITEMS.some(i=>i.roleId===id))return toast('Role đã có trong bảng');if(RITEMS.length>=25)return toast('Tối đa 25 role');RITEMS.push({roleId:id,label:$('r-add-label').value||rName(id),emoji:$('r-add-emoji').value||''});$('r-add-label').value='';$('r-add-emoji').value='';renderItems()};
 $('r-save').onclick=async()=>{if(!RBID)return toast('Tạo/chọn bảng trước');try{await api('PUT','/dashboard/api/guilds/'+G+'/roleboards/'+RBID,{channelId:$('r-channel').value||null,title:$('r-title').value||null,description:$('r-desc').value||null,display:$('r-display').value,exclusive:$('r-excl').checked,maxPicks:parseInt($('r-max').value||'0',10),requiredRoleId:$('r-req').value||null,footer:$('r-footer').value||null,thumbnailUrl:$('r-thumb').value||null,placeholder:$('r-ph').value||null,rainbowBar:$('r-rainbow').value==='1',items:RITEMS});const d=await api('POST','/dashboard/api/guilds/'+G+'/roleboards/'+RBID+'/refresh');const l=await api('GET','/dashboard/api/guilds/'+G+'/roleboards');RBOARDS=l;renderBoards();toast('Đã vẽ bảng! Mở Discord xem');if(d.url)window.open(d.url,'_blank')}catch(e){toast('Lỗi: '+e.message+' (cần chọn kênh + ít nhất 1 role)')}};
 $('r-tmp-add').onclick=async()=>{try{await api('POST','/dashboard/api/guilds/'+G+'/temproles',{userId:$('r-tmp-user').value.trim(),roleId:$('r-tmp-role').value,duration:$('r-tmp-dur').value});$('r-tmp-user').value='';$('r-tmp-dur').value='';toast('Đã cấp role tạm');loadTmp()}catch(e){toast('Lỗi: '+e.message+' (kiểm tra ID user, quyền bot, thời gian VD: 2h)')}};
@@ -392,7 +647,7 @@ function applyFilter(s){
 async function loadOv(){try{const d=await api('GET','/dashboard/api/guilds/'+G+'/overview');$('ov-body').innerHTML='<div class=statgrid><div class=stat><b>'+d.members+'</b><span>thành viên</span></div><div class=stat><b>'+d.channels+'</b><span>kênh</span></div><div class=stat><b>'+d.roles+'</b><span>role</span></div><div class=stat><b>'+d.openTickets+'</b><span>ticket mở</span></div><div class=stat><b>'+d.boards+'</b><span>bảng role</span></div></div>'+(d.botPerms?'<p class=mut>Quyền bot: '+Object.entries(d.botPerms).map(([k,v])=>(v?'✅':'❌')+k).join(' ')+'</p>':'');const go=[['t-w','👋 Welcome'],['t-mod','🛡️ Moderation'],['t-v','🎉 Giveaway'],['t-t','🎫 Ticket'],['t-o','📝 Logs']];$('ov-links').innerHTML=go.map(([t,l])=>'<button class=ghost data-t="'+t+'">'+l+'</button>').join('');document.querySelectorAll('#ov-links button').forEach(b=>b.onclick=()=>document.getElementById(b.dataset.t).click())}catch(e){$('ov-body').innerHTML='<p class=mut>Lỗi tải.</p>'}}
 $('md-go').onclick=async()=>{try{await api('POST','/dashboard/api/guilds/'+G+'/mod',{action:$('md-act').value,userId:$('md-user').value.trim(),reason:$('md-reason').value,minutes:parseInt($('md-mins').value||'10',10)});$('md-user').value='';toast('Đã thực hiện')}catch(e){toast('Lỗi: '+e.message+' (kiểm tra ID, quyền bot)')}};
 $('md-wgo').onclick=async()=>{try{const l=await api('GET','/dashboard/api/guilds/'+G+'/warns?userId='+encodeURIComponent($('md-wuser').value.trim()));$('md-warns').innerHTML=l.length?l.map((w,i)=>'<b>'+(i+1)+'.</b> '+String(w.reason||'').replace(/</g,'&lt;')+' <span class=mut>— '+(w.byTag||'').replace(/</g,'&lt;')+'</span>').join('<br>'):'Chưa có warn nào.'}catch(e){toast('Lỗi: '+e.message)}};
-$('am-save').onclick=async()=>{try{const lines=id=>$(id).value.split(/\n/).map(x=>x.trim()).filter(Boolean);await api('PUT','/dashboard/api/guilds/'+G+'/settings',{automod:{words:$('am-words').checked,wholeWord:$('am-whole').checked,invites:$('am-invites').checked,links:$('am-links').checked,spam:$('am-spam').checked,spamCount:parseInt($('am-count').value||'5',10),spamSecs:parseInt($('am-secs').value||'5',10),caps:$('am-caps').checked,capsPercent:parseInt($('am-caps-pct').value||'70',10),capsMinLen:parseInt($('am-caps-len').value||'10',10),mentions:$('am-mentions').checked,mentionCount:parseInt($('am-mention-count').value||'5',10),actions:{words:$('am-act-words').value,invites:$('am-act-invites').value,links:$('am-act-links').value,spam:$('am-act-spam').value,caps:$('am-act-caps').value,mentions:$('am-act-mentions').value},timeoutMin:parseInt($('am-mins').value||'10',10),urlWhitelist:lines('am-url-wl'),urlBlacklist:lines('am-url-bl'),onlyImageChannels:selVals('am-imgch'),onlyYoutubeChannels:selVals('am-ytch'),exemptChannels:selVals('am-xch'),exemptRoles:selVals('am-xr')},antiraid:{enabled:$('ar-on').checked,ageDays:parseInt($('ar-age').value||'7',10),count:parseInt($('ar-count').value||'5',10),windowSecs:parseInt($('ar-secs').value||'30',10),action:$('ar-act').value,timeoutMin:parseInt($('ar-mins').value||'60',10)}});toast('Đã lưu AutoMod + Anti-Raid (áp dụng ngay)')}catch(e){toast('Lỗi: '+e.message)}};
+$('am-save').onclick=async()=>{try{const lines=id=>$(id).value.split(/\\n/).map(x=>x.trim()).filter(Boolean);await api('PUT','/dashboard/api/guilds/'+G+'/settings',{automod:{words:$('am-words').checked,wholeWord:$('am-whole').checked,invites:$('am-invites').checked,links:$('am-links').checked,spam:$('am-spam').checked,spamCount:parseInt($('am-count').value||'5',10),spamSecs:parseInt($('am-secs').value||'5',10),caps:$('am-caps').checked,capsPercent:parseInt($('am-caps-pct').value||'70',10),capsMinLen:parseInt($('am-caps-len').value||'10',10),mentions:$('am-mentions').checked,mentionCount:parseInt($('am-mention-count').value||'5',10),actions:{words:$('am-act-words').value,invites:$('am-act-invites').value,links:$('am-act-links').value,spam:$('am-act-spam').value,caps:$('am-act-caps').value,mentions:$('am-act-mentions').value},timeoutMin:parseInt($('am-mins').value||'10',10),urlWhitelist:lines('am-url-wl'),urlBlacklist:lines('am-url-bl'),onlyImageChannels:selVals('am-imgch'),onlyYoutubeChannels:selVals('am-ytch'),exemptChannels:selVals('am-xch'),exemptRoles:selVals('am-xr')},antiraid:{enabled:$('ar-on').checked,ageDays:parseInt($('ar-age').value||'7',10),count:parseInt($('ar-count').value||'5',10),windowSecs:parseInt($('ar-secs').value||'30',10),action:$('ar-act').value,timeoutMin:parseInt($('ar-mins').value||'60',10)}});toast('Đã lưu AutoMod + Anti-Raid (áp dụng ngay)')}catch(e){toast('Lỗi: '+e.message)}};
 async function loadCmds(){try{const l=await api('GET','/dashboard/api/guilds/'+G+'/commands');let g='';$('cmd-list').innerHTML=l.map(c=>(c.group!==g?'<h2>'+(g=c.group).toUpperCase()+'</h2>':'')+'<label class=chk><input type=checkbox data-n="'+c.name+'"'+(c.enabled?' checked':'')+'> <b>/'+c.name+'</b> <span class=mut>'+String(c.description||'').replace(/</g,'&lt;')+'</span></label>').join('')}catch(e){$('cmd-list').innerHTML='<p class=mut>Lỗi tải.</p>'}}
 $('cmd-save').onclick=async()=>{try{const off=[];document.querySelectorAll('#cmd-list input').forEach(c=>{if(!c.checked)off.push(c.dataset.n)});await api('PUT','/dashboard/api/guilds/'+G+'/commands',{disabled:off});toast('Đã lưu (áp dụng ngay lệnh tiếp theo)')}catch(e){toast('Lỗi: '+e.message)}};
 $('set-save').onclick=async()=>{try{await api('PUT','/dashboard/api/guilds/'+G+'/settings',{language:$('s-lang').value,timezone:$('s-tz').value,prefix:$('s-prefix').value||'!',starboard:{enabled:$('sb-on').checked,channelId:$('sb-ch').value||null,emoji:$('sb-emoji').value||'⭐',threshold:parseInt($('sb-th').value||'3',10)}});toast('Đã lưu')}catch(e){toast('Lỗi: '+e.message)}};
@@ -404,4 +659,4 @@ setInterval(()=>{if(document.getElementById('p-u').style.display!=='none')loadMu
 </script>`);
 }
 
-module.exports = { login, home, guild };
+module.exports = { login, home, guild, landing };
