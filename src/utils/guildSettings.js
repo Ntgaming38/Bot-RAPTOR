@@ -63,6 +63,7 @@ function baseFromEnv() {
     voiceXpPerMin: 10,
     levelRoles: [],
     automod: null,
+    antiraid: null,
     disabledCommands: null,
     giveawayWinners: 1,
     giveawayDuration: '10m',
