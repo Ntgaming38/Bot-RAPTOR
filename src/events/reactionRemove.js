@@ -9,6 +9,15 @@ module.exports = {
       if (reaction.partial) await reaction.fetch().catch(() => null);
       const message = reaction.message;
       if (!message?.guild) return;
+      // Starboard: gỡ sao → cập nhật/xóa bài nổi bật
+      try {
+        const gst = await require('../utils/guildSettings').getGuildSettings(message.guild.id).catch(() => null);
+        if (require('../utils/starboard').getStarboard(gst).enabled) {
+          if (reaction.partial) await reaction.fetch().catch(() => null);
+          const full = reaction.message.partial ? await reaction.message.fetch().catch(() => reaction.message) : message;
+          await require('../utils/starboard').syncStarboard({ ...reaction, message: full, count: reaction.count }, gst);
+        }
+      } catch (e) { console.warn('[starboard]', e?.message); }
       const rb = require('../utils/roleBoards');
       const board = await rb.findBoardByMessage(message.guild.id, message.id);
       if (!board || (board.display || 'buttons') !== 'reactions') return;

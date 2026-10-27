@@ -64,6 +64,7 @@ function baseFromEnv() {
     levelRoles: [],
     automod: null,
     antiraid: null,
+    starboard: null,
     disabledCommands: null,
     giveawayWinners: 1,
     giveawayDuration: '10m',
