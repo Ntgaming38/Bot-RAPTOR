@@ -107,4 +107,76 @@ async function getLeaderboard(guildId, limit = 10) {
     .map(([id, v], i) => ({ rank: i + 1, userId: id, ...v }));
 }
 
-module.exports = { addXp, getRank, getLeaderboard, xpNeeded };
+// Cộng thẳng một lượng XP (không cooldown) — dùng cho XP thoại và admin set.
+// Trả về { leveled, level, xp, gain } hoặc null nếu gain <= 0
+async function addXpAmount(guildId, userId, gain) {
+  gain = Math.floor(Number(gain) || 0);
+  if (gain <= 0) return null;
+  if (useMongo()) {
+    const { Level } = require('../db');
+    let doc = await Level.findOne({ guildId, userId });
+    if (!doc) doc = new Level({ guildId, userId, xp: 0, level: 0, lastMsg: 0 });
+    doc.xp += gain;
+    let leveled = false;
+    while (doc.xp >= xpNeeded(doc.level)) {
+      doc.xp -= xpNeeded(doc.level);
+      doc.level += 1;
+      leveled = true;
+    }
+    await doc.save();
+    return { leveled, level: doc.level, xp: doc.xp, gain };
+  }
+  const db = load();
+  const u = getUser(db, guildId, userId);
+  u.xp += gain;
+  let leveled = false;
+  while (u.xp >= xpNeeded(u.level)) {
+    u.xp -= xpNeeded(u.level);
+    u.level += 1;
+    leveled = true;
+  }
+  save(db);
+  return { leveled, level: u.level, xp: u.xp, gain };
+}
+
+// Admin đặt XP/level trực tiếp (lệnh /setxp, /setlevel). Trường nào truyền thì đặt trường đó.
+async function setUserXp(guildId, userId, patch) {
+  if (useMongo()) {
+    const { Level } = require('../db');
+    let doc = await Level.findOne({ guildId, userId });
+    if (!doc) doc = new Level({ guildId, userId, xp: 0, level: 0, lastMsg: 0 });
+    if (patch.level !== undefined) doc.level = Math.max(0, Math.floor(patch.level));
+    if (patch.xp !== undefined) doc.xp = Math.max(0, Math.floor(patch.xp));
+    // XP không được vượt ngưỡng của level hiện tại
+    const cap = xpNeeded(doc.level) - 1;
+    if (doc.xp > cap) doc.xp = cap;
+    await doc.save();
+    return { level: doc.level, xp: doc.xp };
+  }
+  const db = load();
+  const u = getUser(db, guildId, userId);
+  if (patch.level !== undefined) u.level = Math.max(0, Math.floor(patch.level));
+  if (patch.xp !== undefined) u.xp = Math.max(0, Math.floor(patch.xp));
+  const cap = xpNeeded(u.level) - 1;
+  if (u.xp > cap) u.xp = cap;
+  save(db);
+  return { level: u.level, xp: u.xp };
+}
+
+// Role thưởng theo cấp (dashboard tab Level): đạt level >= mốc thì nhận role tương ứng.
+// Chỉ cộng role còn thiếu; không tự gỡ role mốc cao hơn.
+async function applyLevelRewards(guild, member, level) {
+  try {
+    if (!guild || !member || member.user?.bot) return;
+    const st = await require('./guildSettings').getGuildSettings(guild.id).catch(() => null);
+    const roles = Array.isArray(st?.levelRoles) ? st.levelRoles : [];
+    for (const r of roles) {
+      if (!r?.roleId || !Number.isFinite(r.level)) continue;
+      if (level >= r.level && !member.roles.cache.has(r.roleId)) {
+        await member.roles.add(r.roleId).catch(() => {});
+      }
+    }
+  } catch {}
+}
+
+module.exports = { addXp, getRank, getLeaderboard, xpNeeded, addXpAmount, setUserXp, applyLevelRewards };

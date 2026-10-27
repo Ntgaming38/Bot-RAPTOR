@@ -21,6 +21,7 @@
   "license": "MIT",
   "dependencies": {
     "@discord-player/extractor": "^7.2.0",
+    "@napi-rs/canvas": "^1.0.13",
     "@snazzah/davey": "^0.1.12",
     "discord-player": "^7.2.0",
     "discord-player-youtubei": "^2.0.0",
