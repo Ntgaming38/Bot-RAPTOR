@@ -1,6 +1,7 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, AttachmentBuilder } = require('discord.js');
 const { embed } = require('../../utils/embeds');
 const { getRank } = require('../../utils/levels');
+const { buildRankCard } = require('../../utils/rankCard');
 
 module.exports = {
   group: 'level',
@@ -11,6 +12,12 @@ module.exports = {
   async execute(interaction) {
     const user = interaction.options.getUser('user') || interaction.user;
     const r = await getRank(interaction.guildId, user.id);
+    // Thẻ ảnh kiểu ProBot (nếu vẽ được)
+    const png = await buildRankCard(user, r).catch(() => null);
+    if (png) {
+      await interaction.reply({ files: [new AttachmentBuilder(png, { name: 'rank.png' })] });
+      return;
+    }
     const progress = Math.floor((r.xp / r.needed) * 20);
     const bar = '█'.repeat(progress) + '░'.repeat(20 - progress);
     await interaction.reply({

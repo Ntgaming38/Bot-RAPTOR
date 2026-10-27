@@ -143,6 +143,9 @@ const guildSettingsSchema = new mongoose.Schema({
   timezone: { type: String, default: null },
   prefix: { type: String, default: null },
   levelEnabled: Boolean,
+  voiceXpEnabled: Boolean,
+  voiceXpPerMin: Number,
+  levelRoles: { type: Array, default: undefined },
   automod: { type: Object, default: undefined },
   disabledCommands: { type: [String], default: undefined },
 });

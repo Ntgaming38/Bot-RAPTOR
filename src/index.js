@@ -201,6 +201,11 @@ async function main() {
   };
   setTimeout(ticketTick, 120_000);
   setInterval(ticketTick, 10 * 60_000);
+  // XP thoại (ProBot): quét voice mỗi phút, cộng XP + role thưởng
+  const voiceTick = async () => {
+    try { await require('./utils/voiceXp').tickVoiceXp(client); } catch (e) { console.warn('[voiceXp]', e?.message); }
+  };
+  setInterval(voiceTick, 60_000);
 
   // Gỡ role tạm thời hết hạn
   const tempTick = async () => {

@@ -228,6 +228,17 @@ function mount(app) {
     if (b.language !== undefined) patch.language = b.language === 'en' ? 'en' : 'vi';
     if (b.prefix !== undefined) patch.prefix = String(b.prefix || '').slice(0, 5) || '!';
     if (b.levelEnabled !== undefined) patch.levelEnabled = !!b.levelEnabled;
+    if (b.voiceXpEnabled !== undefined) patch.voiceXpEnabled = !!b.voiceXpEnabled;
+    if (b.voiceXpPerMin !== undefined) {
+      const n = parseInt(b.voiceXpPerMin, 10);
+      if (Number.isFinite(n)) patch.voiceXpPerMin = Math.min(1000, Math.max(0, n));
+    }
+    if (b.levelRoles !== undefined && Array.isArray(b.levelRoles)) {
+      patch.levelRoles = b.levelRoles.slice(0, 25)
+        .filter((r) => r && r.roleId && Number.isFinite(parseInt(r.level, 10)))
+        .map((r) => ({ level: Math.min(999, Math.max(1, parseInt(r.level, 10))), roleId: String(r.roleId) }))
+        .sort((a, b2) => a.level - b2.level);
+    }
     if (b.timezone !== undefined) {
       try {
         Intl.DateTimeFormat('vi-VN', { timeZone: String(b.timezone) });
