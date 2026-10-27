@@ -147,6 +147,7 @@ const guildSettingsSchema = new mongoose.Schema({
   voiceXpPerMin: Number,
   levelRoles: { type: Array, default: undefined },
   automod: { type: Object, default: undefined },
+  antiraid: { type: Object, default: undefined },
   disabledCommands: { type: [String], default: undefined },
 });
 const GuildSettings = mongoose.models.GuildSettings || mongoose.model('GuildSettings', guildSettingsSchema);

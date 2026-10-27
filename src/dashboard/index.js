@@ -253,17 +253,46 @@ function mount(app) {
         const n = parseInt(v, 10);
         return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fb;
       };
+      const strList = (v, max, len) => (Array.isArray(v) ? v.filter((x) => typeof x === 'string').map((x) => x.slice(0, len || 200)).slice(0, max) : []);
+      const perRule = {};
+      for (const r of ['words', 'invites', 'links', 'spam', 'caps', 'mentions']) {
+        const v = a.actions?.[r];
+        perRule[r] = ['delete', 'warn', 'timeout'].includes(v) ? v : (['delete', 'warn', 'timeout'].includes(a.action) ? a.action : 'delete');
+      }
       patch.automod = {
         words: a.words !== false,
+        wholeWord: !!a.wholeWord,
         invites: !!a.invites,
         links: !!a.links,
         spam: !!a.spam,
         spamCount: num(a.spamCount, 2, 20, 5),
         spamSecs: num(a.spamSecs, 2, 60, 5),
+        caps: !!a.caps,
+        capsPercent: num(a.capsPercent, 30, 100, 70),
+        capsMinLen: num(a.capsMinLen, 4, 200, 10),
+        mentions: !!a.mentions,
+        mentionCount: num(a.mentionCount, 2, 50, 5),
         action: ['delete', 'warn', 'timeout'].includes(a.action) ? a.action : 'delete',
+        actions: perRule,
         timeoutMin: num(a.timeoutMin, 1, 40320, 10),
-        exemptChannels: Array.isArray(a.exemptChannels) ? a.exemptChannels.filter((x) => typeof x === 'string').slice(0, 25) : [],
-        exemptRoles: Array.isArray(a.exemptRoles) ? a.exemptRoles.filter((x) => typeof x === 'string').slice(0, 25) : [],
+        urlWhitelist: strList(a.urlWhitelist, 50),
+        urlBlacklist: strList(a.urlBlacklist, 50),
+        onlyImageChannels: strList(a.onlyImageChannels, 25, 30),
+        onlyYoutubeChannels: strList(a.onlyYoutubeChannels, 25, 30),
+        exemptChannels: strList(a.exemptChannels, 25, 30),
+        exemptRoles: strList(a.exemptRoles, 25, 30),
+      };
+    }
+    if (b.antiraid !== undefined && b.antiraid && typeof b.antiraid === 'object') {
+      const r = b.antiraid;
+      const n2 = (v, min, max, fb) => { const n = parseInt(v, 10); return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fb; };
+      patch.antiraid = {
+        enabled: !!r.enabled,
+        ageDays: [0, 7, 30, 90].includes(parseInt(r.ageDays, 10)) ? parseInt(r.ageDays, 10) : 7,
+        count: n2(r.count, 3, 100, 5),
+        windowSecs: n2(r.windowSecs, 5, 600, 30),
+        action: ['timeout', 'kick', 'ban'].includes(r.action) ? r.action : 'timeout',
+        timeoutMin: n2(r.timeoutMin, 1, 40320, 60),
       };
     }
     // Bỏ key undefined (giữ giá trị cũ)

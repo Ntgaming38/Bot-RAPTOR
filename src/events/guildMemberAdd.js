@@ -9,6 +9,15 @@ module.exports = {
     try {
       if (client) require('../utils/statsSettings').scheduleStatsRefresh(client, member.guild.id);
     } catch {}
+    // Anti-Raid (ProBot): xử lý loạt tài khoản mới vào ồ ạt
+    try {
+      const gst = await require('../utils/guildSettings').getGuildSettings(member.guild.id).catch(() => null);
+      const raid = await require('../utils/antiraid').checkJoin(member, gst);
+      if (raid.actedIds.includes(member.id)) {
+        console.log(`[antiraid] đã xử lý ${member.user.tag} trong đợt raid ở ${member.guild.name}`);
+        return;
+      }
+    } catch (e) { console.warn('[antiraid]', e?.message); }
     console.log(`[welcome] ${member.user.tag} join ${member.guild.name} (${member.guild.id})`);
     // Setting ưu tiên từ /welcome setup, fallback về .env
     const s = await require('../utils/welcomeSettings').getWelcomeSettings(member.guild.id).catch((e) => {
