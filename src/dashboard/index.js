@@ -295,6 +295,16 @@ function mount(app) {
         timeoutMin: n2(r.timeoutMin, 1, 40320, 60),
       };
     }
+    if (b.starboard !== undefined && b.starboard && typeof b.starboard === 'object') {
+      const sb = b.starboard;
+      const n3 = parseInt(sb.threshold, 10);
+      patch.starboard = {
+        enabled: !!sb.enabled,
+        channelId: String(sb.channelId || '') || null,
+        emoji: String(sb.emoji || '⭐').slice(0, 10),
+        threshold: Number.isFinite(n3) ? Math.min(50, Math.max(1, n3)) : 3,
+      };
+    }
     // Bỏ key undefined (giữ giá trị cũ)
     for (const k of Object.keys(patch)) if (patch[k] === undefined) delete patch[k];
     const s = await require('../utils/guildSettings').saveGuildSettings(req.params.gid, patch);
