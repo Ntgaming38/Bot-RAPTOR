@@ -21,7 +21,7 @@ module.exports = {
   welcomeRulesChannelId: process.env.WELCOME_RULES_CHANNEL_ID || null, // kênh luật
   welcomeAnnounceChannelId: process.env.WELCOME_ANNOUNCE_CHANNEL_ID || null, // kênh thông báo
   welcomeChatChannelId: process.env.WELCOME_CHAT_CHANNEL_ID || null, // kênh chat chung
-  welcomeImageUrl: process.env.WELCOME_IMAGE_URL || null, // ảnh thumbnail góc phải — để trống = avatar member
+  welcomeImageUrl: process.env.WELCOME_IMAGE_URL || null, // ảnh thumbnail góc phải — để trống = logo RAPTOR (assets/raptor-logo.jpg)
   welcomeReactions: (process.env.WELCOME_REACTIONS || '🔥,✅').split(',').map(s => s.trim()).filter(Boolean),
   welcomeColor: process.env.WELCOME_COLOR || '#FF4D9D',
   keepAlive: process.env.KEEP_ALIVE === 'true',
