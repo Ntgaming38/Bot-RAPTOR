@@ -95,6 +95,51 @@ body.glass-app{background-color:#0b0e17;background-image:radial-gradient(900px 6
 .glass-app .chip{background:rgba(255,255,255,.08);color:#e6ebf4}
 .glass-app .note{color:#8b96ab}
 .glass-app #errbox{background:rgba(90,18,10,.88)!important;border-color:rgba(255,140,120,.5)!important;color:#ffd9d2!important}
+
+/* ===== Revenue glass v2: cửa sổ kính nổi + cầu sáng aurora ===== */
+body.glass-app{background-color:#04060e;background-image:radial-gradient(1100px 760px at 88% -12%,rgba(64,80,255,.30),transparent 62%),radial-gradient(900px 680px at -12% 18%,rgba(124,58,237,.22),transparent 60%),radial-gradient(1100px 820px at 50% 125%,rgba(214,61,32,.13),transparent 62%),linear-gradient(160deg,#070a16,#04060e 60%,#08060f)}
+.glass-app .ambient::before,.glass-app .ambient::after{content:"";position:absolute;border-radius:50%;filter:blur(50px);opacity:.55;pointer-events:none}
+.glass-app .ambient::before{width:520px;height:520px;top:-260px;left:38%;background:radial-gradient(circle at 35% 35%,#7d9bff,#2740b8 58%,rgba(39,64,184,0) 74%)}
+.glass-app .ambient::after{width:560px;height:560px;bottom:-300px;left:-160px;background:radial-gradient(circle at 40% 40%,#8f7dff,#3b2a8f 58%,rgba(59,42,143,0) 74%)}
+.glass-app .layout,.glass-app .win{background:linear-gradient(165deg,rgba(21,25,44,.78),rgba(9,11,22,.84));-webkit-backdrop-filter:blur(24px) saturate(150%);backdrop-filter:blur(24px) saturate(150%);border:1px solid rgba(255,255,255,.09);border-radius:28px;box-shadow:0 34px 90px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.08);padding:0;gap:0}
+.glass-app .sidewrap{top:40px}
+.glass-app .side{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015));border:0;border-right:1px solid rgba(255,255,255,.07);border-radius:28px 0 0 28px;box-shadow:none;padding:18px 14px;max-height:calc(100vh - 80px)}
+.glass-app .side .brand{border-bottom:0;margin-bottom:2px;padding:0 6px 14px}
+.glass-app .glabel{font-size:10.5px;letter-spacing:.13em;color:#6f7789;font-weight:700;padding:14px 12px 5px}
+.glass-app .nav{height:36px;border-radius:10px;font-size:13.5px;color:#9aa3b8;padding:0 11px}
+.glass-app .nav:hover{background:rgba(255,255,255,.05);color:#e8ecf4}
+.glass-app .nav.on{background:linear-gradient(90deg,rgba(124,92,252,.30),rgba(124,92,252,.12));border-color:rgba(124,92,252,.38);color:#ddd2ff;box-shadow:none}
+.glass-app .nav.on .nic{filter:drop-shadow(0 0 6px rgba(124,92,252,.95))}
+.glass-app a.nav{text-decoration:none}
+.glass-app .layout.rail .glabel{display:none}
+.glass-app .achip{margin:10px 0 0;border:0;border-top:1px solid rgba(255,255,255,.07);border-radius:0;background:transparent;box-shadow:none;padding:13px 6px 2px}
+.glass-app .achip img,.glass-app .achip .afb{width:34px;height:34px;flex:0 0 34px;border-color:rgba(124,92,252,.6)}
+.glass-app .achip .anm{font-size:13px}
+.glass-app .lo-ic{margin-left:auto;width:30px;height:30px;flex:0 0 30px;display:flex;align-items:center;justify-content:center;border-radius:9px;background:rgba(239,68,68,.13);border:1px solid rgba(239,68,68,.32);text-decoration:none;font-size:13px}
+.glass-app .lo-ic:hover{background:rgba(239,68,68,.25)}
+.glass-app .layout.rail .lo-ic{display:none}
+.glass-app .layout.rail .achip{justify-content:center;padding:13px 0 2px}
+.mainwrap{flex:1;min-width:0;display:flex;flex-direction:column}
+.glass-app .topbar{display:flex;align-items:center;gap:12px;padding:16px 22px;border-bottom:1px solid rgba(255,255,255,.07)}
+.glass-app .search{flex:1;display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:0 12px;height:40px}
+.glass-app .search input{flex:1;background:transparent;border:0;padding:0;height:38px;color:#eef1f7;width:auto}
+.glass-app .search input:focus{outline:none}
+.glass-app .search kbd{font-family:inherit;font-size:11px;color:#8b93a7;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:2px 6px}
+.glass-app .gchip{font-size:12px;color:#aeb6c6;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:999px;padding:7px 12px;white-space:nowrap}
+.glass-app .btn-violet{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#7c5cfc,#6847e8);color:#fff;font-weight:600;font-size:13.5px;border-radius:11px;padding:10px 16px;text-decoration:none;white-space:nowrap;box-shadow:0 8px 22px rgba(124,92,252,.35)}
+.glass-app .btn-violet:hover{background:linear-gradient(135deg,#8a6dff,#7150ef);color:#fff}
+.glass-app main{padding:6px 22px 18px}
+.glass-app .pagehead h1{font-size:25px;margin:12px 0 2px}
+.glass-app .pagehead p{margin:0;color:#8b93a7;font-size:13.5px}
+.glass-app .card{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);border-radius:16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 12px 30px rgba(0,0,0,.22)}
+.glass-app input,.glass-app select,.glass-app textarea{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.09)}
+.glass-app button{background:linear-gradient(135deg,#7c5cfc,#6847e8)}
+.glass-app button:hover{background:linear-gradient(135deg,#8a6dff,#7150ef)}
+.glass-app .sw{background:#7c5cfc}
+.glass-app .win .win-pad{padding:20px 24px 24px}
+.glass-app .topbar .logo{display:flex;align-items:center;gap:10px;font-family:'Outfit';font-weight:800;font-size:17px;color:#fff;text-decoration:none;white-space:nowrap}
+.glass-app .topbar .logo img{width:34px;height:34px;border-radius:9px;object-fit:cover}
+@media(max-width:900px){.glass-app .layout,.glass-app .win{border-radius:22px}.glass-app .side{background:linear-gradient(165deg,rgba(38,40,48,.94),rgba(13,14,19,.92) 55%,rgba(20,22,28,.94));border:1px solid rgba(255,255,255,.14);border-radius:24px;box-shadow:0 24px 60px rgba(0,0,0,.5);max-height:none}.glass-app .topbar{flex-wrap:wrap;padding:14px 16px}.glass-app main{padding:4px 14px 14px}.glass-app .gchip{display:none}.glass-app .win .win-pad{padding:16px}}
 `;
 
 function shell(title, body, extra = '') {
@@ -350,7 +395,7 @@ function login() {
 }
 
 function home(user) {
-  return shell('Chọn server', `<div class="row"><h1>👋 ${esc(user.username)}</h1><span style="flex:1"></span><a href="/dashboard/logout" class="mut">Đăng xuất</a></div><p class="mut">Chọn server để tùy chỉnh (chỉ hiện server bạn có quyền quản lý).</p><div id="list"><p class="mut">Đang tải...</p></div>`, `<script>
+  return shell('Chọn server', `<div class="win"><div class="topbar"><a class="logo" href="/dashboard" style="color:#fff"><img class="ic-img" src="/dashboard/logo.jpg" alt="RAPTOR"> RAPTOR</a><div class="search"><span>🔍</span><input id="guild-search" placeholder="Tìm server..."></div><span class="gchip">👋 ${esc(user.username)}</span><a class="btn-violet" href="/dashboard/logout">Đăng xuất</a></div><div class="win-pad"><div class="row"><h1>Chọn server</h1></div><p class="mut">Chọn server để tùy chỉnh (chỉ hiện server bạn có quyền quản lý).</p><div id="list"><p class="mut">Đang tải...</p></div>`, `</div></div><script>document.getElementById('guild-search').addEventListener('input',e=>{const q=e.target.value.trim().toLowerCase();document.querySelectorAll('#list > *').forEach(c=>{c.style.display=(!q||c.textContent.toLowerCase().includes(q))?'':'none'})});</script><script>
 fetch('/dashboard/api/me').then(r=>r.json()).then(d=>{
   const el=document.getElementById('list');
   if(!d.guilds.length){el.innerHTML='<p class=mut>Không có server nào.</p>';return}
@@ -366,7 +411,7 @@ fetch('/dashboard/api/me').then(r=>r.json()).then(d=>{
 function guild(gid, user) {
   const uname = user?.username || 'RAPTOR';
   const uav = user?.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=64` : '';
-  return shell('Tùy chỉnh server', `<div class="ambient"></div><div class="mbar"><img src="/dashboard/logo.jpg" alt="RAPTOR"><b>RAPTOR</b><span style="color:#8a94a8;font-size:12px">Dashboard</span><button id="mbar-btn" aria-label="Mở menu">☰</button></div><div class="scrim" id="scrim"></div><div class="layout" id="layout"><div class="sidewrap" id="sidewrap"><aside class="side" id="side"><div class="brand"><img class="blogo-img" src="/dashboard/logo.jpg" alt="RAPTOR"><span class="btxt"><b>RAPTOR</b><small>Dashboard</small></span></div><div class="achip">${uav ? `<img src="${esc(uav)}" alt="">` : `<span class="afb">${esc(uname.slice(0, 1).toUpperCase())}</span>`}<span class="atxt"><span class="anm">${esc(uname)}</span><br><span class="asub">Đã đăng nhập Discord</span></span></div><div class="nav on" id="t-ov" title="Overview"><span class="nic">📊</span><span class="nlb">Overview</span></div><div class="nav" id="t-mod" title="Moderation"><span class="nic">🛡️</span><span class="nlb">Moderation</span></div><div class="nav" id="t-am" title="AutoMod"><span class="nic">🤖</span><span class="nlb">AutoMod</span></div><div class="nav" id="t-o" title="Logs"><span class="nic">📝</span><span class="nlb">Logs</span></div><div class="nav" id="t-w" title="Welcome"><span class="nic">👋</span><span class="nlb">Welcome</span></div><div class="nav" id="t-g" title="Goodbye"><span class="nic">👋</span><span class="nlb">Goodbye</span></div><div class="nav" id="t-x" title="Leveling"><span class="nic">🏆</span><span class="nlb">Leveling</span></div><div class="nav" id="t-v" title="Giveaway"><span class="nic">🎉</span><span class="nlb">Giveaway</span></div><div class="nav" id="t-t" title="Ticket"><span class="nic">🎫</span><span class="nlb">Ticket</span></div><div class="nav" id="t-r" title="Roles"><span class="nic">🎭</span><span class="nlb">Roles</span></div><div class="nav" id="t-u" title="Music"><span class="nic">🎵</span><span class="nlb">Music</span></div><div class="nav" id="t-s" title="Server Stats"><span class="nic">📈</span><span class="nlb">Server Stats</span></div><div class="nav" id="t-cmd" title="Commands"><span class="nic">⌨️</span><span class="nlb">Commands</span></div><div class="nav" id="t-set" title="Settings"><span class="nic">⚙️</span><span class="nlb">Settings</span></div><a class="backlink" href="/dashboard"><span class="nic">🏠</span><span class="nlb">Tất cả server</span></a><a class="logout" href="/dashboard/logout"><span class="nic">🚪</span><span class="nlb">Đăng xuất</span></a></aside><button id="rail-btn" title="Thu gọn / mở rộng sidebar">❮</button></div><main id="main">
+  return shell('Tùy chỉnh server', `<div class="ambient"></div><div class="mbar"><img src="/dashboard/logo.jpg" alt="RAPTOR"><b>RAPTOR</b><span style="color:#8a94a8;font-size:12px">Dashboard</span><button id="mbar-btn" aria-label="Mở menu">☰</button></div><div class="scrim" id="scrim"></div><div class="layout" id="layout"><div class="sidewrap" id="sidewrap"><aside class="side" id="side"><div class="brand"><img class="blogo-img" src="/dashboard/logo.jpg" alt="RAPTOR"><span class="btxt"><b>RAPTOR <span style="color:#a78bfa;font-weight:600">BOT</span></b><small>Dashboard</small></span></div><div class="glabel">TỔNG QUAN</div><div class="nav on" id="t-ov" title="Overview"><span class="nic">📊</span><span class="nlb">Overview</span></div><div class="glabel">QUẢN TRỊ</div><div class="nav" id="t-mod" title="Moderation"><span class="nic">🛡️</span><span class="nlb">Moderation</span></div><div class="nav" id="t-am" title="AutoMod"><span class="nic">🤖</span><span class="nlb">AutoMod</span></div><div class="nav" id="t-o" title="Logs"><span class="nic">📝</span><span class="nlb">Logs</span></div><div class="glabel">CỘNG ĐỒNG</div><div class="nav" id="t-w" title="Welcome"><span class="nic">👋</span><span class="nlb">Welcome</span></div><div class="nav" id="t-g" title="Goodbye"><span class="nic">👋</span><span class="nlb">Goodbye</span></div><div class="nav" id="t-x" title="Leveling"><span class="nic">🏆</span><span class="nlb">Leveling</span></div><div class="nav" id="t-v" title="Giveaway"><span class="nic">🎉</span><span class="nlb">Giveaway</span></div><div class="glabel">CÔNG CỤ</div><div class="nav" id="t-t" title="Ticket"><span class="nic">🎫</span><span class="nlb">Ticket</span></div><div class="nav" id="t-r" title="Roles"><span class="nic">🎭</span><span class="nlb">Roles</span></div><div class="nav" id="t-u" title="Music"><span class="nic">🎵</span><span class="nlb">Music</span></div><div class="glabel">HỆ THỐNG</div><div class="nav" id="t-s" title="Server Stats"><span class="nic">📈</span><span class="nlb">Server Stats</span></div><div class="nav" id="t-cmd" title="Commands"><span class="nic">⌨️</span><span class="nlb">Commands</span></div><div class="nav" id="t-set" title="Settings"><span class="nic">⚙️</span><span class="nlb">Settings</span></div><a class="nav" href="/dashboard" title="Tất cả server"><span class="nic">🏠</span><span class="nlb">Tất cả server</span></a><div style="flex:1"></div><div class="achip">${uav ? `<img src="${esc(uav)}" alt="">` : `<span class="afb">${esc(uname.slice(0, 1).toUpperCase())}</span>`}<span class="atxt"><span class="anm">${esc(uname)}</span><br><span class="asub">Đã đăng nhập Discord</span></span><a class="lo-ic" href="/dashboard/logout" title="Đăng xuất">🚪</a></div></aside><button id="rail-btn" title="Thu gọn / mở rộng sidebar">❮</button></div><div class="mainwrap"><div class="topbar"><div class="search"><span>🔍</span><input id="nav-search" placeholder="Tìm mục cài đặt..."><kbd>Ctrl K</kbd></div><span class="gchip">🖥 Server ${esc(gid)}</span><a class="btn-violet" href="https://discord.com/app" target="_blank" rel="noopener">+ Mở Discord</a></div><main id="main"><div class="pagehead"><h1>Tùy chỉnh server</h1><p>Quản lý mọi module của RAPTOR — thay đổi áp dụng ngay cho bot.</p></div>
 <div id="p-w" class="card"><h2>Welcome (giống BotGhost)</h2>
 <div class="grid"><div><label>Kênh gửi welcome</label><select id="w-channel"></select></div><div><label>Tiêu đề (VD: By RAPTOR)</label><input id="w-title" placeholder="Để trống = theo tên server"></div>
 <div><label>Kênh chọn role ✅</label><select id="w-role"></select></div><div><label>Kênh luật</label><select id="w-rules"></select></div>
@@ -519,10 +564,11 @@ function guild(gid, user) {
 <div class="grid"><div><label>Kênh starboard</label><select id="sb-ch"></select></div><div><label>Emoji tính sao</label><input id="sb-emoji" maxlength="10" value="⭐"></div></div>
 <div class="grid"><div><label>Số sao tối thiểu</label><input id="sb-th" type="number" min="1" max="50" value="3"></div></div>
 <div><label>Múi giờ hiển thị ngày giờ</label><select id="s-tz"><option value="Asia/Ho_Chi_Minh">Việt Nam (GMT+7)</option><option value="Asia/Tokyo">Nhật Bản (GMT+9)</option><option value="Asia/Bangkok">Bangkok (GMT+7)</option><option value="Asia/Singapore">Singapore (GMT+8)</option><option value="UTC">UTC</option><option value="America/New_York">New York</option><option value="Europe/London">London</option></select></div>
-<button id="set-save">Lưu</button></div></main></div>`, `<script>
+<button id="set-save">Lưu</button></div></main></div></div>`, `<script>
 const G='${esc(gid)}';
 const $=id=>document.getElementById(id);
 try{const L=document.getElementById('layout'),SD=document.getElementById('sidewrap'),RB=document.getElementById('rail-btn'),SC=document.getElementById('scrim');if(localStorage.getItem('raptor-rail')==='1'){L.classList.add('rail');RB.textContent='❯'}RB.onclick=()=>{const on=L.classList.toggle('rail');RB.textContent=on?'❯':'❮';localStorage.setItem('raptor-rail',on?'1':'0')};const closeSide=()=>{SD.classList.remove('open');SC.classList.remove('on')};document.getElementById('mbar-btn').onclick=()=>{SD.classList.add('open');SC.classList.add('on')};SC.onclick=closeSide;document.querySelectorAll('.side .nav').forEach(n=>n.addEventListener('click',()=>{if(window.innerWidth<=900)closeSide()}));}catch(e){}
+try{const NS=document.getElementById('nav-search');const navs=[...document.querySelectorAll('.side .nav')];const glabels=[...document.querySelectorAll('.side .glabel')];NS.addEventListener('input',()=>{const q=NS.value.trim().toLowerCase();navs.forEach(n=>{n.style.display=(!q||n.textContent.toLowerCase().includes(q))?'':'none'});glabels.forEach(g=>{let el=g.nextElementSibling,any=false;while(el&&!el.classList.contains('glabel')&&!el.classList.contains('achip')){if(el.classList.contains('nav')&&el.style.display!=='none')any=true;el=el.nextElementSibling}g.style.display=any?'':'none'})});NS.addEventListener('keydown',e=>{if(e.key==='Enter'){const f=navs.find(n=>n.style.display!=='none'&&n.id);if(f)f.click()}});document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();NS.focus()}});}catch(e){}
 document.getElementById('t-ov').onclick=e=>{t('t-ov',['p-ov'])};
 document.getElementById('t-mod').onclick=e=>{t('t-mod',['p-mod','p-m'])};
 document.getElementById('t-am').onclick=e=>{t('t-am',['p-am'])};
@@ -537,6 +583,7 @@ document.getElementById('t-u').onclick=e=>{t('t-u',['p-u']);loadMusic()};
 document.getElementById('t-s').onclick=e=>{t('t-s',['p-s','p-a'])};
 document.getElementById('t-cmd').onclick=e=>{t('t-cmd',['p-cmd']);loadCmds()};
 document.getElementById('t-set').onclick=e=>{t('t-set',['p-set'])};
+t('t-ov',['p-ov']);
 function t(tab,pages){if(!Array.isArray(pages))pages=[pages];document.querySelectorAll('.nav').forEach(x=>x.classList.remove('on'));document.getElementById(tab).classList.add('on');['p-ov','p-mod','p-am','p-w','p-l','p-x','p-m','p-t','p-a','p-s','p-r','p-g','p-o','p-u','p-v','p-cmd','p-set'].forEach(p=>document.getElementById(p).style.display='none');pages.forEach(p=>document.getElementById(p).style.display='block')}
 function opt(sel,list,cur,allowEmpty){const s=$(sel);s.innerHTML=(allowEmpty?'<option value="">— không dùng —</option>':'')+list.map(o=>'<option value="'+o.id+'"'+(o.lock?' disabled':'')+'>'+o.name.replace(/</g,'&lt;')+(o.lock?' 🔒':'')+'</option>').join('');if(cur)s.value=cur;mkSearch(s)}
 let META=null;
