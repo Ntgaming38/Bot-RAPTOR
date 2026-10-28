@@ -1,8 +1,11 @@
+const fs = require('node:fs');
 const path = require('node:path');
 const config = require('../config');
 const { embed } = require('./embeds');
 
 const RAINBOW_FILE = path.join(__dirname, '..', '..', 'assets', 'rainbow.png');
+const LOGO_FILE = path.join(__dirname, '..', '..', 'assets', 'raptor-logo.jpg');
+const LOGO_NAME = 'raptor-logo.jpg';
 
 // 1st, 2nd, 3rd... như trong hình (185th)
 function ordinal(n) {
@@ -21,7 +24,18 @@ async function buildWelcome(member, s) {
   const server = guild.name;
   const author = (s?.title) || config.welcomeTitle || `By ${server}`;
   const count = ordinal(guild.memberCount);
-  const thumb = (s?.imageUrl) || config.welcomeImageUrl || guild.iconURL({ size: 256 }) || member.user.displayAvatarURL({ size: 256 });
+  // Logo góc phải: ảnh tùy chỉnh (dashboard/.env) > logo RAPTOR đóng gói > icon server > avatar
+  const customThumb = (s?.imageUrl) || config.welcomeImageUrl;
+  let thumb = customThumb;
+  let useLogo = false;
+  if (!thumb) {
+    if (fs.existsSync(LOGO_FILE)) {
+      thumb = `attachment://${LOGO_NAME}`;
+      useLogo = true;
+    } else {
+      thumb = guild.iconURL({ size: 256 }) || member.user.displayAvatarURL({ size: 256 });
+    }
+  }
   const color = (s?.color) || config.welcomeColor;
 
   const roleCh = (s?.roleChannelId) ?? config.welcomeRoleChannelId;
@@ -70,6 +84,7 @@ async function buildWelcome(member, s) {
 
   // Ảnh dưới embed: link banner riêng > card tự vẽ (avatar + cầu vồng) > gạch cầu vồng
   const files = [];
+  if (useLogo) files.push({ attachment: LOGO_FILE, name: LOGO_NAME });
   const banner = s?.bannerUrl || null;
   const rainbow = s?.bannerRainbow ?? true;
   const cardOn = s?.cardEnabled ?? true;
