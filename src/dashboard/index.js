@@ -1,3 +1,4 @@
+const path = require('node:path');
 const session = require('express-session');
 const config = require('../config');
 const views = require('./views');
@@ -878,9 +879,12 @@ function mount(app) {
     }
     res.send(views.home(req.session.user));
   });
+  app.get('/dashboard/logo.jpg', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', '..', 'assets', 'raptor-logo.jpg'));
+  });
   app.get('/dashboard/:gid', (req, res) => {
     if (!req.session?.user) return res.redirect('/dashboard');
-    res.send(views.guild(req.params.gid));
+    res.send(views.guild(req.params.gid, req.session.user));
   });
 
   console.log('📊 Dashboard: /dashboard (cần DISCORD_CLIENT_SECRET để login Discord)');
