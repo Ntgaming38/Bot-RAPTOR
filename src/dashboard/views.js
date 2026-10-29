@@ -139,6 +139,19 @@ body.glass-app{background-color:#04060e;background-image:radial-gradient(1100px 
 .glass-app .win .win-pad{padding:20px 24px 24px}
 .glass-app .topbar .logo{display:flex;align-items:center;gap:10px;font-family:'Outfit';font-weight:800;font-size:17px;color:#fff;text-decoration:none;white-space:nowrap}
 .glass-app .topbar .logo img{width:34px;height:34px;border-radius:9px;object-fit:cover}
+.glass-app .srv{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);color:#eef1f7;border-radius:14px;padding:13px 15px}
+.glass-app .srv:hover{background:rgba(255,255,255,.09);border-color:rgba(124,92,252,.45)}
+.glass-app .srv img{background:rgba(255,255,255,.08)}
+.glass-app .srv b{color:#fff}
+.glass-app .srv .badge.ok{background:rgba(29,157,87,.20);color:#5eeaa0;border:1px solid rgba(29,157,87,.40)}
+.glass-app .srv .badge.no{background:rgba(233,195,60,.14);color:var(--gold);border:1px solid rgba(233,195,60,.40)}
+.glass-app .stat{background:linear-gradient(160deg,rgba(124,92,252,.22),rgba(124,92,252,.07));border:1px solid rgba(124,92,252,.35);border-radius:14px}
+.glass-app .stat:nth-child(2){background:linear-gradient(160deg,rgba(59,130,246,.22),rgba(59,130,246,.07));border-color:rgba(59,130,246,.35)}
+.glass-app .stat:nth-child(3){background:linear-gradient(160deg,rgba(29,157,87,.22),rgba(29,157,87,.07));border-color:rgba(29,157,87,.35)}
+.glass-app .stat:nth-child(4){background:linear-gradient(160deg,rgba(245,158,11,.22),rgba(245,158,11,.07));border-color:rgba(245,158,11,.35)}
+.glass-app .stat:nth-child(5){background:linear-gradient(160deg,rgba(236,72,153,.22),rgba(236,72,153,.07));border-color:rgba(236,72,153,.35)}
+.glass-app .stat b{color:#fff}
+.glass-app .stat span{color:#c3cadb}
 @media(max-width:900px){.glass-app .layout,.glass-app .win{border-radius:22px}.glass-app .side{background:linear-gradient(165deg,rgba(38,40,48,.94),rgba(13,14,19,.92) 55%,rgba(20,22,28,.94));border:1px solid rgba(255,255,255,.14);border-radius:24px;box-shadow:0 24px 60px rgba(0,0,0,.5);max-height:none}.glass-app .topbar{flex-wrap:wrap;padding:14px 16px}.glass-app main{padding:4px 14px 14px}.glass-app .gchip{display:none}.glass-app .win .win-pad{padding:16px}}
 `;
 
