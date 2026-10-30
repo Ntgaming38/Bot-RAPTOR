@@ -18,6 +18,8 @@ module.exports = {
         return;
       }
     } catch (e) { console.warn('[antiraid]', e?.message); }
+    try { await require('../utils/activity').record(member.guild.id, 'join', `@${member.user.tag} vừa tham gia server`); } catch {}
+    try { await require('../utils/inviteRoles').onJoin(member); } catch {}
     console.log(`[welcome] ${member.user.tag} join ${member.guild.name} (${member.guild.id})`);
     // Setting ưu tiên từ /welcome setup, fallback về .env
     const s = await require('../utils/welcomeSettings').getWelcomeSettings(member.guild.id).catch((e) => {

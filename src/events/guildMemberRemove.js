@@ -4,6 +4,7 @@ const config = require('../config');
 module.exports = {
   name: Events.GuildMemberRemove,
   async execute(member, client) {
+    try { await require('../utils/activity').record(member.guild.id, 'leave', `@${member.user.tag} vừa rời server`); } catch {}
     const logger = require('../utils/logger');
     try {
       if (client) require('../utils/statsSettings').scheduleStatsRefresh(client, member.guild.id);

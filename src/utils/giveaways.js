@@ -161,6 +161,7 @@ async function end(client, id, { reroll = false } = {}) {
     await msg.edit({ embeds: [resultEmbed], components: [joinRow({ ...g, ended: true })] }).catch(() => {});
     await msg.reply(`🎊 ${reroll ? 'Roll lại' : 'Kết thúc'}! ${winners.length ? `Chúc mừng ${mention} đã thắng **${g.prize}**!` : 'Không có người thắng vì không ai tham gia.'}`).catch(() => {});
   }
+  if (!reroll) require('./activity').record(g.guildId, 'giveaway', `Giveaway “${g.prize}” kết thúc (${g.entries.length} người tham gia)`).catch(() => {});
   return { giveaway: g, winners };
 }
 

@@ -6,6 +6,7 @@ module.exports = {
     try {
       if (!invite.guild) return;
       await require('../utils/logger').logInvite(invite.guild, invite, true, invite.inviter || null);
+      require('../utils/inviteRoles').onInviteCreate(invite);
     } catch {}
   },
 };

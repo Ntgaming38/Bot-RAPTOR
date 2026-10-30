@@ -241,6 +241,7 @@ async function finishClose(client, guild, channel, t, { byId, byTag, auto = fals
       }
     }
   } catch {}
+  require('./activity').record(guild.id, 'ticket', `Ticket #${t.number ?? ''} (${t.typeLabel || ''}) của @${t.ownerTag} đã đóng`).catch(() => {});
   // DM chủ ticket
   try {
     const owner = await client.users.fetch(t.ownerId).catch(() => null);

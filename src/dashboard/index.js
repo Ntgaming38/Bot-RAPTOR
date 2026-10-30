@@ -795,12 +795,18 @@ function mount(app) {
         return { userId: e.userId, name, avatar, level: e.level, xp: e.xp, pct };
       }));
     } catch {}
+    let toggles = null, activity = [];
+    try {
+      const st = await require('../utils/guildSettings').getGuildSettings(req.params.gid);
+      toggles = { leveling: st.levelEnabled !== false, voicexp: st.voiceXpEnabled !== false, starboard: !!st.starboard?.enabled, antiraid: !!st.antiraid?.enabled };
+    } catch {}
+    try { activity = await require('../utils/activity').list(req.params.gid, 7); } catch {}
     res.json({
       guild: { id: guild.id, name: guild.name, icon: guild.icon, created: guild.createdTimestamp, premiumTier: guild.premiumTier },
       members: guild.memberCount,
       channels: channels?.size ?? 0,
       roles: roles?.size ?? 0,
-      openTickets, boards, top,
+      openTickets, boards, top, toggles, activity,
       bot: { tag: client.user?.tag || null, uptime: client.uptime || 0, ping: Math.round(client.ws?.ping ?? -1), memMB: Math.round(process.memoryUsage().rss / 1048576), guilds: client.guilds.cache.size },
       botPerms: (() => {
         try {
@@ -813,6 +819,192 @@ function mount(app) {
         } catch { return null; }
       })(),
     });
+  });
+
+  // Bật/tắt nhanh trên Overview — nối thẳng vào cài đặt thật của từng module
+  app.post('/dashboard/api/guilds/:gid/overview/toggles', guard, async (req, res) => {
+    const { key, value } = req.body || {};
+    const gs = require('../utils/guildSettings');
+    const st = await gs.getGuildSettings(req.params.gid);
+    const v = !!value;
+    const patch = {};
+    if (key === 'leveling') patch.levelEnabled = v;
+    else if (key === 'voicexp') patch.voiceXpEnabled = v;
+    else if (key === 'starboard') patch.starboard = { ...(st.starboard || {}), enabled: v };
+    else if (key === 'antiraid') patch.antiraid = { ...(st.antiraid || {}), enabled: v };
+    else return res.status(400).json({ error: 'bad-key' });
+    await gs.saveGuildSettings(req.params.gid, patch);
+    const now = await gs.getGuildSettings(req.params.gid);
+    res.json({ ok: true, toggles: { leveling: now.levelEnabled !== false, voicexp: now.voiceXpEnabled !== false, starboard: !!now.starboard?.enabled, antiraid: !!now.antiraid?.enabled } });
+  });
+
+  // Trình tạo Embed: gửi vào kênh + lưu mẫu dùng lại
+  const cleanEmbed = (b) => ({
+    title: String(b?.title || '').slice(0, 256),
+    description: String(b?.description || '').slice(0, 4000),
+    color: /^#[0-9a-fA-F]{6}$/.test(b?.color || '') ? b.color : '#e0322d',
+    image: /^https?:\/\//.test(b?.image || '') ? String(b.image).slice(0, 1000) : '',
+    thumbnail: /^https?:\/\//.test(b?.thumbnail || '') ? String(b.thumbnail).slice(0, 1000) : '',
+    footer: String(b?.footer || '').slice(0, 200),
+    btnLabel: String(b?.btnLabel || '').slice(0, 80),
+    btnUrl: /^https?:\/\//.test(b?.btnUrl || '') ? String(b.btnUrl).slice(0, 500) : '',
+  });
+  app.post('/dashboard/api/guilds/:gid/embed/send', guard, async (req, res) => {
+    try {
+      const guild = await client.guilds.fetch(req.params.gid).catch(() => null);
+      if (!guild) return res.status(404).json({ error: 'bot-not-in-guild' });
+      const ch = await guild.channels.fetch(String(req.body?.channelId || '')).catch(() => null);
+      if (!ch?.isTextBased()) return res.status(400).json({ error: 'bad-channel' });
+      const d = cleanEmbed(req.body?.embed || {});
+      if (!d.title && !d.description && !d.image) return res.status(400).json({ error: 'empty-embed' });
+      const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+      const em = new EmbedBuilder().setColor(d.color).setTimestamp();
+      if (d.title) em.setTitle(d.title);
+      if (d.description) em.setDescription(d.description);
+      if (d.image) em.setImage(d.image);
+      if (d.thumbnail) em.setThumbnail(d.thumbnail);
+      if (d.footer) em.setFooter({ text: d.footer });
+      const payload = { embeds: [em] };
+      if (d.btnLabel && d.btnUrl) {
+        payload.components = [new ActionRowBuilder().addComponents(new ButtonBuilder().setLabel(d.btnLabel).setStyle(ButtonStyle.Link).setURL(d.btnUrl))];
+      }
+      await ch.send(payload);
+      require('../utils/activity').record(req.params.gid, 'embed', `Gửi embed “${(d.title || 'không tiêu đề').slice(0, 60)}” vào #${ch.name}`).catch(() => {});
+      res.json({ ok: true });
+    } catch (e) { res.status(500).json({ error: e?.message || 'send-failed' }); }
+  });
+  app.get('/dashboard/api/guilds/:gid/embed/templates', guard, async (req, res) => {
+    const st = await require('../utils/guildSettings').getGuildSettings(req.params.gid);
+    res.json({ templates: Array.isArray(st.embedTemplates) ? st.embedTemplates : [] });
+  });
+  app.post('/dashboard/api/guilds/:gid/embed/templates', guard, async (req, res) => {
+    const gs = require('../utils/guildSettings');
+    const st = await gs.getGuildSettings(req.params.gid);
+    const name = String(req.body?.name || '').slice(0, 60).trim();
+    if (!name) return res.status(400).json({ error: 'no-name' });
+    let templates = Array.isArray(st.embedTemplates) ? [...st.embedTemplates] : [];
+    const item = { name, data: cleanEmbed(req.body?.data || {}) };
+    const idx = templates.findIndex((t) => t.name === name);
+    if (idx >= 0) templates[idx] = item; else templates.push(item);
+    templates = templates.slice(-30);
+    await gs.saveGuildSettings(req.params.gid, { embedTemplates: templates });
+    res.json({ ok: true, templates });
+  });
+  app.post('/dashboard/api/guilds/:gid/embed/templates/delete', guard, async (req, res) => {
+    const gs = require('../utils/guildSettings');
+    const st = await gs.getGuildSettings(req.params.gid);
+    const templates = (Array.isArray(st.embedTemplates) ? st.embedTemplates : []).filter((t) => t.name !== String(req.body?.name || ''));
+    await gs.saveGuildSettings(req.params.gid, { embedTemplates: templates });
+    res.json({ ok: true, templates });
+  });
+
+  // Role theo link mời: cấu hình + thống kê người mời
+  app.get('/dashboard/api/guilds/:gid/invites', guard, async (req, res) => {
+    const guild = await client.guilds.fetch(req.params.gid).catch(() => null);
+    if (!guild) return res.status(404).json({ error: 'bot-not-in-guild' });
+    const st = await require('../utils/guildSettings').getGuildSettings(req.params.gid);
+    const cfg = st.inviteCfg || { enabled: false, rules: [] };
+    let invites = [];
+    try {
+      const inv = await guild.invites.fetch();
+      invites = [...inv.values()].map((i) => ({ code: i.code, uses: i.uses || 0, inviter: i.inviter?.username || null }));
+    } catch {}
+    const stats = await require('../utils/inviteRoles').getStats(req.params.gid);
+    const enriched = await Promise.all([...stats].sort((a, b) => b.total - a.total).slice(0, 10).map(async (s) => {
+      let name = s.userId;
+      try { name = (await client.users.fetch(s.userId)).username; } catch {}
+      return { ...s, name };
+    }));
+    res.json({ cfg, invites, stats: enriched });
+  });
+  app.put('/dashboard/api/guilds/:gid/invites', guard, async (req, res) => {
+    const b = req.body || {};
+    const rules = (Array.isArray(b.rules) ? b.rules : []).slice(0, 20)
+      .map((r) => ({ code: String(r.code || '').trim(), roleId: String(r.roleId || '') || null }))
+      .filter((r) => r.code && r.roleId);
+    await require('../utils/guildSettings').saveGuildSettings(req.params.gid, { inviteCfg: { enabled: !!b.enabled, rules } });
+    res.json({ ok: true, count: rules.length });
+  });
+
+  // Shop bằng credits (hiển thị bằng /shop, mua bằng /shop buy)
+  const cleanShop = (list) => (Array.isArray(list) ? list : []).slice(0, 30).map((it, i) => ({
+    id: String(it.id || `item${i + 1}`).toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 24) || `item${i + 1}`,
+    name: String(it.name || 'Mặt hàng').slice(0, 60),
+    price: Math.min(1000000, Math.max(1, parseInt(it.price, 10) || 1)),
+    roleId: String(it.roleId || '') || null,
+    desc: String(it.desc || '').slice(0, 200),
+  })).filter((it) => it.name);
+  app.get('/dashboard/api/guilds/:gid/shop', guard, async (req, res) => {
+    const st = await require('../utils/guildSettings').getGuildSettings(req.params.gid);
+    res.json({ items: Array.isArray(st.shopItems) ? st.shopItems : [] });
+  });
+  app.put('/dashboard/api/guilds/:gid/shop', guard, async (req, res) => {
+    const items = cleanShop(req.body?.items);
+    await require('../utils/guildSettings').saveGuildSettings(req.params.gid, { shopItems: items });
+    res.json({ ok: true, count: items.length });
+  });
+
+  // Xuất / nhập cấu hình server (sao lưu & khôi phục)
+  app.get('/dashboard/api/guilds/:gid/config/export', guard, async (req, res) => {
+    const gid = req.params.gid;
+    const data = { app: 'Bot-RAPTOR', version: 1, guildId: gid, exportedAt: new Date().toISOString() };
+    try { data.settings = await require('../utils/guildSettings').getGuildSettings(gid); } catch {}
+    try { data.welcome = await require('../utils/welcomeSettings').getWelcomeSettings(gid); } catch {}
+    try { data.goodbye = await require('../utils/goodbyeSettings').getGoodbye(gid); } catch {}
+    try { data.leaderboard = await require('../utils/leaderboardSettings').getLeaderboardSettings(gid); } catch {}
+    try { data.logs = await require('../utils/logSettings').getLogSettings(gid); } catch {}
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="raptor-config-${gid}.json"`);
+    res.send(JSON.stringify(data, null, 2));
+  });
+  app.post('/dashboard/api/guilds/:gid/config/import', guard, async (req, res) => {
+    const gid = req.params.gid;
+    const d = req.body?.data;
+    if (!d || d.app !== 'Bot-RAPTOR') return res.status(400).json({ error: 'bad-file' });
+    const done = [];
+    const pick = (obj, keys) => {
+      const out = {};
+      if (obj) for (const k of keys) if (obj[k] !== undefined) out[k] = obj[k];
+      return out;
+    };
+    try {
+      if (d.settings) {
+        const keys = ['xpMin', 'xpMax', 'xpCooldownSec', 'levelUpMessage', 'bannedWords', 'logChannelId', 'ticketCategoryId', 'ticketStaffRoleId', 'ticketPanelImageUrl', 'ticketTypes', 'panelTitle', 'panelDescription', 'showClaim', 'showTranscript', 'showRating', 'closeDelaySec', 'archiveCategoryId', 'closeMode', 'autoCloseHours', 'defaultPriority', 'musicDefaultVolume', 'giveawayChannelId', 'giveawayWinners', 'giveawayDuration', 'language', 'timezone', 'prefix', 'levelEnabled', 'voiceXpEnabled', 'voiceXpPerMin', 'levelRoles', 'automod', 'antiraid', 'starboard', 'disabledCommands', 'shopItems', 'inviteCfg', 'embedTemplates'];
+        await require('../utils/guildSettings').saveGuildSettings(gid, pick(d.settings, keys));
+        done.push('cài đặt chung');
+      }
+    } catch {}
+    try {
+      if (d.welcome) {
+        const keys = ['channelId', 'message', 'subheading', 'cardEnabled', 'autoRoleId', 'reactions', 'dmEnabled', 'imageUrl', 'color'];
+        await require('../utils/welcomeSettings').saveWelcomeSettings(gid, pick(d.welcome, keys));
+        done.push('chào mừng');
+      }
+    } catch {}
+    try {
+      if (d.goodbye) {
+        const keys = ['channelId', 'message'];
+        await require('../utils/goodbyeSettings').saveGoodbye(gid, pick(d.goodbye, keys));
+        done.push('tạm biệt');
+      }
+    } catch {}
+    try {
+      const lb = require('../utils/leaderboardSettings');
+      if (d.leaderboard && typeof lb.saveLeaderboardSettings === 'function') {
+        await lb.saveLeaderboardSettings(gid, d.leaderboard);
+        done.push('bảng xếp hạng');
+      }
+    } catch {}
+    try {
+      if (d.logs) {
+        const keys = ['channelId', 'toggles'];
+        await require('../utils/logSettings').saveLogSettings(gid, pick(d.logs, keys));
+        done.push('nhật ký');
+      }
+    } catch {}
+    if (!done.length) return res.status(400).json({ error: 'nothing-imported' });
+    require('../utils/activity').record(gid, 'config', `Nhập cấu hình từ bản sao lưu (${done.join(', ')})`).catch(() => {});
+    res.json({ ok: true, done });
   });
 
   app.post('/dashboard/api/guilds/:gid/mod', guard, async (req, res) => {

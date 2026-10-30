@@ -123,9 +123,28 @@ async function main() {
     console.warn('[youtubei] Không load được YouTube extractor (vẫn phát được SoundCloud/link trực tiếp):', e.message);
   }
 
+  // Lưu hàng đợi nhạc để tự phát tiếp sau khi bot khởi động lại
+  const musicPersist = require('./utils/musicPersist');
+  const trackInfo = (t) => (t ? { url: t.url, title: t.title } : null);
+  const saveQueue = (queue) => {
+    try {
+      if (!queue?.guild) return;
+      const current = queue.currentTrack || queue.current;
+      if (!current && !(queue.tracks?.size)) { musicPersist.clear(queue.guild.id); return; }
+      musicPersist.save(queue.guild.id, {
+        voiceChannelId: queue.channel?.id || null,
+        textChannelId: queue.metadata?.channel?.id || null,
+        volume: queue.node?.volume ?? null,
+        current: trackInfo(current),
+        tracks: (queue.tracks?.toArray?.() || []).map(trackInfo).filter(Boolean),
+      });
+    } catch {}
+  };
   player.events.on(GuildQueueEvent.PlayerStart, (queue, track) => {
     queue.metadata?.channel?.send(`▶️ Đang phát: **${track.cleanTitle || track.title}** — yêu cầu bởi ${track.requestedBy}`).catch(() => {});
+    saveQueue(queue);
   });
+  player.events.on(GuildQueueEvent.AudioTrackAdd, (queue) => saveQueue(queue));
   player.events.on(GuildQueueEvent.PlayerError, (queue, error) => {
     // Lỗi audio (link chết, YouTube chặn, mạng...): báo + tự skip sang bài kế
     console.error('[PlayerError]', error?.message);
@@ -141,6 +160,7 @@ async function main() {
   player.events.on(GuildQueueEvent.Empty, (queue) => {
     queue.metadata?.channel?.send('📭 Hết nhạc trong hàng chờ, bot sẽ ở lại 60s rồi out.').catch(() => {});
     const gid = queue.guild.id;
+    musicPersist.clear(gid);
     if (emptyTimers.has(gid)) clearTimeout(emptyTimers.get(gid));
     const t = setTimeout(() => {
       emptyTimers.delete(gid);
@@ -159,6 +179,34 @@ async function main() {
   } catch (e) {
     console.warn('[giveaway restore]', e.message);
   }
+
+  // Khôi phục hàng đợi nhạc: phát tiếp bài đang dở + hàng chờ đã lưu
+  try {
+    for (const snap of await musicPersist.all()) {
+      try {
+        if (!snap?.current?.url || !snap.voiceChannelId) continue;
+        const guild = client.guilds.cache.get(snap.guildId);
+        if (!guild) continue;
+        const vc = await guild.channels.fetch(snap.voiceChannelId).catch(() => null);
+        if (!vc?.isVoiceBased()) { await musicPersist.clear(snap.guildId); continue; }
+        const tc = snap.textChannelId ? await guild.channels.fetch(snap.textChannelId).catch(() => null) : null;
+        const res = await player.play(vc, snap.current.url, {
+          requestedBy: client.user,
+          nodeOptions: { metadata: { channel: tc?.isTextBased() ? tc : vc } },
+        });
+        const q = res?.queue;
+        if (q) {
+          if (snap.volume) { try { q.node.setVolume(snap.volume); } catch {} }
+          for (const t of (snap.tracks || []).slice(0, 25)) {
+            const sr = await player.search(t.url, { requestedBy: client.user }).catch(() => null);
+            const tr = sr?.tracks?.[0];
+            if (tr) q.addTrack(tr);
+          }
+        }
+        console.log(`🎵 Đã khôi phục hàng đợi nhạc cho ${guild.name}`);
+      } catch (e) { console.warn('[music restore]', snap?.guildId, e?.message); }
+    }
+  } catch (e) { console.warn('[music restore]', e?.message); }
 
   // Tự cập nhật BXH ở kênh riêng mỗi 10 phút
   const refreshBoards = async () => {

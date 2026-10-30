@@ -31,6 +31,7 @@ module.exports = {
       if (res?.leveled) {
         const { applyLevelRewards } = require('../utils/levels');
         if (message.member) await applyLevelRewards(message.guild, message.member, res.level);
+        require('../utils/activity').record(message.guild.id, 'level', `@${message.author.tag} lên cấp ${res.level}`).catch(() => {});
         const lvlMsg = st?.levelUpMessage ?? config.levelUpMessage;
         if (lvlMsg) {
           await message.channel.send(`🎉 ${message.author} đã lên **level ${res.level}**!`).catch(() => {});

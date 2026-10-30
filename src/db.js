@@ -150,6 +150,9 @@ const guildSettingsSchema = new mongoose.Schema({
   antiraid: { type: Object, default: undefined },
   starboard: { type: Object, default: undefined },
   disabledCommands: { type: [String], default: undefined },
+  shopItems: { type: Array, default: undefined },
+  inviteCfg: { type: Object, default: undefined },
+  embedTemplates: { type: Array, default: undefined },
 });
 const GuildSettings = mongoose.models.GuildSettings || mongoose.model('GuildSettings', guildSettingsSchema);
 
@@ -286,4 +289,46 @@ const warnSchema = new mongoose.Schema({
 warnSchema.index({ guildId: 1, userId: 1 }, { unique: true });
 const Warn = mongoose.models.Warn || mongoose.model('Warn', warnSchema);
 
-module.exports = { mongoose, connectDB, isMongo, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings, GuildSettings, AnnounceSettings, StatsSettings, RolePanel, GoodbyeSettings, LogSettings, Warn, RoleBoard, TicketCounter, ClosedTicket, TicketBlacklist, TempRole };
+// === Hoạt động gần đây (cho thẻ Overview trên dashboard) ===
+const activityEventSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  type: String,
+  text: String,
+  ts: { type: Number, index: true },
+});
+const ActivityEvent = mongoose.models.ActivityEvent || mongoose.model('ActivityEvent', activityEventSchema);
+
+// === Nhắc việc (/remind) ===
+const reminderSchema = new mongoose.Schema({
+  guildId: String,
+  channelId: String,
+  userId: String,
+  text: String,
+  dueAt: { type: Number, index: true },
+  done: { type: Boolean, default: false },
+});
+const Reminder = mongoose.models.Reminder || mongoose.model('Reminder', reminderSchema);
+
+// === Hàng đợi nhạc lưu qua restart ===
+const musicQueueSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, unique: true },
+  voiceChannelId: String,
+  textChannelId: String,
+  volume: Number,
+  current: { type: Object, default: null },
+  tracks: { type: Array, default: [] },
+  ts: Number,
+});
+const MusicQueue = mongoose.models.MusicQueue || mongoose.model('MusicQueue', musicQueueSchema);
+
+// === Thống kê mời thành viên (role theo link mời) ===
+const inviteStatSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  userId: { type: String, required: true, index: true },
+  total: { type: Number, default: 0 },
+  byCode: { type: Object, default: undefined },
+});
+inviteStatSchema.index({ guildId: 1, userId: 1 }, { unique: true });
+const InviteStat = mongoose.models.InviteStat || mongoose.model('InviteStat', inviteStatSchema);
+
+module.exports = { mongoose, connectDB, isMongo, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings, GuildSettings, AnnounceSettings, StatsSettings, RolePanel, GoodbyeSettings, LogSettings, Warn, RoleBoard, TicketCounter, ClosedTicket, TicketBlacklist, TempRole, ActivityEvent, Reminder, MusicQueue, InviteStat };

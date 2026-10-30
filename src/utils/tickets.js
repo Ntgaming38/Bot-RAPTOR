@@ -277,6 +277,7 @@ async function createTicket(interaction, type, reason) {
     openingMessageId: null,
   };
   await saveStore(db);
+  require('./activity').record(interaction.guildId, 'ticket', `@${interaction.user.tag} mở ticket #${number} (${type.label})`).catch(() => {});
 
   const opening = await channel.send({
     content: `${interaction.user} ${st.ticketStaffRoleId ? `<@&${st.ticketStaffRoleId}>` : ''}`,

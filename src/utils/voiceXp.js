@@ -17,7 +17,10 @@ async function tickVoiceXp(client) {
           if (member.user.bot) continue;
           if (member.voice?.selfDeaf) continue; // tắt nghe = coi như không tham gia
           const res = await addXpAmount(guild.id, member.id, perMin).catch(() => null);
-          if (res?.leveled) await applyLevelRewards(guild, member, res.level);
+          if (res?.leveled) {
+            await applyLevelRewards(guild, member, res.level);
+            require('./activity').record(guild.id, 'level', `@${member.user.tag} lên cấp ${res.level} (XP thoại)`).catch(() => {});
+          }
         }
       }
     } catch (e) {
