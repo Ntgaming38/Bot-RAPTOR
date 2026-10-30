@@ -783,12 +783,25 @@ function mount(app) {
     try {
       boards = (await require('../utils/roleBoards').listBoards(req.params.gid)).length;
     } catch {}
+    let top = [];
+    try {
+      const levels = require('../utils/levels');
+      const lb = await levels.getLeaderboard(req.params.gid, 5);
+      top = await Promise.all(lb.map(async (e) => {
+        let name = e.userId, avatar = null;
+        try { const u = await client.users.fetch(e.userId); name = u.username; avatar = u.displayAvatarURL({ size: 64 }); } catch {}
+        let pct = 0;
+        try { const need = levels.xpNeeded(e.level); pct = need > 0 ? Math.min(100, Math.round((e.xp / need) * 100)) : 0; } catch {}
+        return { userId: e.userId, name, avatar, level: e.level, xp: e.xp, pct };
+      }));
+    } catch {}
     res.json({
       guild: { id: guild.id, name: guild.name, icon: guild.icon, created: guild.createdTimestamp, premiumTier: guild.premiumTier },
       members: guild.memberCount,
       channels: channels?.size ?? 0,
       roles: roles?.size ?? 0,
-      openTickets, boards,
+      openTickets, boards, top,
+      bot: { tag: client.user?.tag || null, uptime: client.uptime || 0, ping: Math.round(client.ws?.ping ?? -1), memMB: Math.round(process.memoryUsage().rss / 1048576), guilds: client.guilds.cache.size },
       botPerms: (() => {
         try {
           const p = guild.members.me?.permissions;

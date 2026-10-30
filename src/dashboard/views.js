@@ -97,10 +97,10 @@ body.glass-app{background-color:#0b0e17;background-image:radial-gradient(900px 6
 .glass-app #errbox{background:rgba(90,18,10,.88)!important;border-color:rgba(255,140,120,.5)!important;color:#ffd9d2!important}
 
 /* ===== Revenue glass v2: cửa sổ kính nổi + cầu sáng aurora ===== */
-body.glass-app{background-color:#04060e;background-image:radial-gradient(1100px 760px at 88% -12%,rgba(64,80,255,.30),transparent 62%),radial-gradient(900px 680px at -12% 18%,rgba(124,58,237,.22),transparent 60%),radial-gradient(1100px 820px at 50% 125%,rgba(214,61,32,.13),transparent 62%),linear-gradient(160deg,#070a16,#04060e 60%,#08060f)}
+body.glass-app{background-color:#04060e;background-image:radial-gradient(1100px 760px at 88% -12%,rgba(214,32,39,.30),transparent 62%),radial-gradient(900px 680px at -12% 18%,rgba(255,110,64,.16),transparent 60%),radial-gradient(1100px 820px at 50% 125%,rgba(214,61,32,.16),transparent 62%),linear-gradient(160deg,#070a16,#04060e 60%,#08060f)}
 .glass-app .ambient::before,.glass-app .ambient::after{content:"";position:absolute;border-radius:50%;filter:blur(50px);opacity:.55;pointer-events:none}
-.glass-app .ambient::before{width:520px;height:520px;top:-260px;left:38%;background:radial-gradient(circle at 35% 35%,#7d9bff,#2740b8 58%,rgba(39,64,184,0) 74%)}
-.glass-app .ambient::after{width:560px;height:560px;bottom:-300px;left:-160px;background:radial-gradient(circle at 40% 40%,#8f7dff,#3b2a8f 58%,rgba(59,42,143,0) 74%)}
+.glass-app .ambient::before{width:520px;height:520px;top:-260px;left:38%;background:radial-gradient(circle at 35% 35%,#ff9a86,#c22333 58%,rgba(194,35,51,0) 74%)}
+.glass-app .ambient::after{width:560px;height:560px;bottom:-300px;left:-160px;background:radial-gradient(circle at 40% 40%,#ffb08a,#a03a1e 58%,rgba(160,58,30,0) 74%)}
 .glass-app .layout,.glass-app .win{background:linear-gradient(165deg,rgba(21,25,44,.78),rgba(9,11,22,.84));-webkit-backdrop-filter:blur(24px) saturate(150%);backdrop-filter:blur(24px) saturate(150%);border:1px solid rgba(255,255,255,.09);border-radius:28px;box-shadow:0 34px 90px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.08);padding:0;gap:0}
 .glass-app .sidewrap{top:40px}
 .glass-app .side{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015));border:0;border-right:1px solid rgba(255,255,255,.07);border-radius:28px 0 0 28px;box-shadow:none;padding:18px 14px;max-height:calc(100vh - 80px)}
@@ -108,12 +108,14 @@ body.glass-app{background-color:#04060e;background-image:radial-gradient(1100px 
 .glass-app .glabel{font-size:10.5px;letter-spacing:.13em;color:#6f7789;font-weight:700;padding:14px 12px 5px}
 .glass-app .nav{height:36px;border-radius:10px;font-size:13.5px;color:#9aa3b8;padding:0 11px}
 .glass-app .nav:hover{background:rgba(255,255,255,.05);color:#e8ecf4}
-.glass-app .nav.on{background:linear-gradient(90deg,rgba(124,92,252,.30),rgba(124,92,252,.12));border-color:rgba(124,92,252,.38);color:#ddd2ff;box-shadow:none}
-.glass-app .nav.on .nic{filter:drop-shadow(0 0 6px rgba(124,92,252,.95))}
+.glass-app .nav.on{background:linear-gradient(120deg,#c81e2b,#f43f5e);border-color:rgba(255,120,130,.35);color:#fff;box-shadow:0 8px 22px -6px rgba(244,63,78,.55)}
+.glass-app .nav.on .nic{filter:drop-shadow(0 0 6px rgba(255,140,150,.95))}
+.glass-app .nav .nic{display:inline-flex;align-items:center}
+.glass-app .nav .nic svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .glass-app a.nav{text-decoration:none}
 .glass-app .layout.rail .glabel{display:none}
 .glass-app .achip{margin:10px 0 0;border:0;border-top:1px solid rgba(255,255,255,.07);border-radius:0;background:transparent;box-shadow:none;padding:13px 6px 2px}
-.glass-app .achip img,.glass-app .achip .afb{width:34px;height:34px;flex:0 0 34px;border-color:rgba(124,92,252,.6)}
+.glass-app .achip img,.glass-app .achip .afb{width:34px;height:34px;flex:0 0 34px;border-color:rgba(244,63,78,.55)}
 .glass-app .achip .anm{font-size:13px}
 .glass-app .lo-ic{margin-left:auto;width:30px;height:30px;flex:0 0 30px;display:flex;align-items:center;justify-content:center;border-radius:9px;background:rgba(239,68,68,.13);border:1px solid rgba(239,68,68,.32);text-decoration:none;font-size:13px}
 .glass-app .lo-ic:hover{background:rgba(239,68,68,.25)}
@@ -126,32 +128,55 @@ body.glass-app{background-color:#04060e;background-image:radial-gradient(1100px 
 .glass-app .search input:focus{outline:none}
 .glass-app .search kbd{font-family:inherit;font-size:11px;color:#8b93a7;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:2px 6px}
 .glass-app .gchip{font-size:12px;color:#aeb6c6;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:999px;padding:7px 12px;white-space:nowrap}
-.glass-app .btn-violet{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#7c5cfc,#6847e8);color:#fff;font-weight:600;font-size:13.5px;border-radius:11px;padding:10px 16px;text-decoration:none;white-space:nowrap;box-shadow:0 8px 22px rgba(124,92,252,.35)}
-.glass-app .btn-violet:hover{background:linear-gradient(135deg,#8a6dff,#7150ef);color:#fff}
+.glass-app .btn-violet{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(120deg,#c81e2b,#f43f5e);color:#fff;font-weight:600;font-size:13.5px;border-radius:11px;padding:10px 16px;text-decoration:none;white-space:nowrap;box-shadow:0 8px 22px rgba(244,63,78,.35)}
+.glass-app .btn-violet:hover{background:linear-gradient(120deg,#e53240,#ff5c6c);color:#fff}
 .glass-app main{padding:6px 22px 18px}
 .glass-app .pagehead h1{font-size:25px;margin:12px 0 2px}
 .glass-app .pagehead p{margin:0;color:#8b93a7;font-size:13.5px}
 .glass-app .card{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);border-radius:16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 12px 30px rgba(0,0,0,.22)}
 .glass-app input,.glass-app select,.glass-app textarea{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.09)}
-.glass-app button{background:linear-gradient(135deg,#7c5cfc,#6847e8)}
-.glass-app button:hover{background:linear-gradient(135deg,#8a6dff,#7150ef)}
-.glass-app .sw{background:#7c5cfc}
+.glass-app button{background:linear-gradient(120deg,#c81e2b,#f43f5e)}
+.glass-app button:hover{background:linear-gradient(120deg,#e53240,#ff5c6c)}
+.glass-app .sw{background:linear-gradient(120deg,#c81e2b,#f43f5e)}
 .glass-app .win .win-pad{padding:20px 24px 24px}
 .glass-app .topbar .logo{display:flex;align-items:center;gap:10px;font-family:'Outfit';font-weight:800;font-size:17px;color:#fff;text-decoration:none;white-space:nowrap}
 .glass-app .topbar .logo img{width:34px;height:34px;border-radius:9px;object-fit:cover}
 .glass-app .srv{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);color:#eef1f7;border-radius:14px;padding:13px 15px}
-.glass-app .srv:hover{background:rgba(255,255,255,.09);border-color:rgba(124,92,252,.45)}
+.glass-app .srv:hover{background:rgba(255,255,255,.09);border-color:rgba(244,63,78,.45)}
 .glass-app .srv img{background:rgba(255,255,255,.08)}
 .glass-app .srv b{color:#fff}
 .glass-app .srv .badge.ok{background:rgba(29,157,87,.20);color:#5eeaa0;border:1px solid rgba(29,157,87,.40)}
 .glass-app .srv .badge.no{background:rgba(233,195,60,.14);color:var(--gold);border:1px solid rgba(233,195,60,.40)}
-.glass-app .stat{background:linear-gradient(160deg,rgba(124,92,252,.22),rgba(124,92,252,.07));border:1px solid rgba(124,92,252,.35);border-radius:14px}
-.glass-app .stat:nth-child(2){background:linear-gradient(160deg,rgba(59,130,246,.22),rgba(59,130,246,.07));border-color:rgba(59,130,246,.35)}
-.glass-app .stat:nth-child(3){background:linear-gradient(160deg,rgba(29,157,87,.22),rgba(29,157,87,.07));border-color:rgba(29,157,87,.35)}
-.glass-app .stat:nth-child(4){background:linear-gradient(160deg,rgba(245,158,11,.22),rgba(245,158,11,.07));border-color:rgba(245,158,11,.35)}
-.glass-app .stat:nth-child(5){background:linear-gradient(160deg,rgba(236,72,153,.22),rgba(236,72,153,.07));border-color:rgba(236,72,153,.35)}
+.glass-app .stat{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);border-radius:16px;text-align:left;padding:16px}
+.glass-app .stat .sic{width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+.glass-app .stat .sic svg{width:19px;height:19px;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.glass-app .stat .s1{background:rgba(244,63,78,.16)}.glass-app .stat .s1 svg{stroke:#ff8a94}
+.glass-app .stat .s2{background:rgba(56,150,255,.14)}.glass-app .stat .s2 svg{stroke:#6db3ff}
+.glass-app .stat .s3{background:rgba(63,185,112,.14)}.glass-app .stat .s3 svg{stroke:#5ed598}
+.glass-app .stat .s4{background:rgba(245,176,65,.15)}.glass-app .stat .s4 svg{stroke:#ffc65c}
+.glass-app .stat .s5{background:rgba(240,110,180,.13)}.glass-app .stat .s5 svg{stroke:#ff8ac2}
 .glass-app .stat b{color:#fff}
-.glass-app .stat span{color:#c3cadb}
+.glass-app .stat span{color:#98a1b3}
+.glass-app .pbadges{display:flex;flex-wrap:wrap;gap:8px}
+.glass-app .pbdg{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:999px;padding:6px 12px;font-size:13px;color:#d5dae6}
+.glass-app .pbdg::before{content:"";width:7px;height:7px;border-radius:50%;background:#3fb970;box-shadow:0 0 8px #3fb970}
+.glass-app .pbdg.off{color:#6d7688}.glass-app .pbdg.off::before{background:#565f73;box-shadow:none}
+.glass-app .ovgrid{display:grid;grid-template-columns:1fr 330px;gap:16px;align-items:start}
+.glass-app .ovcol{display:flex;flex-direction:column;gap:16px;min-width:0}
+.glass-app .kv{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px dashed rgba(255,255,255,.07);font-size:14px}
+.glass-app .kv:last-child{border-bottom:0}.glass-app .kv span{color:#98a1b3}.glass-app .kv b{font-weight:600;color:#eef1f7;text-align:right}
+.glass-app .odot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#3fb970;box-shadow:0 0 10px #3fb970;margin-right:7px}
+.glass-app .xpr{display:flex;align-items:center;gap:11px;padding:7px 0}
+.glass-app .xpr img,.glass-app .xpr .xfb{width:34px;height:34px;border-radius:50%;flex:0 0 34px;object-fit:cover}
+.glass-app .xpr .xfb{display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;background:linear-gradient(135deg,#e02635,#ff8a5c)}
+.glass-app .xpr .xw{flex:1;min-width:0}
+.glass-app .xpr .xw b{font-size:14px;display:flex;justify-content:space-between;gap:8px;color:#eef1f7}
+.glass-app .xpr .xw b em{font-style:normal;color:#ff8a94;font-size:12.5px;white-space:nowrap}
+.glass-app .xpr .xbar{height:6px;border-radius:99px;background:rgba(255,255,255,.08);margin-top:5px;overflow:hidden}
+.glass-app .xpr .xbar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#c81e2b,#ff8a5c)}
+@media(max-width:1100px){.glass-app .ovgrid{grid-template-columns:1fr}}
+.glass-app #ov-body .statgrid{grid-template-columns:repeat(5,1fr)}
+@media(max-width:760px){.glass-app #ov-body .statgrid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:900px){.glass-app .layout,.glass-app .win{border-radius:22px}.glass-app .side{background:linear-gradient(165deg,rgba(38,40,48,.94),rgba(13,14,19,.92) 55%,rgba(20,22,28,.94));border:1px solid rgba(255,255,255,.14);border-radius:24px;box-shadow:0 24px 60px rgba(0,0,0,.5);max-height:none}.glass-app .topbar{flex-wrap:wrap;padding:14px 16px}.glass-app main{padding:4px 14px 14px}.glass-app .gchip{display:none}.glass-app .win .win-pad{padding:16px}}
 `;
 
@@ -173,18 +198,18 @@ function landing(inviteUrl) {
 <style>
 :root{
   --bg:#0b0e17; --card:rgba(255,255,255,.06); --border:rgba(255,255,255,.13); --ink:#eef1f7; --mut:#98a1b3;
-  --primary:#d63d20; --primary-dark:#b93218; --gold:#e9c33c; --gold-soft:rgba(233,195,60,.15);
+  --primary:#d63d20; --primary-dark:#b93218; --gold:#ff7a59; --gold-soft:rgba(255,122,89,.16);
   --navy:#0c1322; --navy2:#131f38; --ok:#1d9d57;
   --radius:12px;
 }
 *{box-sizing:border-box}
-body{margin:0;font-family:'Inter',system-ui,sans-serif;color:var(--ink);background-color:#0b0e17;background-image:radial-gradient(900px 620px at 8% -10%,rgba(214,61,32,.30),transparent 60%),radial-gradient(820px 560px at 96% 0%,rgba(233,195,60,.15),transparent 55%),radial-gradient(920px 720px at 50% 118%,rgba(70,90,220,.20),transparent 62%),linear-gradient(160deg,#121524,#0b0e17 55%,#100b14);background-attachment:fixed}
+body{margin:0;font-family:'Inter',system-ui,sans-serif;color:var(--ink);background-color:#0b0e17;background-image:radial-gradient(900px 620px at 8% -10%,rgba(214,61,32,.30),transparent 60%),radial-gradient(820px 560px at 96% 0%,rgba(255,110,64,.14),transparent 55%),radial-gradient(920px 720px at 50% 118%,rgba(214,32,39,.18),transparent 62%),linear-gradient(160deg,#121524,#0b0e17 55%,#100b14);background-attachment:fixed}
 h1,h2,h3{font-family:'Outfit','Inter',sans-serif;margin:0}
 a{text-decoration:none;color:inherit}
-.btn{display:inline-block;background:var(--primary);color:#fff;font-weight:600;padding:13px 26px;border-radius:var(--radius);border:0;cursor:pointer;font-size:15px}
-.btn:hover{background:var(--primary-dark)}
+.btn{display:inline-block;background:linear-gradient(120deg,#c81e2b,#f43f5e);color:#fff;font-weight:600;padding:13px 26px;border-radius:var(--radius);border:0;cursor:pointer;font-size:15px}
+.btn:hover{background:linear-gradient(120deg,#a8161f,#d92c3f)}
 .btn.light{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.22);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
-.btn.gold{background:var(--gold);color:#231d05}
+.btn.gold{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.22);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 .btn.blurple{background:#5865f2;color:#fff}
 .wrap{max-width:1140px;margin:0 auto;padding:0 20px}
 /* ===== Navbar ===== */
@@ -196,13 +221,13 @@ header{position:sticky;top:0;z-index:20;background:rgba(12,19,34,.92);backdrop-f
 .navbar nav a:hover{color:var(--gold)}
 .navbar .sp{flex:1}
 .lang{font-size:13px;color:#9aa5ba;border:1px solid #2a3852;padding:6px 10px;border-radius:8px}
-.btn-login{background:var(--gold);color:#231d05;font-weight:700;padding:9px 18px;border-radius:9px;font-size:14px}
+.btn-login{background:linear-gradient(120deg,#c81e2b,#f43f5e);color:#fff;font-weight:700;padding:9px 18px;border-radius:9px;font-size:14px}
 /* ===== Hero ===== */
 .hero{background:radial-gradient(1000px 480px at 75% -10%,rgba(39,64,110,.55) 0%,transparent 60%),linear-gradient(180deg,rgba(12,19,34,.55),rgba(19,31,56,.25));color:#e8ecf4;overflow:hidden}
 .hero-in{display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center;padding:72px 0 84px}
 .badge{display:inline-block;background:rgba(233,195,60,.14);border:1px solid rgba(233,195,60,.45);color:var(--gold);font-size:13px;font-weight:600;padding:5px 12px;border-radius:999px;margin-bottom:18px}
 .hero h1{font-size:46px;line-height:1.12;font-weight:800;color:#fff}
-.hero h1 .hl{color:var(--gold)}
+.hero h1 .hl{background:linear-gradient(92deg,#f43f5e,#ff8a5c);-webkit-background-clip:text;background-clip:text;color:transparent}
 .hero p{font-size:17px;color:#aeb8ca;line-height:1.6;margin:18px 0 28px;max-width:520px}
 .hero .cta{display:flex;gap:12px;flex-wrap:wrap}
 .hero .note{margin-top:16px;font-size:13px;color:#7e8aa0}
@@ -212,7 +237,7 @@ header{position:sticky;top:0;z-index:20;background:rgba(12,19,34,.92);backdrop-f
 .mock .mhead{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .mav{width:36px;height:36px;border-radius:50%;flex:0 0 36px}
 .mname{font-weight:700;color:#fff;font-size:14px}
-.mname .bot{font-size:10px;background:#5865f2;color:#fff;border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:2px}
+.mname .bot{font-size:10px;background:var(--primary);color:#fff;border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:2px}
 .mtime{color:#7e8aa0;font-size:11px;font-weight:400;margin-left:6px}
 .embed{border-left:4px solid var(--gold);background:#171c29;border-radius:8px;padding:12px 14px}
 .embed b{color:#fff;display:block;margin-bottom:4px}
@@ -292,7 +317,7 @@ footer{border-top:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.0
       <h1>Xây dựng một server Discord <span class="hl">chuyên nghiệp!</span></h1>
       <p>Một bot toàn năng cho mọi việc — chào mừng thành viên, ticket hỗ trợ, cấp độ, giveaway, nhạc và kiểm duyệt — tất cả tùy chỉnh ngay trên dashboard, không cần gõ lệnh cấu hình.</p>
       <div class="cta">
-        <a class="btn blurple" href="__INVITE__" target="_blank" rel="noopener">➕ Thêm vào Discord</a>
+        <a class="btn" href="__INVITE__" target="_blank" rel="noopener">➕ Thêm vào Discord</a>
         <a class="btn gold" href="/dashboard">Mở Dashboard</a>
       </div>
       <p class="note">Miễn phí · Không cần thẻ · Cài đặt trong 1 phút</p>
@@ -303,7 +328,7 @@ footer{border-top:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.0
         <div class="embed"><b>👋 Chào mừng @Nguyễn Trọng Thủy!</b><span>Chào mừng bạn đến với <b style="display:inline;color:#fff">RAPTOR Community</b> — bạn là thành viên thứ 1.248. Đọc #nội-quy và chọn role ở #chọn-role nhé!</span></div>
       </div>
       <div class="mock level">
-        <div class="mhead"><div class="mav" style="background:linear-gradient(135deg,#5865f2,#8b5cf6)"></div><div class="mname">khoa.pro<span class="mtime">Cấp 24</span></div></div>
+        <div class="mhead"><div class="mav" style="background:linear-gradient(135deg,#e02635,#ff8a5c)"></div><div class="mname">khoa.pro<span class="mtime">Cấp 24</span></div></div>
         <div style="font-size:13px;color:#aeb8ca">XP: 18.420 / 25.500</div>
         <div class="lvlbar"><i></i></div>
       </div>
@@ -314,7 +339,7 @@ footer{border-top:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.0
 <section class="stats">
   <div class="wrap stats-in">
     <div><b>24/7</b><span>Online không nghỉ</span></div>
-    <div><b>40+</b><span>Lệnh sẵn dùng</span></div>
+    <div><b>49+</b><span>Lệnh sẵn dùng</span></div>
     <div><b>14</b><span>Module tùy chỉnh</span></div>
     <div><b>100%</b><span>Miễn phí</span></div>
   </div>
@@ -355,7 +380,7 @@ footer{border-top:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.0
 
   <div class="feat">
     <div class="vis">
-      <div class="mhead"><div class="mav" style="background:linear-gradient(135deg,#5865f2,#8b5cf6)"></div><div class="mname">BXH tuần này<span class="mtime">Leveling</span></div></div>
+      <div class="mhead"><div class="mav" style="background:linear-gradient(135deg,#e02635,#ff8a5c)"></div><div class="mname">BXH tuần này<span class="mtime">Leveling</span></div></div>
       <div class="tgl">🥇 @khoa.pro — Cấp 24 <b style="margin-left:auto">18.420 XP</b></div>
       <div class="tgl">🥈 @linh.xinh — Cấp 21 <b style="margin-left:auto">15.975 XP</b></div>
       <div class="tgl">🥉 @tuan.dev — Cấp 19 <b style="margin-left:auto">13.260 XP</b></div>
@@ -385,7 +410,7 @@ footer{border-top:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.0
   <div class="cta-band">
     <h2>Sẵn sàng nâng cấp server của bạn?</h2>
     <p>Thêm RAPTOR vào Discord và mở dashboard để tùy chỉnh ngay.</p>
-    <a class="btn blurple" href="__INVITE__" target="_blank" rel="noopener">➕ Thêm vào Discord</a>
+    <a class="btn" href="__INVITE__" target="_blank" rel="noopener">➕ Thêm vào Discord</a>
     <a class="btn gold" href="/dashboard" style="margin-left:10px">Mở Dashboard</a>
   </div>
 </section>
@@ -424,7 +449,7 @@ fetch('/dashboard/api/me').then(r=>r.json()).then(d=>{
 function guild(gid, user) {
   const uname = user?.username || 'RAPTOR';
   const uav = user?.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=64` : '';
-  return shell('Tùy chỉnh server', `<div class="ambient"></div><div class="mbar"><img src="/dashboard/logo.jpg" alt="RAPTOR"><b>RAPTOR</b><span style="color:#8a94a8;font-size:12px">Dashboard</span><button id="mbar-btn" aria-label="Mở menu">☰</button></div><div class="scrim" id="scrim"></div><div class="layout" id="layout"><div class="sidewrap" id="sidewrap"><aside class="side" id="side"><div class="brand"><img class="blogo-img" src="/dashboard/logo.jpg" alt="RAPTOR"><span class="btxt"><b>RAPTOR <span style="color:#a78bfa;font-weight:600">BOT</span></b><small>Dashboard</small></span></div><div class="glabel">TỔNG QUAN</div><div class="nav on" id="t-ov" title="Overview"><span class="nic">📊</span><span class="nlb">Overview</span></div><div class="glabel">QUẢN TRỊ</div><div class="nav" id="t-mod" title="Moderation"><span class="nic">🛡️</span><span class="nlb">Moderation</span></div><div class="nav" id="t-am" title="AutoMod"><span class="nic">🤖</span><span class="nlb">AutoMod</span></div><div class="nav" id="t-o" title="Logs"><span class="nic">📝</span><span class="nlb">Logs</span></div><div class="glabel">CỘNG ĐỒNG</div><div class="nav" id="t-w" title="Welcome"><span class="nic">👋</span><span class="nlb">Welcome</span></div><div class="nav" id="t-g" title="Goodbye"><span class="nic">👋</span><span class="nlb">Goodbye</span></div><div class="nav" id="t-x" title="Leveling"><span class="nic">🏆</span><span class="nlb">Leveling</span></div><div class="nav" id="t-v" title="Giveaway"><span class="nic">🎉</span><span class="nlb">Giveaway</span></div><div class="glabel">CÔNG CỤ</div><div class="nav" id="t-t" title="Ticket"><span class="nic">🎫</span><span class="nlb">Ticket</span></div><div class="nav" id="t-r" title="Roles"><span class="nic">🎭</span><span class="nlb">Roles</span></div><div class="nav" id="t-u" title="Music"><span class="nic">🎵</span><span class="nlb">Music</span></div><div class="glabel">HỆ THỐNG</div><div class="nav" id="t-s" title="Server Stats"><span class="nic">📈</span><span class="nlb">Server Stats</span></div><div class="nav" id="t-cmd" title="Commands"><span class="nic">⌨️</span><span class="nlb">Commands</span></div><div class="nav" id="t-set" title="Settings"><span class="nic">⚙️</span><span class="nlb">Settings</span></div><a class="nav" href="/dashboard" title="Tất cả server"><span class="nic">🏠</span><span class="nlb">Tất cả server</span></a><div style="flex:1"></div><div class="achip">${uav ? `<img src="${esc(uav)}" alt="">` : `<span class="afb">${esc(uname.slice(0, 1).toUpperCase())}</span>`}<span class="atxt"><span class="anm">${esc(uname)}</span><br><span class="asub">Đã đăng nhập Discord</span></span><a class="lo-ic" href="/dashboard/logout" title="Đăng xuất">🚪</a></div></aside><button id="rail-btn" title="Thu gọn / mở rộng sidebar">❮</button></div><div class="mainwrap"><div class="topbar"><div class="search"><span>🔍</span><input id="nav-search" placeholder="Tìm mục cài đặt..."><kbd>Ctrl K</kbd></div><span class="gchip">🖥 Server ${esc(gid)}</span><a class="btn-violet" href="https://discord.com/app" target="_blank" rel="noopener">+ Mở Discord</a></div><main id="main"><div class="pagehead"><h1>Tùy chỉnh server</h1><p>Quản lý mọi module của RAPTOR — thay đổi áp dụng ngay cho bot.</p></div>
+  return shell('Tùy chỉnh server', `<div class="ambient"></div><div class="mbar"><img src="/dashboard/logo.jpg" alt="RAPTOR"><b>RAPTOR</b><span style="color:#8a94a8;font-size:12px">Dashboard</span><button id="mbar-btn" aria-label="Mở menu">☰</button></div><div class="scrim" id="scrim"></div><div class="layout" id="layout"><div class="sidewrap" id="sidewrap"><aside class="side" id="side"><div class="brand"><img class="blogo-img" src="/dashboard/logo.jpg" alt="RAPTOR"><span class="btxt"><b>RAPTOR <span style="color:#ff5c6c;font-weight:600">BOT</span></b><small>Dashboard</small></span></div><div class="glabel">TỔNG QUAN</div><div class="nav on" id="t-ov" title="Overview"><span class="nic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6"/></svg></span><span class="nlb">Overview</span></div><div class="glabel">QUẢN TRỊ</div><div class="nav" id="t-mod" title="Moderation"><span class="nic"><svg viewBox="0 0 24 24"><path d="M12 3l7 2.8v5.4c0 4.4-2.9 7.4-7 9.3-4.1-1.9-7-4.9-7-9.3V5.8z"/><path d="M9 11.6l2.2 2.2L15.4 9.6"/></svg></span><span class="nlb">Moderation</span></div><div class="nav" id="t-am" title="AutoMod"><span class="nic"><svg viewBox="0 0 24 24"><rect x="4.5" y="8" width="15" height="11" rx="2.4"/><path d="M12 8V4.5M12 4.5h.01"/><circle cx="9" cy="13.5" r=".6"/><circle cx="15" cy="13.5" r=".6"/><path d="M9.5 16.8h5"/></svg></span><span class="nlb">AutoMod</span></div><div class="nav" id="t-o" title="Logs"><span class="nic"><svg viewBox="0 0 24 24"><path d="M6 3.5h9L19.5 8v12.5h-13.5z"/><path d="M14.5 3.5v5h5M9 12.5h6M9 16h6"/></svg></span><span class="nlb">Logs</span></div><div class="glabel">CỘNG ĐỒNG</div><div class="nav" id="t-w" title="Welcome"><span class="nic"><svg viewBox="0 0 24 24"><path d="M16 20v-1.6c0-2-1.8-3.4-4.5-3.4S7 16.4 7 18.4V20"/><circle cx="11.5" cy="8" r="3.4"/><path d="M18.5 5.5v4M16.5 7.5h4"/></svg></span><span class="nlb">Welcome</span></div><div class="nav" id="t-g" title="Goodbye"><span class="nic"><svg viewBox="0 0 24 24"><path d="M9 20H6.5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2H9M16 16.5L20.5 12 16 7.5M20.3 12H9.5"/></svg></span><span class="nlb">Goodbye</span></div><div class="nav" id="t-x" title="Leveling"><span class="nic"><svg viewBox="0 0 24 24"><path d="M8 20.5h8M12 17v3.5M6.5 4h11v4.5a5.5 5.5 0 0 1-11 0z"/><path d="M6.5 6H4a2.5 2.5 0 0 0 2.6 4.4M17.5 6H20A2.5 2.5 0 0 1 17.4 10.4"/></svg></span><span class="nlb">Leveling</span></div><div class="nav" id="t-v" title="Giveaway"><span class="nic"><svg viewBox="0 0 24 24"><rect x="3.5" y="8" width="17" height="4"/><path d="M5 12v8.5h14V12M12 8v12.5M12 8S9.6 8 8.2 6.9A2.3 2.3 0 0 1 10.4 3C12 3.6 12 8 12 8zm0 0s2.4 0 3.8-1.1A2.3 2.3 0 0 0 13.6 3C12 3.6 12 8 12 8z"/></svg></span><span class="nlb">Giveaway</span></div><div class="glabel">CÔNG CỤ</div><div class="nav" id="t-t" title="Ticket"><span class="nic"><svg viewBox="0 0 24 24"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h11A2.5 2.5 0 0 1 20 8.5v2a2.6 2.6 0 0 0 0 5.2v2A2.5 2.5 0 0 1 17.5 20h-11A2.5 2.5 0 0 1 4 17.7v-2a2.6 2.6 0 0 0 0-5.2z"/><path d="M13.5 7v1.8M13.5 11.2v1.6M13.5 15.4V17"/></svg></span><span class="nlb">Ticket</span></div><div class="nav" id="t-r" title="Roles"><span class="nic"><svg viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19.5c.6-3 2.8-4.5 5.5-4.5s4.9 1.5 5.5 4.5M16 5.6a3.2 3.2 0 0 1 0 5.9M17.8 15.3c1.5.7 2.4 2 2.7 4.2"/></svg></span><span class="nlb">Roles</span></div><div class="nav" id="t-u" title="Music"><span class="nic"><svg viewBox="0 0 24 24"><path d="M9.5 18.2V6l10-2v11.8"/><circle cx="6.8" cy="18.2" r="2.7"/><circle cx="16.8" cy="15.8" r="2.7"/></svg></span><span class="nlb">Music</span></div><div class="glabel">HỆ THỐNG</div><div class="nav" id="t-s" title="Server Stats"><span class="nic"><svg viewBox="0 0 24 24"><path d="M4 20V10.5M10 20V4.5M16 20v-8M21 20H3.5"/></svg></span><span class="nlb">Server Stats</span></div><div class="nav" id="t-cmd" title="Commands"><span class="nic"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2.4"/><path d="M7 9.5l3 2.7-3 2.7M12.5 15.5H17"/></svg></span><span class="nlb">Commands</span></div><div class="nav" id="t-set" title="Settings"><span class="nic"><svg viewBox="0 0 24 24"><path d="M5 7h9M18 7h1M5 12h3M12 12h7M5 17h11M20 17h-1"/><circle cx="16" cy="7" r="2.1"/><circle cx="10" cy="12" r="2.1"/><circle cx="18" cy="17" r="2.1"/></svg></span><span class="nlb">Settings</span></div><a class="nav" href="/dashboard" title="Tất cả server"><span class="nic"><svg viewBox="0 0 24 24"><path d="M4 11.2L12 4l8 7.2M6.2 9.8V20h11.6V9.8"/></svg></span><span class="nlb">Tất cả server</span></a><div style="flex:1"></div><div class="achip">${uav ? `<img src="${esc(uav)}" alt="">` : `<span class="afb">${esc(uname.slice(0, 1).toUpperCase())}</span>`}<span class="atxt"><span class="anm">${esc(uname)}</span><br><span class="asub">Đã đăng nhập Discord</span></span><a class="lo-ic" href="/dashboard/logout" title="Đăng xuất"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ff8a94" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h3.5a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H14M10 8l-4 4 4 4M6 12h10"/></svg></a></div></aside><button id="rail-btn" title="Thu gọn / mở rộng sidebar">❮</button></div><div class="mainwrap"><div class="topbar"><div class="search"><span style="display:inline-flex"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b93a7" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20.5 20.5L16.6 16.6"/></svg></span><input id="nav-search" placeholder="Tìm mục cài đặt..."><kbd>Ctrl K</kbd></div><span class="gchip" id="srv-chip">Server ${esc(gid)}</span><a class="btn-violet" href="https://discord.com/app" target="_blank" rel="noopener">+ Mở Discord</a></div><main id="main"><div class="pagehead"><h1>Tùy chỉnh server</h1><p>Quản lý mọi module của RAPTOR — thay đổi áp dụng ngay cho bot.</p></div>
 <div id="p-w" class="card"><h2>Welcome (giống BotGhost)</h2>
 <div class="grid"><div><label>Kênh gửi welcome</label><select id="w-channel"></select></div><div><label>Tiêu đề (VD: By RAPTOR)</label><input id="w-title" placeholder="Để trống = theo tên server"></div>
 <div><label>Kênh chọn role ✅</label><select id="w-role"></select></div><div><label>Kênh luật</label><select id="w-rules"></select></div>
@@ -533,7 +558,7 @@ function guild(gid, user) {
 <div><label>Kênh đăng giveaway mặc định</label><select id="v-channel"></select></div>
 <div class="grid"><div><label>Số người thắng mặc định</label><input id="v-winners" type="number" min="1" max="20" value="1"></div><div><label>Thời gian mặc định (VD: 10m, 1h, 1d)</label><input id="v-duration" value="10m"></div></div>
 <button id="v-save">Lưu</button><p class="mut">Lệnh <b>/giveaway start</b> chỉ cần ghi giải thưởng, còn lại lấy mặc định ở đây.</p></div>
-<div id="p-ov" class="card"><h2>Tổng quan</h2><div id="ov-body"><p class="mut">Đang tải...</p></div><div class="row" id="ov-links"></div></div>
+<div id="p-ov"><div class="ovgrid"><div class="ovcol"><div class="card"><h2>Tổng quan</h2><div id="ov-body"><p class="mut">Đang tải...</p></div><div class="row" id="ov-links"></div></div></div><div class="ovcol"><div class="card"><h2>Trạng thái bot</h2><div id="ov-status"><p class="mut">Đang tải...</p></div></div><div class="card"><h2>Top cấp độ</h2><div id="ov-top"><p class="mut">Đang tải...</p></div></div></div></div></div>
 <div id="p-mod" class="card" style="display:none"><h2>Moderation — thao tác nhanh</h2>
 <div class="grid"><div><label>Hành động</label><select id="md-act"><option value="warn">⚠️ Warn</option><option value="timeout">⏳ Timeout</option><option value="kick">👢 Kick</option><option value="ban">🔨 Ban</option><option value="unban">♻️ Unban (dùng ID)</option></select></div><div><label>User ID</label><input id="md-user" placeholder="123..."></div></div>
 <div class="grid"><div><label>Lý do</label><input id="md-reason" maxlength="400" placeholder="Không có lý do"></div><div><label>Số phút (chỉ timeout)</label><input id="md-mins" type="number" min="1" max="40320" value="10"></div></div>
@@ -770,7 +795,7 @@ function applyFilter(s){
   for(const o of Array.from(s.options)){if(keepSet.has(o.value))o.selected=true}
   if(!s.multiple){try{const vs=Array.from(keepSet);if(vs.length&&[...s.options].some(o=>o.value===vs[0]))s.value=vs[0]}catch(e){}}
 }
-async function loadOv(){try{const d=await api('GET','/dashboard/api/guilds/'+G+'/overview');$('ov-body').innerHTML='<div class=statgrid><div class=stat><b>'+d.members+'</b><span>thành viên</span></div><div class=stat><b>'+d.channels+'</b><span>kênh</span></div><div class=stat><b>'+d.roles+'</b><span>role</span></div><div class=stat><b>'+d.openTickets+'</b><span>ticket mở</span></div><div class=stat><b>'+d.boards+'</b><span>bảng role</span></div></div>'+(d.botPerms?'<p class=mut>Quyền bot: '+Object.entries(d.botPerms).map(([k,v])=>(v?'✅':'❌')+k).join(' ')+'</p>':'');const go=[['t-w','👋 Welcome'],['t-mod','🛡️ Moderation'],['t-v','🎉 Giveaway'],['t-t','🎫 Ticket'],['t-o','📝 Logs']];$('ov-links').innerHTML=go.map(([t,l])=>'<button class=ghost data-t="'+t+'">'+l+'</button>').join('');document.querySelectorAll('#ov-links button').forEach(b=>b.onclick=()=>document.getElementById(b.dataset.t).click())}catch(e){$('ov-body').innerHTML='<p class=mut>Lỗi tải.</p>'}}
+async function loadOv(){const E=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));try{const d=await api('GET','/dashboard/api/guilds/'+G+'/overview');const IC={m:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19.5c.6-3 2.8-4.5 5.5-4.5s4.9 1.5 5.5 4.5M16 5.6a3.2 3.2 0 0 1 0 5.9M17.8 15.3c1.5.7 2.4 2 2.7 4.2"/></svg>',c:'<svg viewBox="0 0 24 24"><path d="M4 6.5C4 5.1 5.1 4 6.5 4h11C18.9 4 20 5.1 20 6.5v7c0 1.4-1.1 2.5-2.5 2.5H13l-3.6 3.6c-.5.5-1.4.1-1.4-.6V16H6.5C5.1 16 4 14.9 4 13.5z"/></svg>',r:'<svg viewBox="0 0 24 24"><path d="M12 3l7 2.8v5.4c0 4.4-2.9 7.4-7 9.3-4.1-1.9-7-4.9-7-9.3V5.8z"/></svg>',t:'<svg viewBox="0 0 24 24"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h11A2.5 2.5 0 0 1 20 8.5v2a2.6 2.6 0 0 0 0 5.2v2A2.5 2.5 0 0 1 17.5 20h-11A2.5 2.5 0 0 1 4 17.7v-2a2.6 2.6 0 0 0 0-5.2z"/></svg>',b:'<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2.4"/><path d="M3.5 10h17M7 15h4"/></svg>'};const st=(ic,cls,n,l)=>'<div class=stat><div class="sic '+cls+'">'+ic+'</div><b>'+n+'</b><span>'+l+'</span></div>';$('ov-body').innerHTML='<div class=statgrid>'+st(IC.m,'s1',d.members,'thành viên')+st(IC.c,'s2',d.channels,'kênh')+st(IC.r,'s3',d.roles,'role')+st(IC.t,'s4',d.openTickets,'ticket mở')+st(IC.b,'s5',d.boards,'bảng role')+'</div>'+(d.botPerms?'<p style="margin:16px 0 9px;font-weight:600;color:#eef1f7">Quyền của bot trong server</p><div class=pbadges>'+Object.entries(d.botPerms).map(([k,v])=>'<span class="pbdg'+(v?'':' off')+'">'+E(k)+(v?'':' (chưa có)')+'</span>').join('')+'</div>':'');if(d.guild&&d.guild.name){const c=$('srv-chip');if(c)c.textContent=d.guild.name}if(d.bot){const ms=d.bot.uptime||0,dd=Math.floor(ms/864e5),hh=Math.floor(ms%864e5/36e5),mm=Math.floor(ms%36e5/6e4);const up=dd>0?dd+' ngày '+String(hh).padStart(2,'0')+' giờ':(hh>0?hh+' giờ '+String(mm).padStart(2,'0')+' phút':mm+' phút');$('ov-status').innerHTML='<div class=kv><span>Trạng thái</span><b><span class=odot></span>Online</b></div><div class=kv><span>Bot</span><b>'+E(d.bot.tag||'—')+'</b></div><div class=kv><span>Uptime</span><b>'+up+'</b></div><div class=kv><span>Độ trễ (ping)</span><b>'+(d.bot.ping>=0?d.bot.ping+' ms':'—')+'</b></div><div class=kv><span>RAM tiến trình</span><b>'+d.bot.memMB+' MB</b></div><div class=kv><span>Đang phục vụ</span><b>'+d.bot.guilds+' server</b></div>'}if(d.top){$('ov-top').innerHTML=d.top.length?d.top.map(u=>'<div class=xpr>'+(u.avatar?'<img src="'+E(u.avatar)+'" alt="">':'<span class=xfb>'+E((u.name||'?').slice(0,1).toUpperCase())+'</span>')+'<div class=xw><b><span>'+E(u.name)+'</span><em>Cấp '+u.level+'</em></b><div class=xbar><i style="width:'+(u.pct||0)+'%"></i></div></div></div>').join(''):'<p class=mut>Chưa có dữ liệu XP.</p>'}const go=[['t-w','Welcome'],['t-mod','Moderation'],['t-v','Giveaway'],['t-t','Ticket'],['t-o','Logs']];$('ov-links').innerHTML=go.map(([t,l])=>'<button class=ghost data-t="'+t+'">'+l+'</button>').join('');document.querySelectorAll('#ov-links button').forEach(b=>b.onclick=()=>document.getElementById(b.dataset.t).click())}catch(e){$('ov-body').innerHTML='<p class=mut>Lỗi tải.</p>'}}
 $('md-go').onclick=async()=>{try{await api('POST','/dashboard/api/guilds/'+G+'/mod',{action:$('md-act').value,userId:$('md-user').value.trim(),reason:$('md-reason').value,minutes:parseInt($('md-mins').value||'10',10)});$('md-user').value='';toast('Đã thực hiện')}catch(e){toast('Lỗi: '+e.message+' (kiểm tra ID, quyền bot)')}};
 $('md-wgo').onclick=async()=>{try{const l=await api('GET','/dashboard/api/guilds/'+G+'/warns?userId='+encodeURIComponent($('md-wuser').value.trim()));$('md-warns').innerHTML=l.length?l.map((w,i)=>'<b>'+(i+1)+'.</b> '+String(w.reason||'').replace(/</g,'&lt;')+' <span class=mut>— '+(w.byTag||'').replace(/</g,'&lt;')+'</span>').join('<br>'):'Chưa có warn nào.'}catch(e){toast('Lỗi: '+e.message)}};
 $('am-save').onclick=async()=>{try{const lines=id=>$(id).value.split(/\\n/).map(x=>x.trim()).filter(Boolean);await api('PUT','/dashboard/api/guilds/'+G+'/settings',{automod:{words:$('am-words').checked,wholeWord:$('am-whole').checked,invites:$('am-invites').checked,links:$('am-links').checked,spam:$('am-spam').checked,spamCount:parseInt($('am-count').value||'5',10),spamSecs:parseInt($('am-secs').value||'5',10),caps:$('am-caps').checked,capsPercent:parseInt($('am-caps-pct').value||'70',10),capsMinLen:parseInt($('am-caps-len').value||'10',10),mentions:$('am-mentions').checked,mentionCount:parseInt($('am-mention-count').value||'5',10),actions:{words:$('am-act-words').value,invites:$('am-act-invites').value,links:$('am-act-links').value,spam:$('am-act-spam').value,caps:$('am-act-caps').value,mentions:$('am-act-mentions').value},timeoutMin:parseInt($('am-mins').value||'10',10),urlWhitelist:lines('am-url-wl'),urlBlacklist:lines('am-url-bl'),onlyImageChannels:selVals('am-imgch'),onlyYoutubeChannels:selVals('am-ytch'),exemptChannels:selVals('am-xch'),exemptRoles:selVals('am-xr')},antiraid:{enabled:$('ar-on').checked,ageDays:parseInt($('ar-age').value||'7',10),count:parseInt($('ar-count').value||'5',10),windowSecs:parseInt($('ar-secs').value||'30',10),action:$('ar-act').value,timeoutMin:parseInt($('ar-mins').value||'60',10)}});toast('Đã lưu AutoMod + Anti-Raid (áp dụng ngay)')}catch(e){toast('Lỗi: '+e.message)}};
