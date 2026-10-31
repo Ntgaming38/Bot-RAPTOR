@@ -40,7 +40,12 @@ module.exports = {
       }
     } catch {}
 
-    // 1c) Nhiệm vụ hằng ngày: đếm tin nhắn chat
+    // 1c) AI Chat: được tag @RAPTOR hoặc chat trong kênh AI chỉ định thì bot trả lời
+    try {
+      await require('../utils/aiChat').maybeReply(message, st);
+    } catch {}
+
+    // 1d) Nhiệm vụ hằng ngày: đếm tin nhắn chat
     try {
       const q = await require('../utils/quests').bumpChat(message.guild.id, message.author.id);
       if (q?.completed) {

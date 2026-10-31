@@ -1173,6 +1173,26 @@ function mount(app) {
     res.json({ ok: true, ...cfg });
   });
 
+  // ===== AI Chat (Gemini qua endpoint tương thích OpenAI; key chỉ ở env) =====
+  app.get('/dashboard/api/guilds/:gid/aichat', guard, async (req, res) => {
+    const aiChat = require('../utils/aiChat');
+    const st = await require('../utils/guildSettings').getGuildSettings(req.params.gid);
+    const cfg = aiChat.cfgOf(st);
+    res.json({ ...cfg, keySet: aiChat.keyConfigured() });
+  });
+
+  app.put('/dashboard/api/guilds/:gid/aichat', guard, async (req, res) => {
+    const b = req.body || {};
+    const cfg = {
+      enabled: b.enabled === true,
+      channelId: String(b.channelId || '') || null,
+      persona: String(b.persona || '').trim().slice(0, 1000) || null,
+      model: String(b.model || '').trim().slice(0, 60) || null,
+    };
+    await require('../utils/guildSettings').saveGuildSettings(req.params.gid, { aiChatCfg: cfg });
+    res.json({ ok: true, ...cfg });
+  });
+
   // ===== Khởi động lại bot (từ dashboard) =====
   app.post('/dashboard/api/guilds/:gid/bot/restart', guard, async (req, res) => {
     require('../utils/restartSignal').request();
