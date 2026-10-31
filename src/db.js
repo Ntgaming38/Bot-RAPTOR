@@ -190,6 +190,7 @@ const guildSettingsSchema = new mongoose.Schema({
   socialFeedCfg: { type: Object, default: undefined },
   scamCfg: { type: Object, default: undefined },
   tempVoiceCfg: { type: Object, default: undefined },
+  aiChatCfg: { type: Object, default: undefined },
 });
 const GuildSettings = mongoose.models.GuildSettings || mongoose.model('GuildSettings', guildSettingsSchema);
 
