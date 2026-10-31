@@ -533,7 +533,13 @@ function guild(gid, user) {
 <div class="grid"><div><label>All Members</label><input id="s-n-all"></div><div><label>Members</label><input id="s-n-members"></div>
 <div><label>Bots</label><input id="s-n-bots"></div><div><label>Channels</label><input id="s-n-channels"></div>
 <div><label>Roles</label><input id="s-n-roles"></div></div>
-<button id="s-save">Lưu</button><button class="ghost" id="s-refresh">Cập nhật ngay</button><button class="ghost" id="s-multi">Dựng 5 kênh kiểu mẫu</button><p class="mut">Chế độ 1 kênh: tự đổi tên mỗi 15 phút. Chế độ 5 kênh: All Members / Members / Bots / Channels / Roles riêng. Muốn đếm {online} thì bật <b>Presence Intent</b> trong Developer Portal.</p></div>
+<button id="s-save">Lưu</button><button class="ghost" id="s-refresh">Cập nhật ngay</button><button class="ghost" id="s-multi">Dựng 5 kênh kiểu mẫu</button><p class="mut">Chế độ 1 kênh: tự đổi tên mỗi 15 phút. Chế độ 5 kênh: All Members / Members / Bots / Channels / Roles riêng. Muốn đếm {online} thì bật <b>Presence Intent</b> trong Developer Portal.</p>
+<hr style="border:0;border-top:1px solid rgba(255,255,255,.08);margin:22px 0">
+<h3 style="margin:0 0 10px">Bảng trạng thái embed — tự sửa tin 24/24</h3>
+<div><label>Kênh text chứa bảng (để trống = chưa bật)</label><select id="s-board-ch"></select></div>
+<div><label>Chu kỳ cập nhật (giây, 30–3600; mặc định 60)</label><input id="s-board-int" type="number" min="30" max="3600" step="10"></div>
+<div id="s-board-state" class="mut" style="margin:8px 0"></div>
+<button class="ghost" id="s-board-post">📌 Đăng / cập nhật bảng ngay</button><button class="ghost" id="s-board-off">Tắt bảng (xóa tin)</button><p class="mut">Bảng hiển thị: tổng thành viên · đang online · offline · số bot · đang voice. Tin bị xóa thì bot tự đăng lại. Người ẩn trạng thái (invisible) tính là offline.</p></div>
 <div id="p-r" class="card" style="display:none"><h2>Role theo link mời</h2>
 <p class="mut">Thành viên vào server bằng link mời nào thì tự nhận role tương ứng. Xem số lượt mời bằng lệnh <b>/invites</b>.</p>
 <label class="chk"><input type="checkbox" id="inv-on"> Bật role theo link mời</label>
@@ -750,6 +756,7 @@ async function api(m,url,body){const r=await fetch(url,{method:m,headers:{'Conte
     opt('a-channel',txt,an.channelId,true);$('a-title').value=an.title||'';$('a-text').value=an.text||'';$('a-min').value=an.intervalMin||0;if(an.color)$('a-color').value=an.color;if(an.color)$('a-color').value=an.color;
     const ss=await api('GET','/dashboard/api/guilds/'+G+'/stats');
     opt('s-voice',[{id:'',name:'— chưa bật —'}].concat(META.voice||[]),ss.voiceChannelId,true);$('s-tpl').value=ss.template||'';
+    opt('s-board-ch',[{id:'',name:'— chưa bật —'}].concat(txt),ss.boardChannelId,true);$('s-board-int').value=ss.boardIntervalSec||60;$('s-board-state').textContent=ss.boardChannelId?('Đang bật · chu kỳ '+(ss.boardIntervalSec||60)+' giây'+(ss.boardMessageId?' · đã có tin bảng':' · chưa đăng tin')):'Đang tắt — chọn kênh rồi bấm Đăng.';
     const dmn={all:'🔊 All Members: {n}',members:'🔊 Members: {n}',bots:'🔊 Bots: {n}',channels:'🔊 Channels: {n}',roles:'🔊 Roles: {n}',...(ss.multiNames||{})};
     $('s-n-all').value=dmn.all||'';$('s-n-members').value=dmn.members||'';$('s-n-bots').value=dmn.bots||'';$('s-n-channels').value=dmn.channels||'';$('s-n-roles').value=dmn.roles||'';
     const rp=await api('GET','/dashboard/api/guilds/'+G+'/roleboards');
@@ -792,6 +799,8 @@ $('a-test').onclick=async()=>{try{const d=await api('POST','/dashboard/api/guild
 $('s-save').onclick=async()=>{try{await api('PUT','/dashboard/api/guilds/'+G+'/stats',{voiceChannelId:$('s-voice').value||null,template:$('s-tpl').value||null,multiNames:{all:$('s-n-all').value||null,members:$('s-n-members').value||null,bots:$('s-n-bots').value||null,channels:$('s-n-channels').value||null,roles:$('s-n-roles').value||null}});toast('Đã lưu trạng thái')}catch(e){toast('Lỗi: '+e.message)}};
 $('s-refresh').onclick=async()=>{try{const d=await api('POST','/dashboard/api/guilds/'+G+'/stats/refresh');toast('Đã cập nhật: '+d.name)}catch(e){toast('Lỗi: '+e.message+' (cần setup trước)')}};
 $('s-multi').onclick=async()=>{try{const d=await api('POST','/dashboard/api/guilds/'+G+'/stats/setup-multi',{});toast('Đã dựng 5 kênh: '+d.line)}catch(e){toast('Lỗi: '+e.message+' (bot cần quyền Manage Channels)')}};
+$('s-board-post').onclick=async()=>{try{const ch=$('s-board-ch').value;if(!ch){toast('Hãy chọn kênh text chứa bảng trước');return}let iv=parseInt($('s-board-int').value,10);if(!(iv>=30))iv=60;if(iv>3600)iv=3600;await api('PUT','/dashboard/api/guilds/'+G+'/stats',{boardChannelId:ch,boardIntervalSec:iv});const d=await api('POST','/dashboard/api/guilds/'+G+'/stats/board/post');$('s-board-state').textContent='Đang bật · chu kỳ '+iv+' giây · đã có tin bảng';toast('Đã đăng bảng trạng thái')}catch(e){toast('Lỗi: '+e.message)}};
+$('s-board-off').onclick=async()=>{try{await api('POST','/dashboard/api/guilds/'+G+'/stats/board/off');$('s-board-state').textContent='Đang tắt';toast('Đã tắt bảng trạng thái')}catch(e){toast('Lỗi: '+e.message)}};
 let RITEMS=[];let RBOARDS=[];let RBID='';let CHS=[{id:'',name:'— không dùng —'}];
 let KTYPES=[];
 let LROLES=[];

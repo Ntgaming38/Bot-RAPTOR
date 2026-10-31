@@ -524,6 +524,8 @@ function mount(app) {
       }
       patch.multiNames = mn;
     }
+    if (b.boardChannelId !== undefined) patch.boardChannelId = String(b.boardChannelId || '') || null;
+    if (b.boardIntervalSec !== undefined) patch.boardIntervalSec = require('../utils/statusBoard').clampInterval(b.boardIntervalSec);
     const s = await require('../utils/statsSettings').saveStats(req.params.gid, patch);
     require('../utils/statsSettings').updateStatsChannel(client, req.params.gid).catch(() => {});
     res.json({ ok: true, settings: s });
@@ -543,6 +545,28 @@ function mount(app) {
       res.json({ ok: true, line });
     } catch (e) {
       res.status(400).json({ error: e?.message === 'no-perm' ? 'Bot cần quyền Manage Channels.' : (e?.message || 'failed') });
+    }
+  });
+
+  // Bảng trạng thái embed tự sửa tin (utils/statusBoard.js): đăng/cập nhật ngay
+  app.post('/dashboard/api/guilds/:gid/stats/board/post', guard, async (req, res) => {
+    try {
+      const s = await require('../utils/statsSettings').getStats(req.params.gid);
+      if (!s.boardChannelId) return res.status(400).json({ error: 'no-channel' });
+      const { startBoard } = require('../utils/statusBoard');
+      const r = await startBoard(client, req.params.gid, s.boardChannelId, s.boardIntervalSec);
+      res.json({ ok: true, url: `https://discord.com/channels/${req.params.gid}/${s.boardChannelId}/${r.messageId}` });
+    } catch (e) {
+      res.status(400).json({ error: e?.message || 'failed' });
+    }
+  });
+
+  app.post('/dashboard/api/guilds/:gid/stats/board/off', guard, async (req, res) => {
+    try {
+      await require('../utils/statusBoard').stopBoard(client, req.params.gid);
+      res.json({ ok: true });
+    } catch (e) {
+      res.status(400).json({ error: e?.message || 'failed' });
     }
   });
 
