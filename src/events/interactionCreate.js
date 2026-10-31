@@ -31,10 +31,12 @@ module.exports = {
       return;
     }
 
-    // 2) Chọn loại ticket (select menu) + priority ticket + select-menu role
-    if (interaction.isStringSelectMenu() && (interaction.customId === 'ticket-select' || interaction.customId === 'ticket-priority' || interaction.customId.startsWith('rps:'))) {
+    // 2) Chọn loại ticket (select menu) + priority ticket + select-menu role + menu trợ giúp /help
+    if (interaction.isStringSelectMenu() && (interaction.customId === 'ticket-select' || interaction.customId === 'ticket-priority' || interaction.customId.startsWith('rps:') || interaction.customId.startsWith('help:'))) {
       try {
-        if (interaction.customId === 'ticket-priority') {
+        if (interaction.customId.startsWith('help:')) {
+          await require('../utils/helpMenu').handleSelect(interaction);
+        } else if (interaction.customId === 'ticket-priority') {
           await require('../utils/ticketsPro').handlePriority(interaction);
         } else if (interaction.customId.startsWith('rps:')) {
           const bid = interaction.customId.split(':')[1];
