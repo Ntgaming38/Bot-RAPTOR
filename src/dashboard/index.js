@@ -70,7 +70,8 @@ function mount(app) {
     secret: process.env.SESSION_SECRET || ('dev-' + Math.random().toString(36).slice(2)),
     resave: false,
     saveUninitialized: false,
-    cookie: { httpOnly: true, sameSite: 'lax', secure: 'auto', maxAge: 7 * 24 * 3600 * 1000 },
+    rolling: true,
+    cookie: { httpOnly: true, sameSite: 'lax', secure: 'auto', maxAge: 30 * 24 * 3600 * 1000 },
   }));
   app.use(require('express').json({ limit: '256kb' }));
 
