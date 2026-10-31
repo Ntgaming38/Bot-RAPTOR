@@ -17,6 +17,13 @@ async function tickVoiceXp(client) {
           if (member.user.bot) continue;
           if (member.voice?.selfDeaf) continue; // tắt nghe = coi như không tham gia
           const res = await addXpAmount(guild.id, member.id, perMin).catch(() => null);
+          try {
+            const qb = await require('./quests').bumpVoice(guild.id, member.id);
+            if (qb?.completed) {
+              member.send(`🎯 Bạn vừa hoàn thành nhiệm vụ **${qb.completed.name}** (+${qb.completed.reward} credits) khi ở kênh voice trong server ${guild.name}!`).catch(() => {});
+              require('./activity').record(guild.id, 'quest', `@${member.user.tag} hoàn thành nhiệm vụ “${qb.completed.name}” (+${qb.completed.reward} credits)`).catch(() => {});
+            }
+          } catch {}
           if (res?.leveled) {
             await applyLevelRewards(guild, member, res.level);
             require('./activity').record(guild.id, 'level', `@${member.user.tag} lên cấp ${res.level} (XP thoại)`).catch(() => {});

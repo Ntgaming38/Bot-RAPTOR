@@ -24,6 +24,31 @@ module.exports = {
       }
     } catch {}
 
+    // 1b) Lọc link lừa đảo (domain giả mạo Discord/Steam/Nitro) — mod có quyền quản lý tin nhắn được miễn
+    try {
+      const scamCfg = st?.scamCfg || {};
+      if (scamCfg.enabled !== false && !message.member?.permissions?.has?.('ManageMessages')) {
+        const hit = require('../utils/scamFilter').findScam(message.content, scamCfg.extraDomains || []);
+        if (hit) {
+          await message.delete().catch(() => {});
+          const warn = await message.channel.send(`⚠️ ${message.author} — link **${hit}** bị nghi là lừa đảo nên đã bị xóa. Mọi người cẩn thận với link lạ nhé!`).catch(() => null);
+          if (warn) setTimeout(() => warn.delete().catch(() => {}), 12_000);
+          require('../utils/activity').record(message.guild.id, 'scam', `Đã xóa link nghi lừa đảo (${hit}) của @${message.author.tag}`).catch(() => {});
+          try { require('../utils/logger').logMod(message.guild, `🛡️ Xóa link nghi lừa đảo từ ${message.author.tag}: ${hit}`); } catch {}
+          return;
+        }
+      }
+    } catch {}
+
+    // 1c) Nhiệm vụ hằng ngày: đếm tin nhắn chat
+    try {
+      const q = await require('../utils/quests').bumpChat(message.guild.id, message.author.id);
+      if (q?.completed) {
+        await message.channel.send(`🎯 ${message.author} vừa hoàn thành nhiệm vụ **${q.completed.name}** (+${q.completed.reward} credits)! Gõ /quests để xem nhiệm vụ hôm nay.`).catch(() => {});
+        require('../utils/activity').record(message.guild.id, 'quest', `@${message.author.tag} hoàn thành nhiệm vụ “${q.completed.name}” (+${q.completed.reward} credits)`).catch(() => {});
+      }
+    } catch {}
+
     // 2) Cộng XP level (tắt được: dashboard tab Level → hệ thống level)
     if (st?.levelEnabled === false) return;
     try {

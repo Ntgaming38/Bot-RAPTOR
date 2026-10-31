@@ -153,6 +153,9 @@ const guildSettingsSchema = new mongoose.Schema({
   shopItems: { type: Array, default: undefined },
   inviteCfg: { type: Object, default: undefined },
   embedTemplates: { type: Array, default: undefined },
+  gachaCfg: { type: Object, default: undefined },
+  socialFeedCfg: { type: Object, default: undefined },
+  scamCfg: { type: Object, default: undefined },
 });
 const GuildSettings = mongoose.models.GuildSettings || mongoose.model('GuildSettings', guildSettingsSchema);
 
@@ -331,4 +334,35 @@ const inviteStatSchema = new mongoose.Schema({
 inviteStatSchema.index({ guildId: 1, userId: 1 }, { unique: true });
 const InviteStat = mongoose.models.InviteStat || mongoose.model('InviteStat', inviteStatSchema);
 
-module.exports = { mongoose, connectDB, isMongo, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings, GuildSettings, AnnounceSettings, StatsSettings, RolePanel, GoodbyeSettings, LogSettings, Warn, RoleBoard, TicketCounter, ClosedTicket, TicketBlacklist, TempRole, ActivityEvent, Reminder, MusicQueue, InviteStat };
+// === Nhiệm vụ hằng ngày (/quests) ===
+const questProgressSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  userId: { type: String, required: true, index: true },
+  day: String,
+  chat: { type: Number, default: 0 },
+  voice: { type: Number, default: 0 },
+  daily: { type: Boolean, default: false },
+  rewarded: { type: Object, default: undefined },
+});
+questProgressSchema.index({ guildId: 1, userId: 1, day: 1 }, { unique: true });
+const QuestProgress = mongoose.models.QuestProgress || mongoose.model('QuestProgress', questProgressSchema);
+
+// === Playlist nhạc cá nhân (/playlist) ===
+const playlistSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  userId: { type: String, required: true, index: true },
+  name: String,
+  tracks: { type: Array, default: [] },
+  updatedAt: Number,
+});
+playlistSchema.index({ guildId: 1, userId: 1, name: 1 }, { unique: true });
+const Playlist = mongoose.models.Playlist || mongoose.model('Playlist', playlistSchema);
+
+// === Trạng thái nguồn tin mạng xã hội (chống đăng trùng) ===
+const feedStateSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, unique: true },
+  seen: { type: [String], default: [] },
+});
+const FeedState = mongoose.models.FeedState || mongoose.model('FeedState', feedStateSchema);
+
+module.exports = { mongoose, connectDB, isMongo, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings, GuildSettings, AnnounceSettings, StatsSettings, RolePanel, GoodbyeSettings, LogSettings, Warn, RoleBoard, TicketCounter, ClosedTicket, TicketBlacklist, TempRole, ActivityEvent, Reminder, MusicQueue, InviteStat, QuestProgress, Playlist, FeedState };

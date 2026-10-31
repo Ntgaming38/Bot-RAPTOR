@@ -1007,6 +1007,65 @@ function mount(app) {
     res.json({ ok: true, done });
   });
 
+  // ===== Hộp gacha =====
+  app.get('/dashboard/api/guilds/:gid/gacha', guard, async (req, res) => {
+    const st = await getGuildSettings(req.params.gid);
+    const cfg = st.gachaCfg || {};
+    res.json({ cost: Math.max(1, parseInt(cfg.cost, 10) || 100), prizes: Array.isArray(cfg.prizes) ? cfg.prizes : [] });
+  });
+
+  app.put('/dashboard/api/guilds/:gid/gacha', guard, async (req, res) => {
+    const g = req.params.gid;
+    const cost = Math.max(1, Math.min(1e6, parseInt(req.body?.cost, 10) || 100));
+    const prizes = (Array.isArray(req.body?.prizes) ? req.body.prizes : []).slice(0, 20)
+      .map((p) => ({ name: String(p?.name ?? '').trim().slice(0, 60), roleId: p?.roleId ? String(p.roleId) : null, weight: Math.max(1, Math.min(1000, parseInt(p?.weight, 10) || 10)) }))
+      .filter((p) => p.name);
+    await saveGuildSettings(g, { gachaCfg: { cost, prizes } });
+    res.json({ ok: true, cost, prizes });
+  });
+
+  // ===== Thông báo video TikTok mới qua RSS =====
+  app.get('/dashboard/api/guilds/:gid/socialfeed', guard, async (req, res) => {
+    const st = await getGuildSettings(req.params.gid);
+    const cfg = st.socialFeedCfg || {};
+    res.json({ enabled: !!cfg.enabled, feedUrl: cfg.feedUrl || 'https://rsshub.app/tiktok/user/phimhayplus38', channelId: cfg.channelId || null });
+  });
+
+  app.put('/dashboard/api/guilds/:gid/socialfeed', guard, async (req, res) => {
+    const g = req.params.gid;
+    const feedUrl = String(req.body?.feedUrl || '').trim().slice(0, 400);
+    const cfg = {
+      enabled: !!req.body?.enabled,
+      feedUrl: /^https?:\/\//i.test(feedUrl) ? feedUrl : 'https://rsshub.app/tiktok/user/phimhayplus38',
+      channelId: req.body?.channelId ? String(req.body.channelId) : null,
+    };
+    await saveGuildSettings(g, { socialFeedCfg: cfg });
+    res.json({ ok: true, ...cfg });
+  });
+
+  // ===== Lọc link lừa đảo =====
+  app.get('/dashboard/api/guilds/:gid/scamfilter', guard, async (req, res) => {
+    const st = await getGuildSettings(req.params.gid);
+    const cfg = st.scamCfg || {};
+    res.json({ enabled: cfg.enabled !== false, extraDomains: Array.isArray(cfg.extraDomains) ? cfg.extraDomains : [] });
+  });
+
+  app.put('/dashboard/api/guilds/:gid/scamfilter', guard, async (req, res) => {
+    const g = req.params.gid;
+    const extraDomains = (Array.isArray(req.body?.extraDomains) ? req.body.extraDomains : [])
+      .map((d) => String(d).toLowerCase().trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '')).filter(Boolean).slice(0, 100);
+    const cfg = { enabled: req.body?.enabled !== false, extraDomains };
+    await saveGuildSettings(g, { scamCfg: cfg });
+    res.json({ ok: true, ...cfg });
+  });
+
+  // ===== Khởi động lại bot (từ dashboard) =====
+  app.post('/dashboard/api/guilds/:gid/bot/restart', guard, async (req, res) => {
+    require('../utils/restartSignal').request();
+    console.log(`[ dashboard ] ${req.session.user?.username || '?'} yêu cầu khởi động lại bot từ dashboard.`);
+    res.json({ ok: true });
+  });
+
   app.post('/dashboard/api/guilds/:gid/mod', guard, async (req, res) => {
     const b = req.body || {};
     const action = b.action;

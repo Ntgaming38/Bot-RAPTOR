@@ -57,6 +57,7 @@ async function main() {
     client.commands.set(cmd.data.name, cmd);
   }
   console.log(`📦 Đã load ${commands.length} lệnh: ${commands.map(c => c.data.name).join(', ')}`);
+  try { require('./dashboard/views').setCmdCount(commands.length); } catch {}
 
   // Load events: src/events/<tenEvent>.js — mỗi file export { name, once, execute }
   const eventsPath = path.join(__dirname, 'events');
@@ -207,6 +208,20 @@ async function main() {
       } catch (e) { console.warn('[music restore]', snap?.guildId, e?.message); }
     }
   } catch (e) { console.warn('[music restore]', e?.message); }
+
+  // Cảnh báo sức khỏe cho chủ bot (khởi động lại bất thường + RAM cao) + theo dõi video TikTok mới
+  try { require('./utils/healthWatch').start(client); } catch (e) { console.warn('[healthWatch]', e?.message); }
+  try { require('./utils/socialFeed').startWatcher(client); } catch (e) { console.warn('[socialFeed]', e?.message); }
+
+  // Nút "Khởi động lại bot" trên dashboard: thoát tiến trình để Botkeep tự chạy lại
+  setInterval(() => {
+    try {
+      if (require('./utils/restartSignal').consume()) {
+        console.log('🔄 Nhận yêu cầu khởi động lại từ dashboard — thoát để nền tảng chạy lại bot...');
+        setTimeout(() => process.exit(0), 1500);
+      }
+    } catch {}
+  }, 10_000);
 
   // Tự cập nhật BXH ở kênh riêng mỗi 10 phút
   const refreshBoards = async () => {

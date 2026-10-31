@@ -18,7 +18,16 @@ module.exports = {
         const h = Math.ceil(r.retryAfterMs / 3600000);
         return interaction.reply({ content: `⏳ Bạn đã nhận daily rồi — quay lại sau khoảng **${h} giờ**.`, ephemeral: true });
       }
-      return interaction.reply({ embeds: [embed({ title: '💰 Điểm danh hằng ngày', description: `+${r.amount} credits! Số dư hiện tại: **${r.credits}** credits.` })] });
+      let bonusNote = '';
+      let finalBal = r.credits;
+      try {
+        const q = await require('../../utils/quests').onDaily(interaction.guildId, interaction.user.id);
+        if (q?.completed) {
+          bonusNote = `\n🎯 Hoàn thành nhiệm vụ **${q.completed.name}**: thưởng thêm **+${q.completed.reward}** credits!`;
+          finalBal = q.completed.balance;
+        }
+      } catch {}
+      return interaction.reply({ embeds: [embed({ title: '💰 Điểm danh hằng ngày', description: `+${r.amount} credits! Số dư hiện tại: **${finalBal}** credits.${bonusNote}` })] });
     }
     const user = interaction.options.getUser('user') || interaction.user;
     const p = getProfile(interaction.guildId, user.id);

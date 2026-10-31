@@ -96,14 +96,14 @@ body.glass-app{background-color:#0b0e17;background-image:radial-gradient(900px 6
 .glass-app .note{color:#8b96ab}
 .glass-app #errbox{background:rgba(90,18,10,.88)!important;border-color:rgba(255,140,120,.5)!important;color:#ffd9d2!important}
 
-/* ===== Revenue glass v2: cửa sổ kính nổi + cầu sáng aurora ===== */
-body.glass-app{background-color:#04060e;background-image:radial-gradient(1100px 760px at 88% -12%,rgba(214,32,39,.30),transparent 62%),radial-gradient(900px 680px at -12% 18%,rgba(255,110,64,.16),transparent 60%),radial-gradient(1100px 820px at 50% 125%,rgba(214,61,32,.16),transparent 62%),linear-gradient(160deg,#070a16,#04060e 60%,#08060f)}
-.glass-app .ambient::before,.glass-app .ambient::after{content:"";position:absolute;border-radius:50%;filter:blur(50px);opacity:.55;pointer-events:none}
-.glass-app .ambient::before{width:520px;height:520px;top:-260px;left:38%;background:radial-gradient(circle at 35% 35%,#ff9a86,#c22333 58%,rgba(194,35,51,0) 74%)}
-.glass-app .ambient::after{width:560px;height:560px;bottom:-300px;left:-160px;background:radial-gradient(circle at 40% 40%,#ffb08a,#a03a1e 58%,rgba(160,58,30,0) 74%)}
-.glass-app .layout,.glass-app .win{background:linear-gradient(165deg,rgba(21,25,44,.78),rgba(9,11,22,.84));-webkit-backdrop-filter:blur(24px) saturate(150%);backdrop-filter:blur(24px) saturate(150%);border:1px solid rgba(255,255,255,.09);border-radius:28px;box-shadow:0 34px 90px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.08);padding:0;gap:0}
+/* ===== Revenue glass v2: cửa sổ kính nổi + cầu sáng aurora — nền "Kính băng xanh" (mẫu D, chủ bot chọn 2026-10-31) ===== */
+body.glass-app{background-color:#060d18;background-image:radial-gradient(1000px 700px at 88% -10%,rgba(56,150,255,.42),transparent 60%),radial-gradient(880px 640px at -10% 25%,rgba(34,211,238,.30),transparent 58%),radial-gradient(980px 780px at 50% 120%,rgba(99,102,241,.32),transparent 62%),linear-gradient(160deg,#0a1524,#050910 72%)}
+.glass-app .ambient::before,.glass-app .ambient::after{content:"";position:absolute;border-radius:50%;filter:blur(50px);opacity:.8;pointer-events:none}
+.glass-app .ambient::before{width:520px;height:520px;top:-260px;left:38%;background:radial-gradient(circle at 35% 35%,#bfe3ff,#2f7fe0 55%,rgba(47,127,224,0) 75%)}
+.glass-app .ambient::after{width:560px;height:560px;bottom:-300px;left:-160px;opacity:.75;background:radial-gradient(circle at 40% 40%,#a5f3fc,#0e9db8 55%,rgba(14,157,184,0) 75%)}
+.glass-app .layout,.glass-app .win{background:linear-gradient(150deg,rgba(255,255,255,.10),rgba(255,255,255,.03) 55%,rgba(255,255,255,.06));-webkit-backdrop-filter:blur(26px) saturate(160%);backdrop-filter:blur(26px) saturate(160%);border:1px solid rgba(255,255,255,.15);border-radius:28px;box-shadow:0 30px 80px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.16);padding:0;gap:0}
 .glass-app .sidewrap{top:40px}
-.glass-app .side{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015));border:0;border-right:1px solid rgba(255,255,255,.07);border-radius:28px 0 0 28px;box-shadow:none;padding:18px 14px;max-height:calc(100vh - 80px)}
+.glass-app .side{background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.02));border:0;border-right:1px solid rgba(255,255,255,.07);border-radius:28px 0 0 28px;box-shadow:none;padding:18px 14px;max-height:calc(100vh - 80px)}
 .glass-app .side .brand{border-bottom:0;margin-bottom:2px;padding:0 6px 14px}
 .glass-app .glabel{font-size:10.5px;letter-spacing:.13em;color:#6f7789;font-weight:700;padding:14px 12px 5px}
 .glass-app .nav{height:36px;border-radius:10px;font-size:13.5px;color:#9aa3b8;padding:0 11px}
@@ -133,7 +133,7 @@ body.glass-app{background-color:#04060e;background-image:radial-gradient(1100px 
 .glass-app main{padding:6px 22px 18px}
 .glass-app .pagehead h1{font-size:25px;margin:12px 0 2px}
 .glass-app .pagehead p{margin:0;color:#8b93a7;font-size:13.5px}
-.glass-app .card{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);border-radius:16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 12px 30px rgba(0,0,0,.22)}
+.glass-app .card{background:linear-gradient(165deg,rgba(255,255,255,.10),rgba(255,255,255,.04));-webkit-backdrop-filter:blur(20px) saturate(155%);backdrop-filter:blur(20px) saturate(155%);border:1px solid rgba(255,255,255,.14);border-radius:16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.13),0 16px 38px rgba(0,0,0,.3)}
 .glass-app input,.glass-app select,.glass-app textarea{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.09)}
 .glass-app button{background:linear-gradient(120deg,#c81e2b,#f43f5e)}
 .glass-app button:hover{background:linear-gradient(120deg,#e53240,#ff5c6c)}
@@ -203,6 +203,8 @@ function shell(title, body, extra = '') {
   return `<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)} — RAPTOR Dashboard</title><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet"><style>${CSS}</style></head><body class="glass-app"><div class="wrap">${body}<div id="toast"></div><div id="errbox" style="display:none;position:fixed;top:12px;left:50%;transform:translateX(-50%);background:#fdeaea;border:1px solid #e5a49c;color:#7a1f10;padding:10px 18px;border-radius:10px;max-width:90%;z-index:99"></div><div class="mut" style="text-align:center;margin:20px 0;font-size:12px">build ${esc(build)}</div></div><script>function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',6000)}window.addEventListener('error',function(e){const b=document.getElementById('errbox');if(b){b.style.display='block';b.textContent='Lỗi trang: '+(e.message||e.error)}});</script>${extra}</body></html>`;
 }
 
+let cmdCount = 52;
+function setCmdCount(n) { if (Number.isFinite(n) && n > 0) cmdCount = n; }
 function landing(inviteUrl) {
   const invite = inviteUrl || '/dashboard/login';
   return `<!DOCTYPE html>
@@ -357,7 +359,7 @@ footer{border-top:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.0
 <section class="stats">
   <div class="wrap stats-in">
     <div><b>24/7</b><span>Online không nghỉ</span></div>
-    <div><b>49+</b><span>Lệnh sẵn dùng</span></div>
+    <div><b>__CMDCOUNT__+</b><span>Lệnh sẵn dùng</span></div>
     <div><b>14</b><span>Module tùy chỉnh</span></div>
     <div><b>100%</b><span>Miễn phí</span></div>
   </div>
@@ -443,7 +445,7 @@ footer{border-top:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.0
 </footer>
 </body>
 </html>
-`.replaceAll('__INVITE__', invite);
+`.replaceAll('__INVITE__', invite).replaceAll('__CMDCOUNT__', String(cmdCount));
 }
 
 function login() {
@@ -585,7 +587,7 @@ function guild(gid, user) {
 <div><label>Kênh đăng giveaway mặc định</label><select id="v-channel"></select></div>
 <div class="grid"><div><label>Số người thắng mặc định</label><input id="v-winners" type="number" min="1" max="20" value="1"></div><div><label>Thời gian mặc định (VD: 10m, 1h, 1d)</label><input id="v-duration" value="10m"></div></div>
 <button id="v-save">Lưu</button><p class="mut">Lệnh <b>/giveaway start</b> chỉ cần ghi giải thưởng, còn lại lấy mặc định ở đây.</p></div>
-<div id="p-ov"><div class="ovgrid"><div class="ovcol"><div class="card"><h2>Tổng quan</h2><div id="ov-body"><p class="mut">Đang tải...</p></div><div class="row" id="ov-links"></div></div><div class="card"><h2>Hoạt động gần đây</h2><div id="ov-activity"><p class="mut">Đang tải...</p></div></div></div><div class="ovcol"><div class="card"><h2>Trạng thái bot</h2><div id="ov-status"><p class="mut">Đang tải...</p></div></div><div class="card"><h2>Bật / tắt nhanh</h2><div id="ov-toggles"><p class="mut">Đang tải...</p></div></div><div class="card"><h2>Top cấp độ</h2><div id="ov-top"><p class="mut">Đang tải...</p></div></div></div></div></div>
+<div id="p-ov"><div class="ovgrid"><div class="ovcol"><div class="card"><h2>Tổng quan</h2><div id="ov-body"><p class="mut">Đang tải...</p></div><div class="row" id="ov-links"></div></div><div class="card"><h2>Hoạt động gần đây</h2><div id="ov-activity"><p class="mut">Đang tải...</p></div></div></div><div class="ovcol"><div class="card"><h2>Trạng thái bot</h2><div id="ov-status"><p class="mut">Đang tải...</p></div><button class="ghost" id="ov-restart" type="button" style="margin-top:12px">Khởi động lại bot</button><p class="mut" style="margin-top:6px">Bot tắt trong vài giây rồi được Botkeep tự chạy lại. Hàng đợi nhạc đã lưu sẽ tự khôi phục.</p></div><div class="card"><h2>Bật / tắt nhanh</h2><div id="ov-toggles"><p class="mut">Đang tải...</p></div></div><div class="card"><h2>Top cấp độ</h2><div id="ov-top"><p class="mut">Đang tải...</p></div></div></div></div></div>
 <div id="p-mod" class="card" style="display:none"><h2>Moderation — thao tác nhanh</h2>
 <div class="grid"><div><label>Hành động</label><select id="md-act"><option value="warn">⚠️ Warn</option><option value="timeout">⏳ Timeout</option><option value="kick">👢 Kick</option><option value="ban">🔨 Ban</option><option value="unban">♻️ Unban (dùng ID)</option></select></div><div><label>User ID</label><input id="md-user" placeholder="123..."></div></div>
 <div class="grid"><div><label>Lý do</label><input id="md-reason" maxlength="400" placeholder="Không có lý do"></div><div><label>Số phút (chỉ timeout)</label><input id="md-mins" type="number" min="1" max="40320" value="10"></div></div>
@@ -626,7 +628,14 @@ function guild(gid, user) {
 <p class="mut">Thành viên xem hàng bằng <b>/shop list</b> và mua bằng <b>/shop buy</b>. Credits kiếm được qua <b>/credits daily</b>, rep và hoạt động trong server.</p>
 <div id="shop-items"></div>
 <button class="ghost" id="shop-add">+ Thêm mặt hàng</button><br>
-<button id="shop-save">Lưu cửa hàng</button></div>
+<button id="shop-save">Lưu cửa hàng</button>
+<hr style="border:0;border-top:1px solid var(--line);margin:22px 0">
+<h3>Hộp gacha — mở hộp ngẫu nhiên bằng credits</h3>
+<p class="mut">Thành viên gõ <b>/gacha open</b> để mở hộp. Đặt giá mở, thêm các phần quà và trọng số (số càng lớn càng dễ trúng; tỉ lệ % tự chia theo trọng số). Quà có thể kèm role được gán tự động.</p>
+<div style="max-width:260px"><label>Giá mở 1 hộp (credits)</label><input id="gc-cost" type="number" min="1" value="100"></div>
+<div id="gc-prizes" style="margin-top:10px"></div>
+<button class="ghost" id="gc-add" type="button">+ Thêm phần quà</button><br>
+<button id="gc-save" type="button">Lưu hộp gacha</button></div>
 <div id="p-embed" class="card" style="display:none"><h2>Trình tạo Embed</h2>
 <p class="mut">Soạn tin nhắn embed đẹp như thông báo sự kiện rồi gửi thẳng vào kênh — có xem trước trực tiếp và lưu mẫu dùng lại.</p>
 <div class="grid"><div><label>Kênh gửi</label><select id="e-ch"></select></div><div><label>Màu viền</label><input id="e-color" type="color" value="#e0322d" style="height:40px;padding:2px"></div></div>
@@ -651,7 +660,19 @@ function guild(gid, user) {
 <p class="mut">Xuất toàn bộ cài đặt (chung, chào mừng, tạm biệt, bảng xếp hạng, nhật ký, shop, link mời, mẫu embed) thành 1 file JSON. Nhập lại để khôi phục hoặc chép sang server khác — thao tác nhập sẽ ghi đè cài đặt hiện tại của các mục có trong file.</p>
 <button class="ghost" id="cfg-export" type="button">⬇ Xuất cấu hình (.json)</button>
 <input type="file" id="cfg-file" accept=".json,application/json" style="display:block;margin-top:12px">
-<button class="ghost" id="cfg-import" type="button">⬆ Nhập cấu hình từ file đã chọn</button></div></main></div></div>`, `<script>
+<button class="ghost" id="cfg-import" type="button">⬆ Nhập cấu hình từ file đã chọn</button>
+<hr style="border:0;border-top:1px solid var(--line);margin:22px 0">
+<h3>Thông báo video TikTok mới</h3>
+<p class="mut">Bot kiểm tra mỗi 10 phút — có video mới là đăng vào kênh đã chọn kèm đường link. Nguồn mặc định là kênh TikTok <b>@phimhayplus38</b> qua RSSHub (dịch vụ trung gian, đôi lúc chập chờn thì bot tự thử lại lần sau, không ảnh hưởng các tính năng khác).</p>
+<label class="chk"><input type="checkbox" id="sf-on"> Bật thông báo video mới</label>
+<div class="grid"><div><label>Kênh đăng thông báo</label><select id="sf-ch"></select></div><div><label>Đường dẫn nguồn tin (RSS)</label><input id="sf-url" placeholder="https://rsshub.app/tiktok/user/phimhayplus38"></div></div>
+<button class="ghost" id="sf-save" type="button">Lưu thông báo video</button>
+<hr style="border:0;border-top:1px solid var(--line);margin:22px 0">
+<h3>Lọc link lừa đảo</h3>
+<p class="mut">Tự xóa tin nhắn chứa link giả mạo Discord / Steam / Nitro (kiểu dliscord.com, discord-nitro.xyz...) và cảnh cáo người gửi. Người có quyền Quản lý tin nhắn được miễn. Domain hợp lệ như discord.com, youtube.com không bao giờ bị chặn.</p>
+<label class="chk"><input type="checkbox" id="scf-on"> Bật lọc link lừa đảo</label>
+<div><label>Domain chặn thêm (mỗi dòng 1 domain)</label><textarea id="scf-domains" rows="3" placeholder="vidu-lua-dao.com"></textarea></div>
+<button class="ghost" id="scf-save" type="button">Lưu bộ lọc link</button></div></main></div></div>`, `<script>
 const G='${esc(gid)}';
 const $=id=>document.getElementById(id);
 try{const L=document.getElementById('layout'),SD=document.getElementById('sidewrap'),RB=document.getElementById('rail-btn'),SC=document.getElementById('scrim');if(localStorage.getItem('raptor-rail')==='1'){L.classList.add('rail');RB.textContent='❯'}RB.onclick=()=>{const on=L.classList.toggle('rail');RB.textContent=on?'❯':'❮';localStorage.setItem('raptor-rail',on?'1':'0')};const closeSide=()=>{SD.classList.remove('open');SC.classList.remove('on')};document.getElementById('mbar-btn').onclick=()=>{SD.classList.add('open');SC.classList.add('on')};SC.onclick=closeSide;document.querySelectorAll('.side .nav').forEach(n=>n.addEventListener('click',()=>{if(window.innerWidth<=900)closeSide()}));}catch(e){}
@@ -671,7 +692,7 @@ document.getElementById('t-s').onclick=e=>{t('t-s',['p-s','p-a'])};
 document.getElementById('t-cmd').onclick=e=>{t('t-cmd',['p-cmd']);loadCmds()};
 document.getElementById('t-shop').onclick=e=>{t('t-shop',['p-shop']);loadShop()};
 document.getElementById('t-embed').onclick=e=>{t('t-embed',['p-embed']);loadEmbedPanel()};
-document.getElementById('t-set').onclick=e=>{t('t-set',['p-set'])};
+document.getElementById('t-set').onclick=e=>{t('t-set',['p-set']);loadMiscSettings()};
 t('t-ov',['p-ov']);
 function t(tab,pages){if(!Array.isArray(pages))pages=[pages];document.querySelectorAll('.nav').forEach(x=>x.classList.remove('on'));document.getElementById(tab).classList.add('on');['p-ov','p-mod','p-am','p-w','p-l','p-x','p-m','p-t','p-a','p-s','p-r','p-g','p-o','p-u','p-v','p-cmd','p-set','p-shop','p-embed'].forEach(p=>document.getElementById(p).style.display='none');pages.forEach(p=>document.getElementById(p).style.display='block')}
 function opt(sel,list,cur,allowEmpty){const s=$(sel);s.innerHTML=(allowEmpty?'<option value="">— không dùng —</option>':'')+list.map(o=>'<option value="'+o.id+'"'+(o.lock?' disabled':'')+'>'+o.name.replace(/</g,'&lt;')+(o.lock?' 🔒':'')+'</option>').join('');if(cur)s.value=cur;mkSearch(s)}
@@ -855,7 +876,7 @@ $('inv-add').onclick=()=>addInvRule('','');
 $('inv-save').onclick=async()=>{const rules=[...document.querySelectorAll('.inv-rule')].map(r=>({code:r.querySelector('.inv-code').value.trim(),roleId:r.querySelector('.inv-role').value})).filter(r=>r.code&&r.roleId);try{await api('PUT','/dashboard/api/guilds/'+G+'/invites',{enabled:$('inv-on').checked,rules});toast('Đã lưu role theo link mời ('+rules.length+' quy tắc)')}catch(e){toast('Lỗi: '+e.message)}};
 // ===== Shop credits =====
 function addShopItem(it){it=it||{};const div=document.createElement('div');div.className='shop-item';div.innerHTML='<div class="grid"><div><label>Mã mặt hàng (dùng trong /shop buy)</label><input class="sh-id" value="'+X(it.id||'')+'" placeholder="vip1"></div><div><label>Tên hiển thị</label><input class="sh-name" value="'+X(it.name||'')+'" placeholder="Role VIP"></div></div><div class="grid"><div><label>Giá (credits)</label><input class="sh-price" type="number" min="1" value="'+(it.price||100)+'"></div><div><label>Role nhận được</label><select class="sh-role">'+roleOpts(it.roleId||'')+'</select></div></div><div><label>Mô tả (tuỳ chọn)</label><input class="sh-desc" value="'+X(it.desc||'')+'"></div><button class="ghost sh-del" type="button">Xóa mặt hàng</button><hr style="border:0;border-top:1px solid rgba(255,255,255,.06);margin:14px 0">';div.querySelector('.sh-del').onclick=()=>div.remove();$('shop-items').appendChild(div)}
-async function loadShop(){try{const d=await api('GET','/dashboard/api/guilds/'+G+'/shop');const box=$('shop-items');box.innerHTML='';(d.items||[]).forEach(addShopItem);if(!(d.items||[]).length)box.innerHTML='<p class="mut">Chưa có mặt hàng nào — bấm “+ Thêm mặt hàng” để bắt đầu.</p>'}catch(e){}}
+async function loadShop(){try{const d=await api('GET','/dashboard/api/guilds/'+G+'/shop');const box=$('shop-items');box.innerHTML='';(d.items||[]).forEach(addShopItem);if(!(d.items||[]).length)box.innerHTML='<p class="mut">Chưa có mặt hàng nào — bấm “+ Thêm mặt hàng” để bắt đầu.</p>'}catch(e){}loadGacha().catch(()=>{})}
 $('shop-add').onclick=()=>{const b=$('shop-items');if(b.querySelector('.mut'))b.innerHTML='';addShopItem({})};
 $('shop-save').onclick=async()=>{const items=[...document.querySelectorAll('.shop-item')].map(r=>({id:r.querySelector('.sh-id').value.trim(),name:r.querySelector('.sh-name').value.trim(),price:parseInt(r.querySelector('.sh-price').value||'0',10),roleId:r.querySelector('.sh-role').value||null,desc:r.querySelector('.sh-desc').value.trim()})).filter(x=>x.name);try{await api('PUT','/dashboard/api/guilds/'+G+'/shop',{items});toast('Đã lưu cửa hàng ('+items.length+' mặt hàng)')}catch(e){toast('Lỗi: '+e.message)}};
 // ===== Trình tạo Embed =====
@@ -872,6 +893,17 @@ $('e-deltpl').onclick=async()=>{const t=ETPL[parseInt($('e-tpl').value,10)];if(!
 $('e-send').onclick=async()=>{const ch=$('e-ch').value;if(!ch)return toast('Chọn kênh gửi trước');try{await api('POST','/dashboard/api/guilds/'+G+'/embed/send',{channelId:ch,embed:embedFormData()});toast('Đã gửi embed vào kênh đã chọn')}catch(e){toast('Lỗi: '+e.message)}};
 // ===== Sao lưu cấu hình =====
 $('cfg-export').onclick=async()=>{try{const r=await fetch('/dashboard/api/guilds/'+G+'/config/export');if(!r.ok)throw new Error('HTTP '+r.status);const blob=await r.blob();const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='raptor-config-'+G+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);toast('Đã tải file cấu hình')}catch(e){toast('Lỗi xuất: '+e.message)}};
+/* ===== Đợt 3: hộp gacha + thông báo video + lọc link lừa đảo + nút restart ===== */
+function addGachaPrize(p){p=p||{};const div=document.createElement('div');div.className='gc-prize';div.innerHTML='<div class="grid"><div><label>Tên phần quà</label><input class="gc-name" placeholder="VD: Role VIP 7 ngày" value="'+X(p.name||'')+'"></div><div><label>Role tặng kèm (tùy chọn)</label><select class="gc-role">'+roleOpts(p.roleId||'')+'</select></div><div><label>Trọng số (số càng lớn càng dễ trúng)</label><input class="gc-weight" type="number" min="1" max="1000" value="'+(p.weight||10)+'"></div></div><button class="ghost gc-del" type="button">Xóa phần quà</button>';div.querySelector('.gc-del').onclick=()=>div.remove();$('gc-prizes').appendChild(div)}
+async function loadGacha(){try{const d=await api('GET','/dashboard/api/guilds/'+G+'/gacha');$('gc-cost').value=d.cost||100;const box=$('gc-prizes');box.innerHTML='';(d.prizes||[]).forEach(addGachaPrize);if(!(d.prizes||[]).length)box.innerHTML='<p class="mut">Chưa có phần quà nào — bấm “+ Thêm phần quà” để bắt đầu.</p>'}catch(e){}}
+$('gc-add').onclick=()=>{const b=$('gc-prizes');if(b.querySelector('.mut'))b.innerHTML='';addGachaPrize({})};
+$('gc-save').onclick=async()=>{const prizes=[...document.querySelectorAll('.gc-prize')].map(d=>({name:d.querySelector('.gc-name').value.trim(),roleId:d.querySelector('.gc-role').value||null,weight:Math.max(1,parseInt(d.querySelector('.gc-weight').value,10)||10)})).filter(p=>p.name);const d=await api('PUT','/dashboard/api/guilds/'+G+'/gacha',{cost:Math.max(1,parseInt($('gc-cost').value,10)||100),prizes});toast(d.ok?'Đã lưu hộp gacha ('+prizes.length+' phần quà)':'Lỗi: '+(d.error||'?'))};
+async function loadSocialFeed(){try{const d=await api('GET','/dashboard/api/guilds/'+G+'/socialfeed');$('sf-on').checked=!!d.enabled;$('sf-url').value=d.feedUrl||'';opt('sf-ch',textCh,d.channelId,true)}catch(e){}}
+async function loadScam(){try{const d=await api('GET','/dashboard/api/guilds/'+G+'/scamfilter');$('scf-on').checked=d.enabled!==false;$('scf-domains').value=(d.extraDomains||[]).join(String.fromCharCode(10))}catch(e){}}
+function loadMiscSettings(){loadSocialFeed().catch(()=>{});loadScam().catch(()=>{})}
+$('sf-save').onclick=async()=>{const d=await api('PUT','/dashboard/api/guilds/'+G+'/socialfeed',{enabled:$('sf-on').checked,feedUrl:$('sf-url').value.trim(),channelId:$('sf-ch').value||null});toast(d.ok?'Đã lưu thông báo video mới':'Lỗi: '+(d.error||'?'))};
+$('scf-save').onclick=async()=>{const domains=$('scf-domains').value.split(String.fromCharCode(10)).map(s=>s.trim()).filter(Boolean);const d=await api('PUT','/dashboard/api/guilds/'+G+'/scamfilter',{enabled:$('scf-on').checked,extraDomains:domains});toast(d.ok?'Đã lưu bộ lọc link lừa đảo':'Lỗi: '+(d.error||'?'))};
+$('ov-restart').onclick=async()=>{if(!confirm('Khởi động lại bot ngay? Bot sẽ offline khoảng vài chục giây rồi tự chạy lại.'))return;const d=await api('POST','/dashboard/api/guilds/'+G+'/bot/restart',{});toast(d.ok?'Đã gửi yêu cầu — bot sẽ khởi động lại trong giây lát':'Lỗi: '+(d.error||'?'))};
 $('cfg-import').onclick=async()=>{const f=$('cfg-file').files&&$('cfg-file').files[0];if(!f)return toast('Chọn file .json đã xuất trước');if(!confirm('Nhập cấu hình sẽ GHI ĐÈ cài đặt hiện tại của các mục có trong file. Tiếp tục?'))return;try{const data=JSON.parse(await f.text());const d=await api('POST','/dashboard/api/guilds/'+G+'/config/import',{data});toast('Đã nhập xong: '+((d.done||[]).join(', ')||'—'))}catch(e){toast('Lỗi nhập: '+e.message)}};
 async function loadOv(){const E=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));try{const d=await api('GET','/dashboard/api/guilds/'+G+'/overview');const IC={m:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19.5c.6-3 2.8-4.5 5.5-4.5s4.9 1.5 5.5 4.5M16 5.6a3.2 3.2 0 0 1 0 5.9M17.8 15.3c1.5.7 2.4 2 2.7 4.2"/></svg>',c:'<svg viewBox="0 0 24 24"><path d="M4 6.5C4 5.1 5.1 4 6.5 4h11C18.9 4 20 5.1 20 6.5v7c0 1.4-1.1 2.5-2.5 2.5H13l-3.6 3.6c-.5.5-1.4.1-1.4-.6V16H6.5C5.1 16 4 14.9 4 13.5z"/></svg>',r:'<svg viewBox="0 0 24 24"><path d="M12 3l7 2.8v5.4c0 4.4-2.9 7.4-7 9.3-4.1-1.9-7-4.9-7-9.3V5.8z"/></svg>',t:'<svg viewBox="0 0 24 24"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h11A2.5 2.5 0 0 1 20 8.5v2a2.6 2.6 0 0 0 0 5.2v2A2.5 2.5 0 0 1 17.5 20h-11A2.5 2.5 0 0 1 4 17.7v-2a2.6 2.6 0 0 0 0-5.2z"/></svg>',b:'<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2.4"/><path d="M3.5 10h17M7 15h4"/></svg>'};const st=(ic,cls,n,l)=>'<div class=stat><div class="sic '+cls+'">'+ic+'</div><b>'+n+'</b><span>'+l+'</span></div>';$('ov-body').innerHTML='<div class=statgrid>'+st(IC.m,'s1',d.members,'thành viên')+st(IC.c,'s2',d.channels,'kênh')+st(IC.r,'s3',d.roles,'role')+st(IC.t,'s4',d.openTickets,'ticket mở')+st(IC.b,'s5',d.boards,'bảng role')+'</div>'+(d.botPerms?'<p style="margin:16px 0 9px;font-weight:600;color:#eef1f7">Quyền của bot trong server</p><div class=pbadges>'+Object.entries(d.botPerms).map(([k,v])=>'<span class="pbdg'+(v?'':' off')+'">'+E(k)+(v?'':' (chưa có)')+'</span>').join('')+'</div>':'');if(d.guild&&d.guild.name){const c=$('srv-chip');if(c)c.textContent=d.guild.name}if(d.bot){const ms=d.bot.uptime||0,dd=Math.floor(ms/864e5),hh=Math.floor(ms%864e5/36e5),mm=Math.floor(ms%36e5/6e4);const up=dd>0?dd+' ngày '+String(hh).padStart(2,'0')+' giờ':(hh>0?hh+' giờ '+String(mm).padStart(2,'0')+' phút':mm+' phút');$('ov-status').innerHTML='<div class=kv><span>Trạng thái</span><b><span class=odot></span>Online</b></div><div class=kv><span>Bot</span><b>'+E(d.bot.tag||'—')+'</b></div><div class=kv><span>Uptime</span><b>'+up+'</b></div><div class=kv><span>Độ trễ (ping)</span><b>'+(d.bot.ping>=0?d.bot.ping+' ms':'—')+'</b></div><div class=kv><span>RAM tiến trình</span><b>'+d.bot.memMB+' MB</b></div><div class=kv><span>Đang phục vụ</span><b>'+d.bot.guilds+' server</b></div>'}if(d.top){$('ov-top').innerHTML=d.top.length?d.top.map(u=>'<div class=xpr>'+(u.avatar?'<img src="'+E(u.avatar)+'" alt="">':'<span class=xfb>'+E((u.name||'?').slice(0,1).toUpperCase())+'</span>')+'<div class=xw><b><span>'+E(u.name)+'</span><em>Cấp '+u.level+'</em></b><div class=xbar><i style="width:'+(u.pct||0)+'%"></i></div></div></div>').join(''):'<p class=mut>Chưa có dữ liệu XP.</p>'}const go=[['t-w','Welcome'],['t-mod','Moderation'],['t-v','Giveaway'],['t-t','Ticket'],['t-o','Logs']];$('ov-links').innerHTML=go.map(([t,l])=>'<button class=ghost data-t="'+t+'">'+l+'</button>').join('');document.querySelectorAll('#ov-links button').forEach(b=>b.onclick=()=>document.getElementById(b.dataset.t).click());if(d.toggles){const T=d.toggles;const rows=[['leveling','Leveling — XP khi chat'],['voicexp','XP thoại — khi ở kênh voice'],['starboard','Starboard — tin nổi bật'],['antiraid','Anti-raid — chặn acc mới vào ồ ạt']];$('ov-toggles').innerHTML=rows.map(([k,l])=>'<label class=trow><span>'+l+'</span><span class="tsw'+(T[k]?' on':'')+'" data-k="'+k+'"></span></label>').join('');document.querySelectorAll('#ov-toggles .tsw').forEach(s=>s.onclick=async()=>{const k=s.dataset.k;const v=!s.classList.contains('on');s.classList.toggle('on',v);try{await api('POST','/dashboard/api/guilds/'+G+'/overview/toggles',{key:k,value:v});toast('Đã '+(v?'bật':'tắt')+' — áp dụng ngay cho bot')}catch(e){s.classList.toggle('on',!v);toast('Lỗi: '+e.message)}})}if(d.activity){const GLYPH={join:'<svg viewBox="0 0 24 24" stroke="#3fb969"><path d="M16 20v-1.6c0-2-1.8-3.4-4.5-3.4S7 16.4 7 18.4V20"/><circle cx="11.5" cy="8" r="3.4"/><path d="M18.5 5.5v4M16.5 7.5h4"/></svg>',leave:'<svg viewBox="0 0 24 24" stroke="#f07167"><path d="M9 20H6.5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2H9M16 16.5L20.5 12 16 7.5M20.3 12H9.5"/></svg>',level:'<svg viewBox="0 0 24 24" stroke="#ffb02e"><path d="M8 20.5h8M12 17v3.5M6.5 4h11v4.5a5.5 5.5 0 0 1-11 0z"/><path d="M6.5 6H4a2.5 2.5 0 0 0 2.6 4.4M17.5 6H20A2.5 2.5 0 0 1 17.4 10.4"/></svg>',ticket:'<svg viewBox="0 0 24 24" stroke="#58a6ff"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h11A2.5 2.5 0 0 1 20 8.5v2a2.6 2.6 0 0 0 0 5.2v2A2.5 2.5 0 0 1 17.5 20h-11A2.5 2.5 0 0 1 4 17.7v-2a2.6 2.6 0 0 0 0-5.2z"/></svg>',giveaway:'<svg viewBox="0 0 24 24" stroke="#f778ba"><rect x="3.5" y="8" width="17" height="4"/><path d="M5 12v8.5h14V12M12 8v12.5"/></svg>'};const DF=(ts)=>{const s=Math.max(0,((Date.now()-ts)/1000)|0);if(s<60)return'vừa xong';if(s<3600)return((s/60)|0)+' phút trước';if(s<86400)return((s/3600)|0)+' giờ trước';return((s/86400)|0)+' ngày trước'};$('ov-activity').innerHTML=d.activity.length?'<div class=afeed>'+d.activity.map(a=>'<div class=ait><span class=aic>'+(GLYPH[a.type]||GLYPH.join)+'</span><div><p>'+E(a.text)+'</p><time>'+DF(a.ts)+'</time></div></div>').join('')+'</div>':'<p class=mut>Chưa có hoạt động nào được ghi — sự kiện mới (vào/rời server, lên cấp, mở/đóng ticket, giveaway, mua shop...) sẽ hiện ở đây.</p>'}}catch(e){$('ov-body').innerHTML='<p class=mut>Lỗi tải.</p>'}}
 $('md-go').onclick=async()=>{try{await api('POST','/dashboard/api/guilds/'+G+'/mod',{action:$('md-act').value,userId:$('md-user').value.trim(),reason:$('md-reason').value,minutes:parseInt($('md-mins').value||'10',10)});$('md-user').value='';toast('Đã thực hiện')}catch(e){toast('Lỗi: '+e.message+' (kiểm tra ID, quyền bot)')}};
@@ -888,4 +920,4 @@ setInterval(()=>{if(document.getElementById('p-u').style.display!=='none')loadMu
 </script>`);
 }
 
-module.exports = { login, home, guild, landing };
+module.exports = { login, home, guild, landing, setCmdCount };
