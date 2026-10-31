@@ -1,4 +1,5 @@
 const path = require('node:path');
+const fs = require('node:fs');
 const session = require('express-session');
 const config = require('../config');
 const views = require('./views');
@@ -61,12 +62,58 @@ async function guard(req, res, next) {
   next();
 }
 
+// Session store ghi xuống file: phiên đăng nhập dashboard sống qua các lần restart bot
+// (store mặc định của express-session giữ trong RAM — restart là mất hết phiên).
+class FileSessionStore extends session.Store {
+  constructor(file) {
+    super();
+    this.file = file;
+    this.data = {};
+    this._lastFlush = 0;
+    try { this.data = JSON.parse(fs.readFileSync(file, 'utf8')) || {}; } catch { this.data = {}; }
+  }
+  _flush(force) {
+    const now = Date.now();
+    if (!force && now - this._lastFlush < 1000) return;
+    this._lastFlush = now;
+    try {
+      fs.mkdirSync(path.dirname(this.file), { recursive: true });
+      fs.writeFileSync(this.file, JSON.stringify(this.data));
+    } catch {}
+  }
+  get(sid, cb) {
+    const s = this.data[sid];
+    if (!s) return cb(null, null);
+    if (s.cookie && s.cookie.expires && new Date(s.cookie.expires).getTime() < Date.now()) {
+      delete this.data[sid];
+      this._flush(true);
+      return cb(null, null);
+    }
+    cb(null, s);
+  }
+  set(sid, sess, cb) {
+    this.data[sid] = sess;
+    this._flush(false);
+    if (cb) cb(null);
+  }
+  destroy(sid, cb) {
+    delete this.data[sid];
+    this._flush(true);
+    if (cb) cb(null);
+  }
+  touch(sid, sess, cb) {
+    if (this.data[sid]) { this.data[sid] = sess; this._flush(false); }
+    if (cb) cb(null);
+  }
+}
+
 function mount(app) {
   if (!process.env.SESSION_SECRET) {
     console.warn('[dashboard] chưa có SESSION_SECRET — login sẽ mất khi restart. Thêm SESSION_SECRET vào env.');
   }
   app.set('trust proxy', 1);
   app.use(session({
+    store: new FileSessionStore(path.join(__dirname, '..', '..', 'data', 'sessions.json')),
     secret: process.env.SESSION_SECRET || ('dev-' + Math.random().toString(36).slice(2)),
     resave: false,
     saveUninitialized: false,
@@ -74,6 +121,13 @@ function mount(app) {
     cookie: { httpOnly: true, sameSite: 'lax', secure: 'auto', maxAge: 30 * 24 * 3600 * 1000 },
   }));
   app.use(require('express').json({ limit: '256kb' }));
+  // Trang HTML của dashboard không cache — tránh điện thoại dùng lại trang cũ sau khi bot cập nhật.
+  app.use((req, res, next) => {
+    if (req.method === 'GET' && !req.path.startsWith('/dashboard/api') && !/\.(jpg|jpeg|png|gif|css|js|ico|svg)$/i.test(req.path)) {
+      res.set('Cache-Control', 'no-store');
+    }
+    next();
+  });
 
   // --- Auth ---
   app.get('/dashboard/login', (req, res) => {
