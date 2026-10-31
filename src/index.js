@@ -267,6 +267,10 @@ async function main() {
   setInterval(announceTick, 5 * 60_000);
   setInterval(statsTick, 15 * 60_000);
 
+  // Bảng trạng thái embed tự sửa tin (online/offline/bot) — quét mỗi 20 giây,
+  // mỗi guild tự giữ chu kỳ riêng (mặc định 60 giây)
+  try { require('./utils/statusBoard').startStatusBoardLoop(client); } catch (e) { console.warn('[statusboard]', e?.message); }
+
   // Tự đóng ticket im lặng quá lâu
   const ticketTick = async () => {
     try {

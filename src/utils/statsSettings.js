@@ -62,6 +62,15 @@ async function clearStats(guildId) {
   }
 }
 
+// Guild đang bật bảng trạng thái embed (utils/statusBoard.js)
+async function listBoardGuilds() {
+  if (useMongo()) {
+    const rows = await require('../db').StatsSettings.find({ boardChannelId: { $ne: null } }).lean().catch(() => []);
+    return rows.map((r) => r.guildId);
+  }
+  return Object.entries(loadAll()).filter(([, v]) => v?.boardChannelId).map(([g]) => g);
+}
+
 async function listStatsGuilds() {
   if (useMongo()) {
     const rows = await require('../db').StatsSettings.find({
@@ -196,4 +205,4 @@ function scheduleStatsRefresh(client, guildId, delayMs = 60000) {
   if (pendingRefresh.get(guildId)?.unref) pendingRefresh.get(guildId).unref();
 }
 
-module.exports = { getStats, saveStats, clearStats, listStatsGuilds, updateStatsChannel, setupMultiChannels, scheduleStatsRefresh, DEFAULT_TEMPLATE, DEFAULT_MULTI_NAMES };
+module.exports = { getStats, saveStats, clearStats, listStatsGuilds, listBoardGuilds, updateStatsChannel, setupMultiChannels, scheduleStatsRefresh, DEFAULT_TEMPLATE, DEFAULT_MULTI_NAMES };

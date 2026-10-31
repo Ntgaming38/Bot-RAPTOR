@@ -216,6 +216,10 @@ const statsSettingsSchema = new mongoose.Schema({
   categoryId: { type: String, default: null },
   multi: { type: Object, default: undefined },
   multiNames: { type: Object, default: undefined },
+  // Bảng trạng thái embed tự sửa tin (utils/statusBoard.js)
+  boardChannelId: { type: String, default: null },
+  boardMessageId: { type: String, default: null },
+  boardIntervalSec: { type: Number, default: 60 },
 });
 const StatsSettings = mongoose.models.StatsSettings || mongoose.model('StatsSettings', statsSettingsSchema);
 
