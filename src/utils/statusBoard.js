@@ -62,7 +62,7 @@ function buildBoardEmbed(guild, c, intervalSec) {
     bar(c.active, c.humans),
     `Online ${c.online} · Treo máy ${c.idle} · Bận ${c.dnd}`,
     '',
-    `⚫ **Đang offline · ${c.offline}**`,
+    `⚪ **Đang offline · ${c.offline}**`,
     bar(c.offline, c.humans),
     '',
     `🤖 **Bot · ${c.bots}**`,
@@ -74,7 +74,7 @@ function buildBoardEmbed(guild, c, intervalSec) {
     title: `📊 Trạng thái server ${guild.name}`,
     description: desc,
     thumbnail: guild.iconURL?.() || null,
-    footer: '🟢 Online · ⚫ Offline · 🤖 Bot · 🎙️ Voice',
+    footer: '🟢 Online · ⚪ Offline · 🤖 Bot · 🎙️ Voice',
   });
 }
 
