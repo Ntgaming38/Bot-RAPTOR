@@ -1010,7 +1010,7 @@ function mount(app) {
 
   // ===== Kênh voice tạm (kiểu VoiceMaster) =====
   app.get('/dashboard/api/guilds/:gid/tempvoice', guard, async (req, res) => {
-    const st = await getGuildSettings(req.params.gid);
+    const st = await require('../utils/guildSettings').getGuildSettings(req.params.gid);
     const cfg = st.tempVoiceCfg || {};
     res.json({
       enabled: !!cfg.enabled,
@@ -1032,13 +1032,13 @@ function mount(app) {
       defaultLimit: Math.max(0, Math.min(99, parseInt(req.body?.defaultLimit, 10) || 0)),
       maxPerUser: Math.max(1, Math.min(10, parseInt(req.body?.maxPerUser, 10) || 1)),
     };
-    await saveGuildSettings(g, { tempVoiceCfg: cfg });
+    await require('../utils/guildSettings').saveGuildSettings(g, { tempVoiceCfg: cfg });
     res.json({ ok: true, ...cfg });
   });
 
   // ===== Hộp gacha =====
   app.get('/dashboard/api/guilds/:gid/gacha', guard, async (req, res) => {
-    const st = await getGuildSettings(req.params.gid);
+    const st = await require('../utils/guildSettings').getGuildSettings(req.params.gid);
     const cfg = st.gachaCfg || {};
     res.json({ cost: Math.max(1, parseInt(cfg.cost, 10) || 100), prizes: Array.isArray(cfg.prizes) ? cfg.prizes : [] });
   });
@@ -1049,13 +1049,13 @@ function mount(app) {
     const prizes = (Array.isArray(req.body?.prizes) ? req.body.prizes : []).slice(0, 20)
       .map((p) => ({ name: String(p?.name ?? '').trim().slice(0, 60), roleId: p?.roleId ? String(p.roleId) : null, weight: Math.max(1, Math.min(1000, parseInt(p?.weight, 10) || 10)) }))
       .filter((p) => p.name);
-    await saveGuildSettings(g, { gachaCfg: { cost, prizes } });
+    await require('../utils/guildSettings').saveGuildSettings(g, { gachaCfg: { cost, prizes } });
     res.json({ ok: true, cost, prizes });
   });
 
   // ===== Thông báo video TikTok mới qua RSS =====
   app.get('/dashboard/api/guilds/:gid/socialfeed', guard, async (req, res) => {
-    const st = await getGuildSettings(req.params.gid);
+    const st = await require('../utils/guildSettings').getGuildSettings(req.params.gid);
     const cfg = st.socialFeedCfg || {};
     res.json({ enabled: !!cfg.enabled, feedUrl: cfg.feedUrl || 'https://rsshub.app/tiktok/user/phimhayplus38', channelId: cfg.channelId || null });
   });
@@ -1068,13 +1068,13 @@ function mount(app) {
       feedUrl: /^https?:\/\//i.test(feedUrl) ? feedUrl : 'https://rsshub.app/tiktok/user/phimhayplus38',
       channelId: req.body?.channelId ? String(req.body.channelId) : null,
     };
-    await saveGuildSettings(g, { socialFeedCfg: cfg });
+    await require('../utils/guildSettings').saveGuildSettings(g, { socialFeedCfg: cfg });
     res.json({ ok: true, ...cfg });
   });
 
   // ===== Lọc link lừa đảo =====
   app.get('/dashboard/api/guilds/:gid/scamfilter', guard, async (req, res) => {
-    const st = await getGuildSettings(req.params.gid);
+    const st = await require('../utils/guildSettings').getGuildSettings(req.params.gid);
     const cfg = st.scamCfg || {};
     res.json({ enabled: cfg.enabled !== false, extraDomains: Array.isArray(cfg.extraDomains) ? cfg.extraDomains : [] });
   });
@@ -1084,7 +1084,7 @@ function mount(app) {
     const extraDomains = (Array.isArray(req.body?.extraDomains) ? req.body.extraDomains : [])
       .map((d) => String(d).toLowerCase().trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '')).filter(Boolean).slice(0, 100);
     const cfg = { enabled: req.body?.enabled !== false, extraDomains };
-    await saveGuildSettings(g, { scamCfg: cfg });
+    await require('../utils/guildSettings').saveGuildSettings(g, { scamCfg: cfg });
     res.json({ ok: true, ...cfg });
   });
 
