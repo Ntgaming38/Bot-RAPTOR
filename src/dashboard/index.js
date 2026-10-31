@@ -1007,6 +1007,34 @@ function mount(app) {
     res.json({ ok: true, done });
   });
 
+  // ===== Kênh voice tạm (kiểu VoiceMaster) =====
+  app.get('/dashboard/api/guilds/:gid/tempvoice', guard, async (req, res) => {
+    const st = await getGuildSettings(req.params.gid);
+    const cfg = st.tempVoiceCfg || {};
+    res.json({
+      enabled: !!cfg.enabled,
+      generatorId: cfg.generatorId || null,
+      categoryId: cfg.categoryId || null,
+      nameTpl: cfg.nameTpl || '🎧 Phòng của {user}',
+      defaultLimit: Math.max(0, Math.min(99, parseInt(cfg.defaultLimit, 10) || 0)),
+      maxPerUser: Math.max(1, Math.min(10, parseInt(cfg.maxPerUser, 10) || 1)),
+    });
+  });
+
+  app.put('/dashboard/api/guilds/:gid/tempvoice', guard, async (req, res) => {
+    const g = req.params.gid;
+    const cfg = {
+      enabled: !!req.body?.enabled,
+      generatorId: req.body?.generatorId ? String(req.body.generatorId) : null,
+      categoryId: req.body?.categoryId ? String(req.body.categoryId) : null,
+      nameTpl: String(req.body?.nameTpl || '🎧 Phòng của {user}').trim().slice(0, 60) || '🎧 Phòng của {user}',
+      defaultLimit: Math.max(0, Math.min(99, parseInt(req.body?.defaultLimit, 10) || 0)),
+      maxPerUser: Math.max(1, Math.min(10, parseInt(req.body?.maxPerUser, 10) || 1)),
+    };
+    await saveGuildSettings(g, { tempVoiceCfg: cfg });
+    res.json({ ok: true, ...cfg });
+  });
+
   // ===== Hộp gacha =====
   app.get('/dashboard/api/guilds/:gid/gacha', guard, async (req, res) => {
     const st = await getGuildSettings(req.params.gid);

@@ -156,6 +156,7 @@ const guildSettingsSchema = new mongoose.Schema({
   gachaCfg: { type: Object, default: undefined },
   socialFeedCfg: { type: Object, default: undefined },
   scamCfg: { type: Object, default: undefined },
+  tempVoiceCfg: { type: Object, default: undefined },
 });
 const GuildSettings = mongoose.models.GuildSettings || mongoose.model('GuildSettings', guildSettingsSchema);
 
@@ -365,4 +366,12 @@ const feedStateSchema = new mongoose.Schema({
 });
 const FeedState = mongoose.models.FeedState || mongoose.model('FeedState', feedStateSchema);
 
-module.exports = { mongoose, connectDB, isMongo, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings, GuildSettings, AnnounceSettings, StatsSettings, RolePanel, GoodbyeSettings, LogSettings, Warn, RoleBoard, TicketCounter, ClosedTicket, TicketBlacklist, TempRole, ActivityEvent, Reminder, MusicQueue, InviteStat, QuestProgress, Playlist, FeedState };
+// === Kênh voice tạm (module kiểu VoiceMaster) ===
+const tempChannelSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  channelId: { type: String, required: true, unique: true },
+  ownerId: { type: String, required: true },
+});
+const TempChannel = mongoose.models.TempChannel || mongoose.model('TempChannel', tempChannelSchema);
+
+module.exports = { mongoose, connectDB, isMongo, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings, GuildSettings, AnnounceSettings, StatsSettings, RolePanel, GoodbyeSettings, LogSettings, Warn, RoleBoard, TicketCounter, ClosedTicket, TicketBlacklist, TempRole, ActivityEvent, Reminder, MusicQueue, InviteStat, QuestProgress, Playlist, FeedState, TempChannel };

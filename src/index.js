@@ -210,6 +210,7 @@ async function main() {
   } catch (e) { console.warn('[music restore]', e?.message); }
 
   // Cảnh báo sức khỏe cho chủ bot (khởi động lại bất thường + RAM cao) + theo dõi video TikTok mới
+  try { await require('./utils/tempVoice').reconcile(client); } catch (e) { console.warn('[tempVoice]', e?.message); }
   try { require('./utils/healthWatch').start(client); } catch (e) { console.warn('[healthWatch]', e?.message); }
   try { require('./utils/socialFeed').startWatcher(client); } catch (e) { console.warn('[socialFeed]', e?.message); }
 

@@ -66,7 +66,27 @@ module.exports = {
       return;
     }
 
-    // 3) Form lý do ticket (modal)
+    // 2b) Chọn người trên panel phòng voice tạm (cho phép / đá)
+    if (interaction.isUserSelectMenu() && (interaction.customId || '').startsWith('tv:')) {
+      try {
+        await require('../utils/tempVoice').handleUserSelect(interaction);
+      } catch (err) {
+        console.error('[tempVoice select]', err);
+        if (!interaction.replied) await interaction.reply({ content: 'Có lỗi khi xử lý.', ephemeral: true }).catch(() => {});
+      }
+      return;
+    }
+
+    // 3) Form lý do ticket (modal) + form phòng voice tạm
+    if (interaction.isModalSubmit() && (interaction.customId || '').startsWith('tv-modal:')) {
+      try {
+        await require('../utils/tempVoice').handleModal(interaction);
+      } catch (err) {
+        console.error('[tempVoice modal]', err);
+        if (!interaction.replied) await interaction.reply({ content: 'Có lỗi khi xử lý.', ephemeral: true }).catch(() => {});
+      }
+      return;
+    }
     if (interaction.isModalSubmit() && (interaction.customId || '').startsWith('ticket-modal:')) {
       try {
         await require('../utils/tickets').handleModal(interaction);
@@ -81,6 +101,10 @@ module.exports = {
     if (interaction.isButton()) {
       const id = interaction.customId || '';
       try {
+        if (id.startsWith('tv:')) {
+          await require('../utils/tempVoice').handleButton(interaction);
+          return;
+        }
         if (id.startsWith('role-toggle:')) {
           await require('../utils/rolePanels').handleToggle(interaction, id.split(':')[1]);
           return;

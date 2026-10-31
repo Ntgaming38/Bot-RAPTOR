@@ -13,5 +13,11 @@ module.exports = {
     } catch (e) {
       console.warn('[voiceGuard]', e?.message);
     }
+    // Kênh voice tạm (kiểu VoiceMaster): tạo phòng khi vào kênh tạo phòng, dọn khi trống
+    try {
+      await require('../utils/tempVoice').onVoiceState(oldState, newState);
+    } catch (e) {
+      console.warn('[tempVoice]', e?.message);
+    }
   },
 };
