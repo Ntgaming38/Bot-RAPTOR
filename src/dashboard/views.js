@@ -586,7 +586,7 @@ function guild(gid, user) {
 <label class="chk"><input type="checkbox" id="ai-on"> Bật AI Chat</label>
 <div id="ai-keystate" class="mut" style="margin:8px 0"></div>
 <div><label>Kênh chat riêng (để trống = chỉ trả lời khi được tag)</label><select id="ai-channel"></select></div>
-<div><label>Model (để trống = mặc định của hệ thống)</label><input id="ai-model" placeholder="gemini-2.5-flash"></div>
+<div><label>Model (để trống = mặc định của hệ thống)</label><input id="ai-model" placeholder="gemini-3.8-flash"></div>
 <div><label>Tính cách của bot (để trống = mặc định)</label><textarea id="ai-persona" rows="4" maxlength="1000" placeholder="Bạn là RAPTOR, trợ lý AI thân thiện trong server Discord..."></textarea></div>
 <button id="ai-save">Lưu AI Chat</button></div>
 <div id="p-v" class="card" style="display:none"><h2>Giveaway mặc định</h2>
