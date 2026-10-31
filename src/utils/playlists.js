@@ -1,7 +1,7 @@
 // Playlist nhạc cá nhân (/playlist): lưu danh sách bài (url + tiêu đề) theo người dùng.
 const fs = require('node:fs');
 const path = require('node:path');
-const { writeJsonAtomic } = require('./jsonStore');
+const { writeJsonAtomic, readJson } = require('./jsonStore');
 
 const FILE = path.join(__dirname, '..', '..', 'data', 'playlists.json');
 const MAX_TRACKS = 50;
@@ -13,7 +13,7 @@ function useMongo() {
 function loadAll() {
   try {
     if (!fs.existsSync(FILE)) return [];
-    const v = JSON.parse(fs.readFileSync(FILE, 'utf8'));
+    const v = readJson(FILE, []);
     return Array.isArray(v) ? v : [];
   } catch { return []; }
 }

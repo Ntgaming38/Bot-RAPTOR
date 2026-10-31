@@ -12,12 +12,12 @@ module.exports = {
     const target = interaction.options.getUser('user');
     if (target.id === interaction.user.id) return interaction.reply({ content: 'Không tự tặng rep cho mình được đâu 😅', ephemeral: true });
     if (target.bot) return interaction.reply({ content: 'Bot không cần rep.', ephemeral: true });
-    const r = giveRep(interaction.guildId, interaction.user.id, target.id);
+    const r = await giveRep(interaction.guildId, interaction.user.id, target.id);
     if (!r.ok) {
       const h = Math.ceil(r.retryAfterMs / 3600000);
       return interaction.reply({ content: `⏳ Bạn đã tặng rep rồi — thử lại sau khoảng **${h} giờ** nữa.`, ephemeral: true });
     }
-    const p = getProfile(interaction.guildId, target.id);
+    const p = await getProfile(interaction.guildId, target.id);
     await interaction.reply({
       embeds: [embed({
         title: '⭐ Đã tặng điểm danh tiếng',

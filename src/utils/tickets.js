@@ -1,6 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const { writeJsonAtomic } = require('./jsonStore');
+const { writeJsonAtomic, readJson } = require('./jsonStore');
 const {
   ActionRowBuilder, ButtonBuilder, ButtonStyle,
   ChannelType, PermissionFlagsBits,
@@ -54,54 +54,100 @@ function getTypes(st) {
 function load() {
   try {
     if (!fs.existsSync(FILE)) return {};
-    return JSON.parse(fs.readFileSync(FILE, 'utf8'));
+    return readJson(FILE, {});
   } catch { return {}; }
 }
 function save(db) {
   writeJsonAtomic(FILE, db);
 }
 
-// ===== Mongo (model Ticket đã có trong db.js nhưng trước đây tickets chỉ ghi JSON,
-// nên ticket đang mở vẫn mất khi Render restart dù đã set MONGODB_URI) =====
-// Mọi call site của load/save đều nằm trong hàm async, nên có bản async song song:
-// loadStore/saveStore tự chọn Mongo hoặc JSON. load/save đồng bộ giữ lại cho
-// isTicketChannel (chỉ đúng ở chế độ JSON) và tương thích cũ.
+// ===== Persistence theo TỪNG RECORD (Mongo model Ticket / JSON data/tickets.json) =====
+// Trước đây loadStore/saveStore nạp & ghi lại TOÀN BỘ map ticket: hai thao tác
+// đồng thời dùng chung một snapshot có thể xóa ticket người kia vừa tạo hoặc
+// ghi ngược trạng thái mới (audit 2026-10-31, H1/H3). Nay mọi thao tác chạm
+// đúng 1 record: Mongo dùng findOne/updateOne/deleteOne theo channelId; JSON
+// thì load→sửa→save diễn ra đồng bộ trong một hàm (không await ở giữa) nên
+// không có cửa sổ race trong cùng tiến trình.
 function useMongo() {
   try {
     return require('../db').isMongo();
   } catch { return false; }
 }
 
-async function loadStore() {
+function stripDoc(d) {
+  if (!d) return null;
+  const { _id, __v, ...rest } = d;
+  return rest;
+}
+
+async function getTicket(channelId) {
+  if (useMongo()) {
+    const { Ticket } = require('../db');
+    return stripDoc(await Ticket.findOne({ channelId }).lean().catch(() => null));
+  }
+  return load()[channelId] || null;
+}
+
+async function putTicket(channelId, record) {
+  if (useMongo()) {
+    const { Ticket } = require('../db');
+    await Ticket.updateOne({ channelId }, { $set: { ...record, channelId } }, { upsert: true });
+    return;
+  }
+  const db = load();
+  db[channelId] = record;
+  save(db);
+}
+
+async function patchTicket(channelId, patch) {
+  if (useMongo()) {
+    const { Ticket } = require('../db');
+    return stripDoc(await Ticket.findOneAndUpdate({ channelId }, { $set: patch }, { new: true }).lean().catch(() => null));
+  }
+  const db = load();
+  if (!db[channelId]) return null;
+  db[channelId] = { ...db[channelId], ...patch };
+  save(db);
+  return db[channelId];
+}
+
+async function removeTicket(channelId) {
+  if (useMongo()) {
+    const { Ticket } = require('../db');
+    await Ticket.deleteOne({ channelId });
+    return;
+  }
+  const db = load();
+  delete db[channelId];
+  save(db);
+}
+
+// Đọc toàn bộ map (chỉ cho thống kê/quét định kỳ — không ghi ngược từ snapshot này).
+async function listTickets() {
   if (useMongo()) {
     const { Ticket } = require('../db');
     const docs = await Ticket.find({}).lean().catch(() => []);
     const out = {};
-    for (const d of docs) {
-      const { _id, __v, ...rest } = d;
-      out[d.channelId] = rest;
-    }
+    for (const d of docs) out[d.channelId] = stripDoc(d);
     return out;
   }
   return load();
 }
 
-async function saveStore(db) {
+// Ticket ĐANG MỞ của một người trong một guild → [channelId, record] | null.
+// Bản ghi đã đóng (closed) KHÔNG tính — trước đây ticket archive rồi vẫn chặn
+// chủ ticket mở ticket mới (audit H2).
+async function findOpenTicketByOwner(guildId, ownerId) {
   if (useMongo()) {
     const { Ticket } = require('../db');
-    const ids = Object.keys(db);
-    const ops = ids.map((channelId) => ({
-      updateOne: {
-        filter: { channelId },
-        update: { $set: { ...db[channelId], channelId } },
-        upsert: true,
-      },
-    }));
-    if (ops.length) await Ticket.bulkWrite(ops);
-    await Ticket.deleteMany({ channelId: { $nin: ids } });
-    return;
+    const d = await Ticket.findOne({ guildId, ownerId, closed: { $ne: true } }).lean().catch(() => null);
+    return d ? [d.channelId, stripDoc(d)] : null;
   }
-  save(db);
+  const db = load();
+  for (const [channelId, t] of Object.entries(db)) {
+    if (t.guildId === guildId && t.ownerId === ownerId && !t.closed) return [channelId, t];
+  }
+  return null;
 }
 
 // ===== PANEL 1 NÚT "Mở Ticket" (kiểu tickets.bot trong hình) =====
@@ -205,8 +251,7 @@ async function handleSelect(interaction) {
   const types = getTypes(await getT(interaction.guildId));
   const type = types.find(t => t.id === typeId) || types[0];
 
-  const db = await loadStore();
-  const existing = Object.entries(db).find(([, t]) => t.guildId === interaction.guildId && t.ownerId === interaction.user.id);
+  const existing = await findOpenTicketByOwner(interaction.guildId, interaction.user.id);
   if (existing) {
     return interaction.reply({ content: `⚠️ Bạn đã có ticket mở: <#${existing[0]}>`, ephemeral: true });
   }
@@ -243,6 +288,12 @@ async function createTicket(interaction, type, reason) {
   if (await pro.isBlacklisted(interaction.guildId, interaction.user.id)) {
     return interaction.editReply({ embeds: [errorEmbed('⛔ Bạn đang bị chặn tạo ticket. Liên hệ admin.') ] });
   }
+  // Kiểm tra trùng NGAY TRƯỚC khi tạo (bước chọn loại/nút bấm kiểm tra sớm có
+  // thể bị lách bằng cách mở 2 form rồi submit cả hai — audit H2).
+  const dup = await findOpenTicketByOwner(interaction.guildId, interaction.user.id);
+  if (dup) {
+    return interaction.editReply({ content: `⚠️ Bạn đã có ticket mở: <#${dup[0]}>` });
+  }
   const st = await getT(interaction.guildId);
   const number = await pro.nextTicketNumber(interaction.guildId);
 
@@ -268,24 +319,22 @@ async function createTicket(interaction, type, reason) {
     permissionOverwrites: overwrites,
   }));
 
-  const db = await loadStore();
-  db[channel.id] = {
+  const record = {
     ownerId: interaction.user.id, ownerTag: interaction.user.tag,
     guildId: interaction.guildId, type: type.id, typeLabel: type.label,
     reason, createdAt: Date.now(), lastActivity: Date.now(), claimedBy: null,
     number, priority: st.defaultPriority || 'medium', closed: false,
     openingMessageId: null,
   };
-  await saveStore(db);
+  await putTicket(channel.id, record);
   require('./activity').record(interaction.guildId, 'ticket', `@${interaction.user.tag} mở ticket #${number} (${type.label})`).catch(() => {});
 
   const opening = await channel.send({
     content: `${interaction.user} ${st.ticketStaffRoleId ? `<@&${st.ticketStaffRoleId}>` : ''}`,
-    embeds: [pro.ticketInfoEmbed({ ...db[channel.id] })],
-    components: [ticketRow(st), pro.priorityRow(db[channel.id].priority)],
+    embeds: [pro.ticketInfoEmbed({ ...record })],
+    components: [ticketRow(st), pro.priorityRow(record.priority)],
   });
-  db[channel.id].openingMessageId = opening?.id || null;
-  await saveStore(db);
+  await patchTicket(channel.id, { openingMessageId: opening?.id || null });
 
   try {
     require('./logger').logMod(interaction.guild, `🎫 Mở ticket ${channel} (${type.label}) bởi ${interaction.user.tag}`, reason);
@@ -296,8 +345,7 @@ async function createTicket(interaction, type, reason) {
 
 // Tương thích nút cũ
 async function handleCreate(interaction) {
-  const db = await loadStore();
-  const existing = Object.entries(db).find(([, t]) => t.guildId === interaction.guildId && t.ownerId === interaction.user.id);
+  const existing = await findOpenTicketByOwner(interaction.guildId, interaction.user.id);
   if (existing) {
     return interaction.reply({ content: `⚠️ Bạn đã có ticket mở: <#${existing[0]}>`, ephemeral: true });
   }
@@ -332,8 +380,7 @@ async function generateTranscript(channel) {
 }
 
 async function handleTranscript(interaction) {
-  const db = await loadStore();
-  const t = db[interaction.channelId];
+  const t = await getTicket(interaction.channelId);
   if (!t) {
     return interaction.reply({ embeds: [errorEmbed('Kênh này không phải ticket.')], ephemeral: true });
   }
@@ -356,8 +403,7 @@ async function canManageTicket(interaction, t) {
 }
 
 async function handleClose(interaction) {
-  const db = await loadStore();
-  const t = db[interaction.channelId];
+  const t = await getTicket(interaction.channelId);
   if (!t) {
     return interaction.reply({ embeds: [errorEmbed('Kênh này không phải ticket.')], ephemeral: true });
   }
@@ -375,8 +421,7 @@ async function handleClose(interaction) {
 }
 
 async function handleClaim(interaction) {
-  const db = await loadStore();
-  const t = db[interaction.channelId];
+  const t = await getTicket(interaction.channelId);
   if (!t) {
     return interaction.reply({ embeds: [errorEmbed('Kênh này không phải ticket.')], ephemeral: true });
   }
@@ -389,8 +434,7 @@ async function handleClaim(interaction) {
   }
   t.claimedBy = interaction.user.id;
   t.claimedTag = interaction.user.tag;
-  db[interaction.channelId] = t;
-  await saveStore(db);
+  await patchTicket(interaction.channelId, { claimedBy: t.claimedBy, claimedTag: t.claimedTag });
   await interaction.channel.setName(`${interaction.channel.name}-xuly`.slice(0, 90)).catch(() => {});
   await interaction.reply(`✋ ${interaction.user} đã nhận ticket này, <@${t.ownerId}> chờ chút nhé!`);
 }
@@ -404,10 +448,7 @@ async function handleRate(interaction) {
   if (!n || n < 1 || n > 5) return;
   const guildId = parts.length >= 4 ? parts[2] : null;
   const channelId = parts.length >= 4 ? parts[3] : null;
-  let db = {};
-  try {
-    if (fs.existsSync(RATINGS_FILE)) db = JSON.parse(fs.readFileSync(RATINGS_FILE, 'utf8'));
-  } catch { db = {}; }
+  const db = readJson(RATINGS_FILE, {});
   const key = guildId && channelId ? `${guildId}:${channelId}` : `legacy:${interaction.user.id}`;
   db[key] = { guildId, channelId, userId: interaction.user.id, stars: n, at: Date.now() };
   writeJsonAtomic(RATINGS_FILE, db);
@@ -424,8 +465,7 @@ async function handleRate(interaction) {
 
 // ===== QUẢN LÝ: add / remove / rename =====
 async function handleAdd(interaction, user) {
-  const db = await loadStore();
-  const t = db[interaction.channelId];
+  const t = await getTicket(interaction.channelId);
   if (!t) {
     return interaction.reply({ embeds: [errorEmbed('Kênh này không phải ticket.')], ephemeral: true });
   }
@@ -439,8 +479,7 @@ async function handleAdd(interaction, user) {
 }
 
 async function handleRemove(interaction, user) {
-  const db = await loadStore();
-  const t = db[interaction.channelId];
+  const t = await getTicket(interaction.channelId);
   if (!t) return interaction.reply({ embeds: [errorEmbed('Kênh này không phải ticket.')], ephemeral: true });
   if (user.id === t.ownerId) return interaction.reply({ embeds: [errorEmbed('Không thể xóa chủ ticket.')], ephemeral: true });
   if (!(await canManageTicket(interaction, t))) {
@@ -451,8 +490,7 @@ async function handleRemove(interaction, user) {
 }
 
 async function handleRename(interaction, name) {
-  const db = await loadStore();
-  const t = db[interaction.channelId];
+  const t = await getTicket(interaction.channelId);
   if (!t) {
     return interaction.reply({ embeds: [errorEmbed('Kênh này không phải ticket.')], ephemeral: true });
   }
@@ -466,7 +504,7 @@ async function handleRename(interaction, name) {
 
 function isTicketChannel(channelId) {
   // LƯU Ý: bản đồng bộ này chỉ đọc JSON — ở chế độ Mongo nó không thấy ticket.
-  // Hiện không còn call site nào dùng; cần kiểm tra ticket thì dùng loadStore().
+  // Hiện không còn call site nào dùng; cần kiểm tra ticket thì dùng getTicket().
   return !!load()[channelId];
 }
 
@@ -510,5 +548,5 @@ module.exports = {
   handleSelect, handleModal, handleCreate, handleClose, handleClaim,
   handleTranscript, handleRate, handleAdd, handleRemove, handleRename,
   isTicketChannel, generateTranscript, lockPanelChannel, createPanelChannel,
-  load, save, loadStore, saveStore, getT, canManageTicket,
+  load, save, getTicket, putTicket, patchTicket, removeTicket, listTickets, findOpenTicketByOwner, getT, canManageTicket,
 };

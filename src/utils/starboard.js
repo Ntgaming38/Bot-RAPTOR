@@ -2,14 +2,14 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { EmbedBuilder } = require('discord.js');
-const { writeJsonAtomic } = require('./jsonStore');
+const { writeJsonAtomic, readJson } = require('./jsonStore');
 
 const FILE = path.join(__dirname, '..', '..', 'data', 'starboard.json');
 
 function load() {
   try {
     if (!fs.existsSync(FILE)) return {};
-    return JSON.parse(fs.readFileSync(FILE, 'utf8'));
+    return readJson(FILE, {});
   } catch { return {}; }
 }
 function save(db) { writeJsonAtomic(FILE, db); }

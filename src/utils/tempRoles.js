@@ -1,13 +1,13 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const { writeJsonAtomic } = require('./jsonStore');
+const { writeJsonAtomic, readJson } = require('./jsonStore');
 
 const FILE = path.join(__dirname, '..', '..', 'data', 'temp-roles.json');
 
 function loadAll() {
   try {
     if (!fs.existsSync(FILE)) return [];
-    const d = JSON.parse(fs.readFileSync(FILE, 'utf8'));
+    const d = readJson(FILE, {});
     return Array.isArray(d) ? d : [];
   } catch { return []; }
 }

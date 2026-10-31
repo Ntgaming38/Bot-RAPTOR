@@ -70,15 +70,15 @@ class FileSessionStore extends session.Store {
     this.file = file;
     this.data = {};
     this._lastFlush = 0;
-    try { this.data = JSON.parse(fs.readFileSync(file, 'utf8')) || {}; } catch { this.data = {}; }
+    this.data = require('../utils/jsonStore').readJson(file, {}) || {};
   }
   _flush(force) {
     const now = Date.now();
     if (!force && now - this._lastFlush < 1000) return;
     this._lastFlush = now;
     try {
-      fs.mkdirSync(path.dirname(this.file), { recursive: true });
-      fs.writeFileSync(this.file, JSON.stringify(this.data));
+      // Ghi nguyên tử như mọi store khác: crash giữa lúc ghi không làm hỏng sessions.json.
+      require('../utils/jsonStore').writeJsonAtomic(this.file, this.data);
     } catch {}
   }
   get(sid, cb) {
@@ -678,7 +678,7 @@ function mount(app) {
   app.get('/dashboard/api/guilds/:gid/roleboards/:bid', guard, async (req, res) => {
     const b = await roleBoards.getBoard(req.params.gid, req.params.bid);
     if (!b) return res.status(404).json({ error: 'not-found' });
-    res.json({ id: String(b._id || b.id), name: b.name, channelId: b.channelId, title: b.title, description: b.description, items: b.items || [] });
+    res.json({ id: String(b._id || b.id), name: b.name, channelId: b.channelId, title: b.title, description: b.description, items: b.items || [], display: b.display || 'buttons', exclusive: !!b.exclusive, maxPicks: b.maxPicks || 0, requiredRoleId: b.requiredRoleId || null, footer: b.footer || null, thumbnailUrl: b.thumbnailUrl || null, placeholder: b.placeholder || null, rainbowBar: b.rainbowBar !== false });
   });
   app.put('/dashboard/api/guilds/:gid/roleboards/:bid', guard, async (req, res) => {
     const b = req.body || {};
@@ -693,6 +693,13 @@ function mount(app) {
       if (Number.isFinite(n)) patch.maxPicks = Math.min(25, Math.max(0, n));
     }
     if (b.requiredRoleId !== undefined) patch.requiredRoleId = String(b.requiredRoleId || '') || null;
+    if (b.footer !== undefined) patch.footer = String(b.footer || '').slice(0, 100) || null;
+    if (b.thumbnailUrl !== undefined) {
+      const u = String(b.thumbnailUrl || '').trim();
+      patch.thumbnailUrl = /^https?:\/\//i.test(u) ? u.slice(0, 500) : null;
+    }
+    if (b.placeholder !== undefined) patch.placeholder = String(b.placeholder || '').slice(0, 150) || null;
+    if (b.rainbowBar !== undefined) patch.rainbowBar = !!b.rainbowBar;
     if (b.items !== undefined) {
       if (!Array.isArray(b.items) || b.items.length > 25) return res.status(400).json({ error: 'items' });
       patch.items = b.items.filter((i) => i && i.roleId).slice(0, 25)
@@ -831,7 +838,7 @@ function mount(app) {
     const roles = await guild.roles.fetch().catch(() => guild.roles.cache);
     let openTickets = 0;
     try {
-      openTickets = Object.values(await require('../utils/tickets').loadStore())
+      openTickets = Object.values(await require('../utils/tickets').listTickets())
         .filter((t) => t.guildId === req.params.gid && !t.closed).length;
     } catch {}
     let boards = 0;

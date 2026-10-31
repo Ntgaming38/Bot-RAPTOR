@@ -2,7 +2,7 @@
 // Hoàn thành là tự cộng credits qua social.js. Lưu Mongo (QuestProgress) hoặc JSON.
 const fs = require('node:fs');
 const path = require('node:path');
-const { writeJsonAtomic } = require('./jsonStore');
+const { writeJsonAtomic, readJson } = require('./jsonStore');
 
 const FILE = path.join(__dirname, '..', '..', 'data', 'quests.json');
 const DEFS = [
@@ -20,7 +20,7 @@ function useMongo() {
 function loadAll() {
   try {
     if (!fs.existsSync(FILE)) return {};
-    return JSON.parse(fs.readFileSync(FILE, 'utf8'));
+    return readJson(FILE, {});
   } catch { return {}; }
 }
 const blank = () => ({ chat: 0, voice: 0, daily: false, rewarded: {} });
@@ -58,7 +58,7 @@ async function bump(guildId, userId, field, amount = 1) {
     const cur = def.id === 'daily' ? (row.daily ? 1 : 0) : (row[def.id] || 0);
     if (cur >= def.target && !row.rewarded[def.id]) {
       row.rewarded[def.id] = true;
-      const balance = require('./social').addCredits(guildId, userId, def.reward);
+      const balance = await require('./social').addCredits(guildId, userId, def.reward);
       completed = { ...def, balance };
     }
   }

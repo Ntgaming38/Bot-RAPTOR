@@ -23,7 +23,7 @@ module.exports = {
       if (!list.length) {
         return interaction.reply({ content: '🛒 Cửa hàng đang trống — quản trị viên có thể thêm mặt hàng ở dashboard, mục **Shop**.', ephemeral: true });
       }
-      const bal = getProfile(interaction.guildId, interaction.user.id).credits;
+      const bal = (await getProfile(interaction.guildId, interaction.user.id)).credits;
       const desc = list.map((it) => `**${it.id}** — ${it.name} · **${it.price}** credits${it.roleId ? ` · <@&${it.roleId}>` : ''}${it.desc ? `\n　${it.desc}` : ''}`).join('\n');
       return interaction.reply({ embeds: [embed({ title: '🛒 Cửa hàng', description: `${desc}\n\n💰 Số dư của bạn: **${bal}** credits — mua bằng lệnh \`/shop buy id:<mã>\`` })] });
     }
@@ -36,7 +36,7 @@ module.exports = {
     if (it.roleId && member.roles.cache.has(it.roleId)) {
       return interaction.reply({ content: 'ℹ️ Bạn đã có role này rồi.', ephemeral: true });
     }
-    const profile = getProfile(interaction.guildId, interaction.user.id);
+    const profile = await getProfile(interaction.guildId, interaction.user.id);
     if ((profile.credits || 0) < it.price) {
       return interaction.reply({ content: `⚠️ Chưa đủ credits: cần **${it.price}**, bạn có **${profile.credits || 0}**. Nhận thêm bằng \`/credits daily\` nhé.`, ephemeral: true });
     }
@@ -52,7 +52,7 @@ module.exports = {
         return interaction.reply({ content: '⚠️ Gán role thất bại — chưa trừ credits. Thử lại sau nhé.', ephemeral: true });
       }
     }
-    const balance = addCredits(interaction.guildId, interaction.user.id, -Math.abs(it.price));
+    const balance = await addCredits(interaction.guildId, interaction.user.id, -Math.abs(it.price));
     await require('../../utils/activity').record(interaction.guildId, 'shop', `@${interaction.user.tag} mua “${it.name}” (${it.price} credits)`).catch(() => {});
     return interaction.reply({ embeds: [embed({ title: '✅ Mua thành công', description: `Bạn đã mua **${it.name}** với **${it.price}** credits.${it.roleId ? `\nĐã gán role <@&${it.roleId}>.` : ''}\n💰 Số dư còn lại: **${balance}** credits.` })] });
   },

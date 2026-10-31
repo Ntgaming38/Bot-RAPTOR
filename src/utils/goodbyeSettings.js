@@ -1,6 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const { writeJsonAtomic } = require('./jsonStore');
+const { writeJsonAtomic, readJson } = require('./jsonStore');
 const { embed } = require('./embeds');
 
 const FILE = path.join(__dirname, '..', '..', 'data', 'goodbye.json');
@@ -9,7 +9,7 @@ const DEFAULT_TEXT = '👋 {user} vừa rời **{server}**. Hẹn gặp lại! (
 function loadAll() {
   try {
     if (!fs.existsSync(FILE)) return {};
-    return JSON.parse(fs.readFileSync(FILE, 'utf8'));
+    return readJson(FILE, {});
   } catch { return {}; }
 }
 function saveAll(db) {

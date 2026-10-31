@@ -17,10 +17,24 @@ async function loadCommands() {
     return [];
   });
 
+  const seen = new Map();
   for (const file of walk(commandsPath)) {
-    delete require.cache[require.resolve(file)];
-    const cmd = require(file);
+    let cmd;
+    try {
+      delete require.cache[require.resolve(file)];
+      cmd = require(file);
+    } catch (e) {
+      // Cách ly lỗi: 1 file lệnh hỏng KHÔNG được làm sập toàn bộ bot.
+      console.error(`[ERROR] Không nạp được lệnh ${file}: ${e?.message || e} — bỏ qua file này.`);
+      continue;
+    }
     if (cmd?.data && cmd?.execute) {
+      const name = cmd.data.name;
+      if (seen.has(name)) {
+        console.error(`[ERROR] Trùng tên lệnh "${name}": ${file} trùng với ${seen.get(name)} — bỏ qua bản trùng (giữ bản đầu).`);
+        continue;
+      }
+      seen.set(name, file);
       commands.push(cmd);
     } else {
       console.warn(`[WARN] Lệnh ${file} thiếu "data" hoặc "execute", bỏ qua.`);
@@ -51,6 +65,7 @@ async function deploy() {
     }
   } catch (err) {
     console.error('❌ Deploy lệnh thất bại:', err);
+    process.exitCode = 1;
   }
 }
 

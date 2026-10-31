@@ -10,7 +10,7 @@ module.exports = {
     .setDescription('Xem nhiệm vụ hằng ngày và phần thưởng credits'),
   async execute(interaction) {
     const list = await quests.listFor(interaction.guildId, interaction.user.id);
-    const bal = getProfile(interaction.guildId, interaction.user.id).credits;
+    const bal = (await getProfile(interaction.guildId, interaction.user.id)).credits;
     const bar = (cur, target) => {
       const filled = Math.round((Math.min(cur, target) / target) * 10);
       return '▰'.repeat(filled) + '▱'.repeat(10 - filled);

@@ -2,7 +2,7 @@
 // Mongo (ActivityEvent) khi có, JSON (data/activity.json) khi không — giữ tối đa 50 mục/server.
 const fs = require('node:fs');
 const path = require('node:path');
-const { writeJsonAtomic } = require('./jsonStore');
+const { writeJsonAtomic, readJson } = require('./jsonStore');
 
 const FILE = path.join(__dirname, '..', '..', 'data', 'activity.json');
 const MAX_PER_GUILD = 50;
@@ -13,7 +13,7 @@ function useMongo() {
 function loadAll() {
   try {
     if (!fs.existsSync(FILE)) return {};
-    return JSON.parse(fs.readFileSync(FILE, 'utf8'));
+    return readJson(FILE, {});
   } catch { return {}; }
 }
 

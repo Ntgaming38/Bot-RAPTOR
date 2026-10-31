@@ -3,7 +3,7 @@
 // - RAM vượt ~85% trần 512MB của gói Free (có thời gian chờ giữa các lần báo).
 const fs = require('node:fs');
 const path = require('node:path');
-const { writeJsonAtomic } = require('./jsonStore');
+const { writeJsonAtomic, readJson } = require('./jsonStore');
 
 const FILE = path.join(__dirname, '..', '..', 'data', 'health.json');
 const RAM_LIMIT_MB = 512;
@@ -12,7 +12,7 @@ const RAM_WARN_MB = Math.round(RAM_LIMIT_MB * 0.85);
 function loadState() {
   try {
     if (!fs.existsSync(FILE)) return {};
-    return JSON.parse(fs.readFileSync(FILE, 'utf8'));
+    return readJson(FILE, {});
   } catch { return {}; }
 }
 function saveState(s) { writeJsonAtomic(FILE, s); }

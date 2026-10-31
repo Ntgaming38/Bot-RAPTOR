@@ -34,6 +34,9 @@ async function main() {
   } catch (e) {
     console.warn('[mongo] bỏ qua, dùng JSON:', e.message);
   }
+  // Economy trước đây chỉ có JSON: chuyển một lần sang Mongo (nếu đang ở chế độ
+  // Mongo) để số dư credits/rep/points của mọi người không bị "về 0".
+  try { await require('./utils/social').migrateJsonOnce(); } catch (e) { console.warn('[social] migrate bỏ qua:', e?.message); }
 
   const client = new Client({
     intents: [
@@ -63,7 +66,14 @@ async function main() {
   const eventsPath = path.join(__dirname, 'events');
   if (fs.existsSync(eventsPath)) {
     for (const file of fs.readdirSync(eventsPath).filter(f => f.endsWith('.js'))) {
-      const event = require(path.join(eventsPath, file));
+      let event;
+      try {
+        event = require(path.join(eventsPath, file));
+      } catch (e) {
+        // Cách ly lỗi: 1 file event hỏng KHÔNG được làm sập toàn bộ bot.
+        console.error(`[ERROR] Không nạp được event ${file}: ${e?.message || e} — bỏ qua file này.`);
+        continue;
+      }
       if (!event?.name || !event?.execute) {
         console.warn(`[WARN] Event ${file} thiếu "name" hoặc "execute".`);
         continue;

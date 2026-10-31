@@ -4,7 +4,7 @@
 // Cấu hình (lưu trong guildSettings): inviteCfg = { enabled, rules: [{ code, roleId }] }
 const fs = require('node:fs');
 const path = require('node:path');
-const { writeJsonAtomic } = require('./jsonStore');
+const { writeJsonAtomic, readJson } = require('./jsonStore');
 
 const FILE = path.join(__dirname, '..', '..', 'data', 'invite-stats.json');
 const cache = new Map(); // guildId -> Map(code -> { uses, inviterId })
@@ -15,7 +15,7 @@ function useMongo() {
 function loadAll() {
   try {
     if (!fs.existsSync(FILE)) return {};
-    return JSON.parse(fs.readFileSync(FILE, 'utf8'));
+    return readJson(FILE, {});
   } catch { return {}; }
 }
 

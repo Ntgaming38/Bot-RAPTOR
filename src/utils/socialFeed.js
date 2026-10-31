@@ -4,7 +4,7 @@
 // ghi nhận các mục hiện có, không đăng dồn — tránh spam video cũ.
 const fs = require('node:fs');
 const path = require('node:path');
-const { writeJsonAtomic } = require('./jsonStore');
+const { writeJsonAtomic, readJson } = require('./jsonStore');
 
 const FILE = path.join(__dirname, '..', '..', 'data', 'feed-state.json');
 const DEFAULT_FEED = 'https://rsshub.app/tiktok/user/phimhayplus38';
@@ -15,7 +15,7 @@ function useMongo() {
 function loadAll() {
   try {
     if (!fs.existsSync(FILE)) return {};
-    return JSON.parse(fs.readFileSync(FILE, 'utf8'));
+    return readJson(FILE, {});
   } catch { return {}; }
 }
 

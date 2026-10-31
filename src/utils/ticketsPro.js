@@ -172,8 +172,8 @@ async function closedList(guildId) {
 }
 
 async function computeTicketStats(guildId) {
-  const { loadStore } = require('./tickets');
-  const open = Object.entries(await loadStore()).filter(([, t]) => t.guildId === guildId && !t.closed);
+  const { listTickets } = require('./tickets');
+  const open = Object.entries(await listTickets()).filter(([, t]) => t.guildId === guildId && !t.closed);
   const closed = await closedList(guildId);
   const byType = {};
   for (const [, t] of open) byType[t.typeLabel || t.type || '?'] = (byType[t.typeLabel || t.type || '?'] || 0) + 1;
@@ -277,20 +277,14 @@ async function finishClose(client, guild, channel, t, { byId, byTag, auto = fals
   // Archive (giữ kênh cho mở lại) hay xóa hẳn
   const mode = st.closeMode || 'delete';
   if (mode === 'archive' && st.archiveCategoryId) {
-    const db = await tickets.loadStore();
-    const cur = db[channel.id] || t;
-    cur.closed = true;
-    db[channel.id] = cur;
-    await tickets.saveStore(db);
+    await tickets.patchTicket(channel.id, { closed: true });
     await channel.permissionOverwrites.edit(t.ownerId, { ViewChannel: true, SendMessages: false, ReadMessageHistory: true }).catch(() => {});
     await channel.setParent(st.archiveCategoryId).catch(() => {});
     if (!channel.name.startsWith('🔒-')) await channel.setName(`🔒-${channel.name}`.slice(0, 90)).catch(() => {});
     await channel.send({ content: `🔒 Ticket đã đóng${auto ? ' tự động (im lặng quá lâu)' : ''}. Staff có thể mở lại hoặc xóa hẳn:`, components: [reopenRow()] }).catch(() => {});
     return 'archived';
   }
-  const db = await tickets.loadStore();
-  delete db[channel.id];
-  await tickets.saveStore(db);
+  await tickets.removeTicket(channel.id);
   const delaySec = Math.min(600, Math.max(0, st.closeDelaySec ?? 5));
   setTimeout(() => channel.delete().catch(() => {}), delaySec * 1000);
   return 'deleted';
@@ -306,13 +300,10 @@ function reopenRow() {
 async function touchTicketActivity(channelId) {
   try {
     const tickets = require('./tickets');
-    const db = await tickets.loadStore();
-    const t = db[channelId];
+    const t = await tickets.getTicket(channelId);
     if (!t || t.closed) return;
     if (Date.now() - (t.lastActivity || 0) < 5 * 60_000) return;
-    t.lastActivity = Date.now();
-    db[channelId] = t;
-    await tickets.saveStore(db);
+    await tickets.patchTicket(channelId, { lastActivity: Date.now() });
   } catch {}
 }
 
@@ -332,28 +323,25 @@ async function autoCloseTick(client) {
         guilds = Object.entries(all).filter(([, v]) => (v.autoCloseHours || 0) > 0).map(([guildId, v]) => ({ guildId, ...v }));
       }
     }
-    const { loadStore, saveStore } = require('./tickets');
+    const { listTickets, removeTicket } = require('./tickets');
     for (const g of guilds) {
       const hours = g.autoCloseHours || 0;
       if (!hours) continue;
       const guild = await client.guilds.fetch(g.guildId).catch(() => null);
       if (!guild) continue;
-      const db = await loadStore();
-      let dirty = false;
+      const db = await listTickets();
       for (const [chId, t] of Object.entries(db)) {
         if (t.guildId !== g.guildId || t.closed) continue;
         const last = t.lastActivity || t.createdAt || 0;
         if (Date.now() - last < hours * 3600_000) continue;
         const channel = await guild.channels.fetch(chId).catch(() => null);
         if (!channel) {
-          delete db[chId];
-          dirty = true;
+          await removeTicket(chId);
           continue;
         }
         console.log(`[ticket] tự đóng #${channel.name} (im ${hours}h)`);
         await finishClose(client, guild, channel, t, { byId: client.user.id, byTag: client.user.tag, auto: true });
       }
-      if (dirty) await saveStore(db);
     }
   } catch (e) {
     console.warn('[ticket autoclear]', e?.message);
@@ -390,8 +378,8 @@ module.exports = {
 const { errorEmbed: _err } = require('./embeds');
 
 async function ticketDoc(channelId) {
-  const { loadStore } = require('./tickets');
-  return (await loadStore())[channelId] || null;
+  const { getTicket } = require('./tickets');
+  return getTicket(channelId);
 }
 
 async function isTicketStaff(interaction) {
@@ -401,9 +389,8 @@ async function isTicketStaff(interaction) {
 }
 
 async function handlePriority(interaction) {
-  const { loadStore, saveStore, canManageTicket } = require('./tickets');
-  const db = await loadStore();
-  const t = db[interaction.channelId];
+  const { getTicket, patchTicket, canManageTicket } = require('./tickets');
+  const t = await getTicket(interaction.channelId);
   if (!t) return interaction.reply({ embeds: [_err('Kênh này không phải ticket.')], ephemeral: true });
   if (!(await canManageTicket(interaction, t))) {
     return interaction.reply({ embeds: [_err('Chỉ chủ ticket hoặc staff mới đổi priority.')], ephemeral: true });
@@ -411,8 +398,7 @@ async function handlePriority(interaction) {
   const level = interaction.values?.[0];
   if (!PRIORITIES[level]) return interaction.reply({ embeds: [_err('Mức không hợp lệ.')], ephemeral: true });
   t.priority = level;
-  db[interaction.channelId] = t;
-  await saveStore(db);
+  await patchTicket(interaction.channelId, { priority: level });
   // Sửa lại embed thông tin
   try {
     if (t.openingMessageId) {
@@ -427,15 +413,13 @@ async function handleUnclaim(interaction) {
   if (!(await isTicketStaff(interaction))) {
     return interaction.reply({ embeds: [_err('Chỉ staff mới bỏ nhận ticket được.')], ephemeral: true });
   }
-  const { loadStore, saveStore } = require('./tickets');
-  const db = await loadStore();
-  const t = db[interaction.channelId];
+  const { getTicket, patchTicket } = require('./tickets');
+  const t = await getTicket(interaction.channelId);
   if (!t) return interaction.reply({ embeds: [_err('Kênh này không phải ticket.')], ephemeral: true });
   if (!t.claimedBy) return interaction.reply({ content: 'Ticket này chưa ai nhận.', ephemeral: true });
   t.claimedBy = null;
   t.claimedTag = null;
-  db[interaction.channelId] = t;
-  await saveStore(db);
+  await patchTicket(interaction.channelId, { claimedBy: null, claimedTag: null });
   try {
     const name = interaction.channel.name.replace(/-xuly$/, '');
     if (name !== interaction.channel.name) await interaction.channel.setName(name.slice(0, 90)).catch(() => {});
@@ -447,8 +431,8 @@ async function handleLock(interaction, lock) {
   if (!(await isTicketStaff(interaction))) {
     return interaction.reply({ embeds: [_err('Chỉ staff mới khóa/mở ticket được.')], ephemeral: true });
   }
-  const { loadStore } = require('./tickets');
-  const t = (await loadStore())[interaction.channelId];
+  const { getTicket } = require('./tickets');
+  const t = await getTicket(interaction.channelId);
   if (!t) return interaction.reply({ embeds: [_err('Kênh này không phải ticket.')], ephemeral: true });
   await interaction.channel.permissionOverwrites.edit(t.ownerId, {
     ViewChannel: true, SendMessages: !lock, ReadMessageHistory: true,
@@ -464,17 +448,15 @@ async function handleUnlock(interaction) {
 }
 
 async function handleReopen(interaction) {
-  const { loadStore, saveStore, canManageTicket } = require('./tickets');
-  const db = await loadStore();
-  const t = db[interaction.channelId];
+  const { getTicket, patchTicket, canManageTicket } = require('./tickets');
+  const t = await getTicket(interaction.channelId);
   if (!t) return interaction.reply({ embeds: [_err('Kênh này không phải ticket.')], ephemeral: true });
   if (!t.closed) return interaction.reply({ content: 'Ticket này đang mở mà.', ephemeral: true });
   if (!(await canManageTicket(interaction, t))) {
     return interaction.reply({ embeds: [_err('Chỉ chủ ticket hoặc staff mới mở lại được.')], ephemeral: true });
   }
   t.closed = false;
-  db[interaction.channelId] = t;
-  await saveStore(db);
+  await patchTicket(interaction.channelId, { closed: false });
   await interaction.channel.permissionOverwrites.edit(t.ownerId, {
     ViewChannel: true, SendMessages: true, ReadMessageHistory: true,
   }).catch(() => {});
@@ -491,15 +473,13 @@ async function handleReopen(interaction) {
 }
 
 async function handleDeleteNow(interaction) {
-  const { loadStore, saveStore, canManageTicket } = require('./tickets');
-  const db = await loadStore();
-  const t = db[interaction.channelId];
+  const { getTicket, patchTicket, canManageTicket } = require('./tickets');
+  const t = await getTicket(interaction.channelId);
   if (!t) return interaction.reply({ embeds: [_err('Kênh này không phải ticket.')], ephemeral: true });
   if (!(await canManageTicket(interaction, t))) {
     return interaction.reply({ embeds: [_err('Chỉ chủ ticket hoặc staff mới xóa được.')], ephemeral: true });
   }
-  delete db[interaction.channelId];
-  await saveStore(db);
+  await removeTicket(interaction.channelId);
   await interaction.reply('🗑️ Đang xóa kênh...').catch(() => {});
   setTimeout(() => interaction.channel.delete().catch(() => {}), 3000);
 }

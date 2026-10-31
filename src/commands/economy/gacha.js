@@ -25,16 +25,16 @@ module.exports = {
     }
     if (sub === 'info') {
       const list = gacha.odds(prizes).map((p) => `• **${p.name}** — ${p.pct}%`).join('\n');
-      const bal = getProfile(interaction.guildId, interaction.user.id).credits;
+      const bal = (await getProfile(interaction.guildId, interaction.user.id)).credits;
       return interaction.reply({ embeds: [embed({ title: '🎁 Hộp gacha', description: `Giá mở: **${cost}** credits/hộp\n\n${list}\n\n💰 Số dư của bạn: **${bal}** credits — mở bằng \`/gacha open\`` })] });
     }
-    const profile = getProfile(interaction.guildId, interaction.user.id);
+    const profile = await getProfile(interaction.guildId, interaction.user.id);
     if ((profile.credits || 0) < cost) {
       return interaction.reply({ embeds: [errorEmbed(`Chưa đủ credits: mở hộp cần **${cost}**, bạn có **${profile.credits || 0}**. Làm nhiệm vụ /quests hoặc /credits daily để kiếm thêm nhé.`)], ephemeral: true });
     }
     const prize = gacha.pick(prizes);
     if (!prize) return interaction.reply({ embeds: [errorEmbed('Hộp gacha đang lỗi cấu hình (tỉ lệ trống).')], ephemeral: true });
-    let balance = addCredits(interaction.guildId, interaction.user.id, -cost);
+    let balance = await addCredits(interaction.guildId, interaction.user.id, -cost);
     let granted = '';
     if (prize.roleId) {
       const member = await interaction.guild.members.fetch(interaction.user.id).catch(() => null);

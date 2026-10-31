@@ -7,7 +7,7 @@ const {
 } = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
-const { writeJsonAtomic } = require('./jsonStore');
+const { writeJsonAtomic, readJson } = require('./jsonStore');
 
 const FILE = path.join(__dirname, '..', '..', 'data', 'temp-voice.json');
 const DEFAULTS = { enabled: false, generatorId: null, categoryId: null, nameTpl: '🎧 Phòng của {user}', defaultLimit: 0, maxPerUser: 1 };
@@ -24,7 +24,7 @@ async function getCfg(guildId) {
 function loadRows() {
   try {
     if (!fs.existsSync(FILE)) return [];
-    const v = JSON.parse(fs.readFileSync(FILE, 'utf8'));
+    const v = readJson(FILE, {});
     return Array.isArray(v) ? v : [];
   } catch { return []; }
 }

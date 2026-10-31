@@ -1,7 +1,7 @@
 // Lưu hàng đợi nhạc xuống kho (Mongo hoặc JSON) để bot tự phát tiếp sau khi khởi động lại.
 const fs = require('node:fs');
 const path = require('node:path');
-const { writeJsonAtomic } = require('./jsonStore');
+const { writeJsonAtomic, readJson } = require('./jsonStore');
 
 const FILE = path.join(__dirname, '..', '..', 'data', 'music-queues.json');
 
@@ -11,7 +11,7 @@ function useMongo() {
 function loadAll() {
   try {
     if (!fs.existsSync(FILE)) return {};
-    return JSON.parse(fs.readFileSync(FILE, 'utf8'));
+    return readJson(FILE, {});
   } catch { return {}; }
 }
 

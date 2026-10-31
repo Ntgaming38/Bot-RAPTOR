@@ -19,14 +19,14 @@ module.exports = {
     const sub = interaction.options.getSubcommand();
     const user = interaction.options.getUser('user');
     if (sub === 'view') {
-      const p = getProfile(interaction.guildId, user.id);
+      const p = await getProfile(interaction.guildId, user.id);
       return interaction.reply({ embeds: [embed({ title: '🏅 Points', description: `${user} đang có **${p.points}** points trong server này.` })] });
     }
     if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
       return interaction.reply({ content: '⛔ Chỉ quản trị (Manage Server) mới cộng/trừ points được.', ephemeral: true });
     }
     const amount = interaction.options.getInteger('amount');
-    const total = addPoints(interaction.guildId, user.id, sub === 'add' ? amount : -amount);
+    const total = await addPoints(interaction.guildId, user.id, sub === 'add' ? amount : -amount);
     await interaction.reply({
       embeds: [embed({
         title: sub === 'add' ? '🏅 Đã cộng points' : '🏅 Đã trừ points',

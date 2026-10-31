@@ -1,6 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const { writeJsonAtomic } = require('./jsonStore');
+const { writeJsonAtomic, readJson } = require('./jsonStore');
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { embed } = require('./embeds');
 
@@ -11,7 +11,7 @@ const MAX_BOARDS = 10;
 function loadAll() {
   try {
     if (!fs.existsSync(FILE)) return {};
-    return JSON.parse(fs.readFileSync(FILE, 'utf8'));
+    return readJson(FILE, {});
   } catch { return {}; }
 }
 function saveAll(db) {

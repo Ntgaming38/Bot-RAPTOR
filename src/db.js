@@ -1,18 +1,50 @@
 const mongoose = require('mongoose');
 const config = require('./config');
 
+// Backend lưu trữ được CHỐT MỘT LẦN khi connectDB chạy lúc boot:
+// - Có MONGODB_URI + kết nối thành công → 'mongo' cho cả phiên chạy.
+// - Không có URI, hoặc kết nối thất bại lúc boot → 'json' cho cả phiên chạy.
+// Trước đây isMongo() xét readyState ở TỪNG lần đọc/ghi: Mongo chập chờn giữa
+// chừng sẽ khiến dữ liệu ghi lặng lẽ xuống JSON rồi "biến mất" khi Mongo hồi
+// lại (split-brain). Giờ nếu Mongo rớt giữa chừng, các thao tác Mongo sẽ
+// chờ/lỗi theo driver và được log — không âm thầm đổi nguồn dữ liệu nữa.
+let latchedMode = null; // 'mongo' | 'json' | null = chưa chốt (trước khi boot xong)
+let listenersBound = false;
+
 function isMongo() {
+  if (latchedMode) return latchedMode === 'mongo';
   return mongoose.connection.readyState === 1;
+}
+
+function storageMode() {
+  return latchedMode || (mongoose.connection.readyState === 1 ? 'mongo' : 'json');
+}
+
+function bindConnectionLogs() {
+  if (listenersBound) return;
+  listenersBound = true;
+  mongoose.connection.on('disconnected', () => {
+    console.warn('[db] ⚠️ MongoDB MẤT KẾT NỐI giữa chừng — backend đã chốt "mongo" nên dữ liệu KHÔNG rẽ sang JSON; các thao tác sẽ chờ driver tự nối lại hoặc báo lỗi. Kiểm tra Atlas/network ngay.');
+  });
+  mongoose.connection.on('reconnected', () => {
+    console.log('[db] 🍃 MongoDB đã nối lại.');
+  });
+  mongoose.connection.on('error', (e) => {
+    console.error('[db] Lỗi kết nối MongoDB:', e?.message || e);
+  });
 }
 
 async function connectDB() {
   if (!config.mongodbUri) {
-    console.log('📁 Không có MONGODB_URI → dùng file JSON trong data/ (mất khi Render restart).');
+    latchedMode = 'json';
+    console.log('📁 Không có MONGODB_URI → dùng file JSON trong data/ cho cả phiên chạy.');
     return false;
   }
+  bindConnectionLogs();
   try {
     await mongoose.connect(config.mongodbUri);
-    console.log('🍃 Đã kết nối MongoDB Atlas (giữ XP/giveaway/ticket vĩnh viễn).');
+    latchedMode = 'mongo';
+    console.log('🍃 Đã kết nối MongoDB Atlas (giữ XP/giveaway/ticket vĩnh viễn). Backend lưu trữ chốt: MONGO.');
     // Gỡ index unique cũ của roleboards (giờ cho nhiều bảng/server)
     try {
       await mongoose.connection.collection('roleboards').dropIndex('guildId_1');
@@ -20,7 +52,8 @@ async function connectDB() {
     } catch {}
     return true;
   } catch (e) {
-    console.error('❌ Kết nối MongoDB thất bại, fallback về JSON:', e.message);
+    latchedMode = 'json';
+    console.error('❌ Kết nối MongoDB thất bại lúc boot → chốt backend JSON cho cả phiên chạy (dữ liệu phiên này nằm ở data/, KHÔNG tự hợp nhất vào Mongo sau này):', e.message);
     return false;
   }
 }
@@ -374,4 +407,18 @@ const tempChannelSchema = new mongoose.Schema({
 });
 const TempChannel = mongoose.models.TempChannel || mongoose.model('TempChannel', tempChannelSchema);
 
-module.exports = { mongoose, connectDB, isMongo, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings, GuildSettings, AnnounceSettings, StatsSettings, RolePanel, GoodbyeSettings, LogSettings, Warn, RoleBoard, TicketCounter, ClosedTicket, TicketBlacklist, TempRole, ActivityEvent, Reminder, MusicQueue, InviteStat, QuestProgress, Playlist, FeedState, TempChannel };
+// === Kinh tế xã hội: Rep / Credits / Points (trước đây chỉ ở data/social.json) ===
+const socialProfileSchema = new mongoose.Schema({
+  guildId: { type: String, required: true },
+  userId: { type: String, required: true },
+  rep: { type: Number, default: 0 },
+  credits: { type: Number, default: 0 },
+  points: { type: Number, default: 0 },
+  lastRepAt: { type: Number, default: 0 },
+  lastRepTo: { type: String, default: null },
+  lastDailyAt: { type: Number, default: 0 },
+}, { timestamps: false });
+socialProfileSchema.index({ guildId: 1, userId: 1 }, { unique: true });
+const SocialProfile = mongoose.models.SocialProfile || mongoose.model('SocialProfile', socialProfileSchema);
+
+module.exports = { mongoose, connectDB, isMongo, storageMode, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings, GuildSettings, AnnounceSettings, StatsSettings, RolePanel, GoodbyeSettings, LogSettings, Warn, RoleBoard, TicketCounter, ClosedTicket, TicketBlacklist, TempRole, ActivityEvent, Reminder, MusicQueue, InviteStat, QuestProgress, Playlist, FeedState, TempChannel, SocialProfile };

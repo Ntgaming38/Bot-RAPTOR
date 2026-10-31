@@ -13,7 +13,7 @@ module.exports = {
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
     if (sub === 'daily') {
-      const r = claimDaily(interaction.guildId, interaction.user.id);
+      const r = await claimDaily(interaction.guildId, interaction.user.id);
       if (!r.ok) {
         const h = Math.ceil(r.retryAfterMs / 3600000);
         return interaction.reply({ content: `⏳ Bạn đã nhận daily rồi — quay lại sau khoảng **${h} giờ**.`, ephemeral: true });
@@ -30,7 +30,7 @@ module.exports = {
       return interaction.reply({ embeds: [embed({ title: '💰 Điểm danh hằng ngày', description: `+${r.amount} credits! Số dư hiện tại: **${finalBal}** credits.${bonusNote}` })] });
     }
     const user = interaction.options.getUser('user') || interaction.user;
-    const p = getProfile(interaction.guildId, user.id);
+    const p = await getProfile(interaction.guildId, user.id);
     await interaction.reply({
       embeds: [embed({
         title: `💼 Hồ sơ của ${user.username}`,

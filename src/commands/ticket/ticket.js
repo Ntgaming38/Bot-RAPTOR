@@ -108,15 +108,13 @@ module.exports = {
     }
     if (sub === 'priority') {
       const level = interaction.options.getString('muc', true);
-      const db = await tickets.loadStore();
-      const t = db[interaction.channelId];
+      const t = await tickets.getTicket(interaction.channelId);
       if (!t) return interaction.reply({ embeds: [errorEmbed('Kênh này không phải ticket.')], ephemeral: true });
       if (!(await tickets.canManageTicket(interaction, t))) {
         return interaction.reply({ embeds: [errorEmbed('Chỉ chủ ticket hoặc staff mới đổi priority.')], ephemeral: true });
       }
       t.priority = level;
-      db[interaction.channelId] = t;
-      await tickets.saveStore(db);
+      await tickets.patchTicket(interaction.channelId, { priority: level });
       try {
         if (t.openingMessageId) {
           const msg = await interaction.channel.messages.fetch(t.openingMessageId).catch(() => null);
