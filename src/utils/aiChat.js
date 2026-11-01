@@ -73,21 +73,40 @@ async function callModel(cfg, turns) {
   const messages = [{ role: 'system', content: cfg.persona }, ...turns];
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 60_000);
+  const post = (payload) => fetch(`${baseUrl()}/chat/completions`, {
+    method: 'POST',
+    signal: ctrl.signal,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${process.env.AI_API_KEY}`,
+    },
+    body: JSON.stringify(payload),
+  });
+  const fail = async (res) => {
+    const body = await res.text().catch(() => '');
+    const err = new Error(`AI HTTP ${res.status}: ${body.slice(0, 200)}`);
+    err.status = res.status;
+    return err;
+  };
   try {
-    const res = await fetch(`${baseUrl()}/chat/completions`, {
-      method: 'POST',
-      signal: ctrl.signal,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.AI_API_KEY}`,
-      },
-      body: JSON.stringify({ model: cfg.model, messages, temperature: 0.8, max_tokens: 400 }),
-    });
+    const base = { model: cfg.model, messages, temperature: 0.8, max_tokens: 400 };
+    // Model Gemini 3.x mặc định để mức "suy nghĩ" (thinking) CAO — nó nghĩ rất lâu trước
+    // khi ra chữ đầu tiên, là nguyên nhân chính khiến câu trả lời chờ 30–60s+ rồi bị cắt.
+    // Qua endpoint tương thích OpenAI, hạ mức này bằng reasoning_effort; với 3.8 Flash,
+    // 'minimal' không hợp lệ nên 'low' là mức thấp nhất dùng được cho chat.
+    let res = await post({ ...base, reasoning_effort: 'low' });
     if (!res.ok) {
-      const body = await res.text().catch(() => '');
-      const err = new Error(`AI HTTP ${res.status}: ${body.slice(0, 200)}`);
-      err.status = res.status;
-      throw err;
+      const bodyText = await res.text().catch(() => '');
+      if (res.status === 400 && /reasoning|thinking/i.test(bodyText)) {
+        // Provider không nhận reasoning_effort → gọi lại không kèm tham số này.
+        console.warn('[aichat]', `model=${cfg.model}`, 'reasoning_effort bị từ chối — gọi lại không kèm tham số này');
+        res = await post(base);
+        if (!res.ok) throw await fail(res);
+      } else {
+        const err = new Error(`AI HTTP ${res.status}: ${bodyText.slice(0, 200)}`);
+        err.status = res.status;
+        throw err;
+      }
     }
     const data = await res.json();
     return String(data?.choices?.[0]?.message?.content || '').trim();
