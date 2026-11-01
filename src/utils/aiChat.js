@@ -81,7 +81,7 @@ async function callModel(cfg, turns) {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${process.env.AI_API_KEY}`,
       },
-      body: JSON.stringify({ model: cfg.model, messages, temperature: 0.8, max_tokens: 800 }),
+      body: JSON.stringify({ model: cfg.model, messages, temperature: 0.8, max_tokens: 400 }),
     });
     if (!res.ok) {
       const body = await res.text().catch(() => '');
@@ -119,15 +119,22 @@ async function maybeReply(message, st) {
   busyChannels.add(message.channelId);
   inFlight += 1;
   const key = `${message.guild.id}:${message.channelId}`;
+  const startedAt = Date.now();
+  let typingTimer = null;
   try {
     await message.channel.sendTyping().catch(() => {});
+    // Discord tự tắt "đang gõ…" sau ~10s, mà Gemini hay trả chậm hơn thế — làm mới mỗi 8s
+    // để người dùng thấy bot vẫn đang trả lời chứ không phải treo.
+    typingTimer = setInterval(() => { message.channel.sendTyping().catch(() => {}); }, 8_000);
     const name = message.member?.displayName || message.author.username || 'Bạn';
     const userTurn = { role: 'user', content: `${name}: ${text}` };
-    const turns = [...getHistory(key), userTurn];
+    // Chỉ gửi 10 lượt gần nhất cho model (RAM vẫn giữ 20) — bớt ngữ cảnh thừa, gọi nhanh hơn.
+    const turns = [...getHistory(key), userTurn].slice(-10);
     const raw = await callModel(cfg, turns);
     const answer = sanitize(raw);
     if (!answer) return false;
     await message.reply({ content: answer, allowedMentions: { parse: [], repliedUser: true } });
+    console.log('[aichat]', `model=${cfg.model}`, `took=${((Date.now() - startedAt) / 1000).toFixed(1)}s`);
     pushHistory(key, userTurn, answer);
     return true;
   } catch (e) {
@@ -142,6 +149,7 @@ async function maybeReply(message, st) {
     }
     return false;
   } finally {
+    if (typingTimer) clearInterval(typingTimer);
     busyChannels.delete(message.channelId);
     inFlight -= 1;
   }
