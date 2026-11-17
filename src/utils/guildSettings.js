@@ -63,6 +63,8 @@ function baseFromEnv() {
     voiceXpPerMin: 10,
     levelRoles: [],
     automod: null,
+    warnEscalation: null,
+    customCmdCfg: null,
     antiraid: null,
     starboard: null,
     disabledCommands: null,

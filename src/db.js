@@ -193,6 +193,8 @@ const guildSettingsSchema = new mongoose.Schema({
   scamCfg: { type: Object, default: undefined },
   tempVoiceCfg: { type: Object, default: undefined },
   aiChatCfg: { type: Object, default: undefined },
+  warnEscalation: { type: Object, default: undefined },
+  customCmdCfg: { type: Object, default: undefined },
 });
 const GuildSettings = mongoose.models.GuildSettings || mongoose.model('GuildSettings', guildSettingsSchema);
 
@@ -334,6 +336,18 @@ const warnSchema = new mongoose.Schema({
 warnSchema.index({ guildId: 1, userId: 1 }, { unique: true });
 const Warn = mongoose.models.Warn || mongoose.model('Warn', warnSchema);
 
+// === Custom Commands theo server (admin tự tạo lệnh !tên → bot trả lời sẵn) ===
+const customCommandSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, index: true },
+  name: { type: String, required: true },
+  response: { type: String, required: true },
+  createdBy: { type: String, default: null },
+  uses: { type: Number, default: 0 },
+  createdAt: { type: Number, default: Date.now },
+});
+customCommandSchema.index({ guildId: 1, name: 1 }, { unique: true });
+const CustomCommand = mongoose.models.CustomCommand || mongoose.model('CustomCommand', customCommandSchema);
+
 // === Hoạt động gần đây (cho thẻ Overview trên dashboard) ===
 const activityEventSchema = new mongoose.Schema({
   guildId: { type: String, required: true, index: true },
@@ -429,4 +443,4 @@ const socialProfileSchema = new mongoose.Schema({
 socialProfileSchema.index({ guildId: 1, userId: 1 }, { unique: true });
 const SocialProfile = mongoose.models.SocialProfile || mongoose.model('SocialProfile', socialProfileSchema);
 
-module.exports = { mongoose, connectDB, isMongo, storageMode, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings, GuildSettings, AnnounceSettings, StatsSettings, RolePanel, GoodbyeSettings, LogSettings, Warn, RoleBoard, TicketCounter, ClosedTicket, TicketBlacklist, TempRole, ActivityEvent, Reminder, MusicQueue, InviteStat, QuestProgress, Playlist, FeedState, TempChannel, SocialProfile };
+module.exports = { mongoose, connectDB, isMongo, storageMode, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings, GuildSettings, AnnounceSettings, StatsSettings, RolePanel, GoodbyeSettings, LogSettings, Warn, RoleBoard, TicketCounter, ClosedTicket, TicketBlacklist, TempRole, ActivityEvent, Reminder, MusicQueue, InviteStat, QuestProgress, Playlist, FeedState, TempChannel, SocialProfile, CustomCommand };

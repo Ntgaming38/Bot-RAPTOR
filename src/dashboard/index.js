@@ -313,7 +313,7 @@ function mount(app) {
       const perRule = {};
       for (const r of ['words', 'invites', 'links', 'spam', 'caps', 'mentions']) {
         const v = a.actions?.[r];
-        perRule[r] = ['delete', 'warn', 'timeout'].includes(v) ? v : (['delete', 'warn', 'timeout'].includes(a.action) ? a.action : 'delete');
+        perRule[r] = ['delete', 'warn', 'timeout', 'kick', 'ban'].includes(v) ? v : (['delete', 'warn', 'timeout', 'kick', 'ban'].includes(a.action) ? a.action : 'delete');
       }
       patch.automod = {
         words: a.words !== false,
@@ -328,7 +328,7 @@ function mount(app) {
         capsMinLen: num(a.capsMinLen, 4, 200, 10),
         mentions: !!a.mentions,
         mentionCount: num(a.mentionCount, 2, 50, 5),
-        action: ['delete', 'warn', 'timeout'].includes(a.action) ? a.action : 'delete',
+        action: ['delete', 'warn', 'timeout', 'kick', 'ban'].includes(a.action) ? a.action : 'delete',
         actions: perRule,
         timeoutMin: num(a.timeoutMin, 1, 40320, 10),
         urlWhitelist: strList(a.urlWhitelist, 50),

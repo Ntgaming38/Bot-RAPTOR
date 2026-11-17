@@ -40,12 +40,21 @@ module.exports = {
       }
     } catch {}
 
-    // 1c) AI Chat: được tag @RAPTOR hoặc chat trong kênh AI chỉ định thì bot trả lời
+    // 1c) Custom Commands: tin nhắn "!tên" khớp lệnh tự tạo của server thì bot trả lời sẵn
+    let ccHandled = false;
     try {
-      await require('../utils/aiChat').maybeReply(message, st);
+      ccHandled = await require('../utils/customCommands').handleMessage(message, st);
     } catch {}
 
-    // 1d) Nhiệm vụ hằng ngày: đếm tin nhắn chat
+    // 1d) AI Chat: được tag @RAPTOR hoặc chat trong kênh AI chỉ định thì bot trả lời
+    // (bỏ qua nếu tin nhắn vừa là lệnh tự tạo — tránh bot trả lời 2 lần)
+    if (!ccHandled) {
+      try {
+        await require('../utils/aiChat').maybeReply(message, st);
+      } catch {}
+    }
+
+    // 1e) Nhiệm vụ hằng ngày: đếm tin nhắn chat
     try {
       const q = await require('../utils/quests').bumpChat(message.guild.id, message.author.id);
       if (q?.completed) {

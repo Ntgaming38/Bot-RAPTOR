@@ -3,7 +3,7 @@ const { addWarn } = require('./warns');
 // Bộ nhớ chống spam (theo guild:user, tự xóa cũ)
 const buckets = new Map();
 
-const ACTIONS = ['delete', 'warn', 'timeout'];
+const ACTIONS = ['delete', 'warn', 'timeout', 'kick', 'ban'];
 const RULES = ['words', 'invites', 'links', 'spam', 'caps', 'mentions'];
 
 function getAutomod(st) {
@@ -146,14 +146,33 @@ async function punishAutomod(message, st, violation) {
   const label = RULE_LABEL[violation.rule] || violation.rule;
   // Vi phạm loại kênh (media) chỉ xóa, không warn/timeout
   const action = violation.rule === 'media' ? 'delete' : (am.actions[violation.rule] || am.action);
+  let escDesc = null;
   if (action === 'warn') {
     try {
-      await addWarn(message.guildId, message.author.id, 'automod', 'AutoMod', `Vi phạm: ${label}`);
+      const count = await addWarn(message.guildId, message.author.id, 'automod', 'AutoMod', `Vi phạm: ${label}`);
+      // Warn của AutoMod cũng tính vào leo thang như warn tay
+      if (count && message.member) {
+        escDesc = await require('./escalation').applyEscalation({
+          guild: message.guild, member: message.member, count, st, source: 'AutoMod',
+        }).catch(() => null);
+      }
     } catch {}
   } else if (action === 'timeout') {
     try {
       if (message.member?.moderatable) {
         await message.member.timeout(am.timeoutMin * 60 * 1000, `AutoMod: ${label}`);
+      }
+    } catch {}
+  } else if (action === 'kick') {
+    try {
+      if (message.member?.kickable) {
+        await message.member.kick(`AutoMod: ${label}`);
+      }
+    } catch {}
+  } else if (action === 'ban') {
+    try {
+      if (message.member?.bannable) {
+        await message.member.ban({ reason: `AutoMod: ${label}` });
       }
     } catch {}
   }
@@ -164,7 +183,7 @@ async function punishAutomod(message, st, violation) {
   try {
     require('./logger').logMod(
       message.guild,
-      `🤖 AutoMod xóa tin của ${message.author.tag} trong ${message.channel} (vi phạm: ${label}${action !== 'delete' ? `, phạt: ${action}` : ''})`,
+      `🤖 AutoMod xóa tin của ${message.author.tag} trong ${message.channel} (vi phạm: ${label}${action !== 'delete' ? `, phạt: ${action}` : ''}${escDesc ? `; leo thang: ${escDesc}` : ''})`,
       (message.content || '').slice(0, 1000)
     );
   } catch {}
