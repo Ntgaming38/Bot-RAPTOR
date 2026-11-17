@@ -579,7 +579,7 @@ function login() {
 }
 
 function home(user) {
-  return shell('Chọn server', `<div class="win"><div class="topbar"><a class="logo" href="/dashboard"><img class="ic-img" src="/dashboard/logo.jpg" alt="RAPTOR"> RAPTOR</a><div class="search"><span>🔍</span><input id="guild-search" placeholder="Tìm server..."></div><span class="gchip">👋 ${esc(user.username)}</span><button id="theme-btn" class="ghost" title="Chuyển giao diện sáng / tối" style="margin:0;padding:9px 12px;font-size:15px">☀️</button><a class="btn-violet" href="/dashboard/logout">Đăng xuất</a></div><div class="win-pad"><div class="row"><h1>Chọn server</h1></div><p class="mut">Chọn server để tùy chỉnh (chỉ hiện server bạn có quyền quản lý).</p><div id="list"><p class="mut">Đang tải...</p></div>`, `</div></div><script>document.getElementById('guild-search').addEventListener('input',e=>{const q=e.target.value.trim().toLowerCase();document.querySelectorAll('#list > *').forEach(c=>{c.style.display=(!q||c.textContent.toLowerCase().includes(q))?'':'none'})});</script><script>
+  return shell('Chọn server', `<div class="win"><div class="topbar"><a class="logo" href="/dashboard"><img class="ic-img" src="/dashboard/logo.jpg" alt="RAPTOR"> RAPTOR</a><div class="search"><span>🔍</span><input id="guild-search" placeholder="Tìm server..."></div><span class="gchip">👋 ${esc(user.username)}</span><button id="theme-btn" class="ghost" title="Chuyển giao diện sáng / tối" style="margin:0;padding:9px 12px;font-size:15px">☀️</button><a class="btn-violet" href="/dashboard/logout">Đăng xuất</a></div><div class="win-pad"><div class="row"><h1>Chọn server</h1></div><p class="mut">Chọn server để tùy chỉnh (chỉ hiện server bạn có quyền quản lý).</p><div id="bot-profile" class="card" style="display:none;margin-bottom:14px"><h2 style="margin-top:0">🤖 Hồ sơ bot</h2><div style="display:flex;gap:12px;align-items:center;margin-bottom:10px"><img id="bp-avatar" alt="" style="width:56px;height:56px;border-radius:50%;background:#22242b;object-fit:cover"><div><b id="bp-name"></b><br><span class="mut" id="bp-tag"></span></div></div><div><label>Tên bot trên Discord</label><input id="bp-username" maxlength="32"></div><div><label>Link ảnh đại diện mới (https — để trống = giữ ảnh cũ)</label><input id="bp-avatar-url" placeholder="https://..."></div><button id="bp-save">Lưu hồ sơ bot</button><p class="mut">Chỉ admin của server chính mới thấy mục này. Tên/ảnh áp dụng cho bot ở MỌI server. Discord giới hạn số lần đổi trong giờ — đừng đổi liên tục.</p></div><div id="list"><p class="mut">Đang tải...</p></div>`, `</div></div><script>document.getElementById('guild-search').addEventListener('input',e=>{const q=e.target.value.trim().toLowerCase();document.querySelectorAll('#list > *').forEach(c=>{c.style.display=(!q||c.textContent.toLowerCase().includes(q))?'':'none'})});</script><script>
 fetch('/dashboard/api/me').then(r=>r.json()).then(d=>{
   const el=document.getElementById('list');
   if(!d.guilds.length){el.innerHTML='<p class=mut>Không có server nào.</p>';return}
@@ -589,6 +589,29 @@ fetch('/dashboard/api/me').then(r=>r.json()).then(d=>{
     return '<a class=srv href="/dashboard/'+g.id+'">'+(icon?'<img src="'+icon+'">':'<img>')+'<span><b>'+g.name.replace(/</g,'&lt;')+'</b><br>'+b+'</span></a>';
   }).join('');
 }).catch(()=>toast('Lỗi tải server'));
+</script><script>
+fetch('/dashboard/api/bot/profile').then(r=>r.json()).then(d=>{
+  if(!d||!d.canEdit)return;
+  var card=document.getElementById('bot-profile'); if(!card)return;
+  card.style.display='';
+  document.getElementById('bp-avatar').src=d.avatarUrl||'';
+  document.getElementById('bp-name').textContent=d.username||'';
+  document.getElementById('bp-tag').textContent=d.tag||'';
+  document.getElementById('bp-username').value=d.username||'';
+  document.getElementById('bp-save').onclick=async()=>{
+    var body={username:document.getElementById('bp-username').value,avatarUrl:document.getElementById('bp-avatar-url').value};
+    try{
+      var r=await fetch('/dashboard/api/bot/profile',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      var j=await r.json().catch(()=>({}));
+      if(!r.ok)throw new Error(j.error||('HTTP '+r.status));
+      document.getElementById('bp-avatar').src=j.avatarUrl||'';
+      document.getElementById('bp-name').textContent=j.username||'';
+      document.getElementById('bp-tag').textContent=j.tag||'';
+      document.getElementById('bp-avatar-url').value='';
+      toast(j.changed&&j.changed.length?('Đã đổi '+j.changed.join(' + ')+' của bot'):'Không có gì thay đổi');
+    }catch(e){toast('Lỗi: '+e.message)}
+  };
+}).catch(()=>{});
 </script>`);
 }
 

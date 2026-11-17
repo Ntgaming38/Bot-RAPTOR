@@ -45,6 +45,41 @@ function canManage(g) {
   } catch { return false; }
 }
 
+// Tên/ảnh của bot là TOÀN CỤC (đổi 1 lần, áp dụng mọi server) nên quyền đổi
+// chặt hơn dashboard thường: chỉ admin (Manage Server) của server CHÍNH
+// (GUILD_ID) mới được đổi. session.guilds vốn chỉ chứa server người dùng có
+// quyền Manage Server (đã lọc lúc login). Chưa cấu hình GUILD_ID thì admin
+// của bất kỳ server nào cũng được.
+function canEditBotProfile(u) {
+  if (!u || !Array.isArray(u.guilds) || !u.guilds.length) return false;
+  if (config.guildId) return u.guilds.some((g) => g.id === config.guildId);
+  return true;
+}
+
+function validateBotUsername(raw) {
+  const name = String(raw || '').trim();
+  if (name.length < 2 || name.length > 32) return null;
+  return name;
+}
+
+async function fetchImageBuffer(url) {
+  const res = await fetch(url, { signal: AbortSignal.timeout(10000), redirect: 'follow' });
+  if (!res.ok) throw new Error(`Không tải được ảnh (HTTP ${res.status}).`);
+  const type = String(res.headers.get('content-type') || '');
+  if (!type.startsWith('image/')) throw new Error('Link không phải file ảnh.');
+  const buf = Buffer.from(await res.arrayBuffer());
+  if (!buf.length || buf.length > 8 * 1024 * 1024) throw new Error('Ảnh phải nhỏ hơn 8MB.');
+  return buf;
+}
+
+function friendlyDiscordError(e) {
+  const msg = String(e?.message || e || '');
+  if (e?.status === 429 || /rate limit/i.test(msg)) {
+    return 'Discord đang giới hạn đổi tên/ảnh (chỉ vài lần mỗi giờ). Chờ ít phút rồi thử lại.';
+  }
+  return 'Discord từ chối thay đổi: ' + msg.slice(0, 200);
+}
+
 async function botInGuild(gid) {
   if (!client) return false;
   if (client.guilds.cache.has(gid)) return true;
@@ -171,7 +206,74 @@ function mount(app) {
     if (!u) return res.status(401).json({ error: 'login' });
     const guilds = [];
     for (const g of u.guilds) guilds.push({ ...g, bot: await botInGuild(g.id) });
-    res.json({ user: { id: u.id, username: u.username, avatar: u.avatar }, guilds });
+    res.json({
+      user: { id: u.id, username: u.username, avatar: u.avatar },
+      guilds,
+      bot: client?.user ? {
+        username: client.user.username,
+        tag: client.user.tag,
+        avatarUrl: client.user.displayAvatarURL({ size: 128 }),
+        canEdit: canEditBotProfile(u),
+      } : null,
+    });
+  });
+
+  // --- Hồ sơ bot (tên + ảnh đại diện trên Discord) — chỉ admin server chính ---
+  app.get('/dashboard/api/bot/profile', async (req, res) => {
+    const u = req.session?.user;
+    if (!u) return res.status(401).json({ error: 'login' });
+    if (!client?.user) return res.status(503).json({ error: 'bot-offline' });
+    res.json({
+      username: client.user.username,
+      tag: client.user.tag,
+      avatarUrl: client.user.displayAvatarURL({ size: 128 }),
+      canEdit: canEditBotProfile(u),
+    });
+  });
+
+  app.put('/dashboard/api/bot/profile', async (req, res) => {
+    const u = req.session?.user;
+    if (!u) return res.status(401).json({ error: 'login' });
+    if (!canEditBotProfile(u)) return res.status(403).json({ error: 'forbidden' });
+    if (!client?.user) return res.status(503).json({ error: 'bot-offline' });
+    const b = req.body || {};
+    const changed = [];
+    try {
+      if (typeof b.username === 'string') {
+        const name = validateBotUsername(b.username);
+        if (!name) return res.status(400).json({ error: 'Tên bot phải từ 2–32 ký tự.' });
+        if (name !== client.user.username) {
+          await client.user.setUsername(name);
+          changed.push('tên');
+        }
+      }
+      if (typeof b.avatarUrl === 'string' && b.avatarUrl.trim()) {
+        const url = b.avatarUrl.trim();
+        if (!/^https:\/\//i.test(url) || url.length > 2000) {
+          return res.status(400).json({ error: 'Link ảnh phải bắt đầu bằng https://' });
+        }
+        let buf;
+        try {
+          buf = await fetchImageBuffer(url);
+        } catch (e) {
+          return res.status(400).json({ error: e?.message || 'Không tải được ảnh.' });
+        }
+        await client.user.setAvatar(buf);
+        changed.push('ảnh đại diện');
+      }
+    } catch (e) {
+      return res.status(400).json({ error: friendlyDiscordError(e) });
+    }
+    if (changed.length) {
+      console.log(`[dashboard] ${u.username} (${u.id}) đã đổi ${changed.join(' + ')} của bot qua dashboard.`);
+    }
+    res.json({
+      ok: true,
+      changed,
+      username: client.user.username,
+      tag: client.user.tag,
+      avatarUrl: client.user.displayAvatarURL({ size: 128 }),
+    });
   });
 
   app.get('/dashboard/api/guilds/:gid/meta', guard, async (req, res) => {
@@ -1288,4 +1390,4 @@ function mount(app) {
   console.log('📊 Dashboard: /dashboard (cần DISCORD_CLIENT_SECRET để login Discord)');
 }
 
-module.exports = { mount, setClient };
+module.exports = { mount, setClient, canEditBotProfile, validateBotUsername };
