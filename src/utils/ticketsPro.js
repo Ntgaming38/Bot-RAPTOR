@@ -203,6 +203,8 @@ async function ticketHistoryFor(guildId, ownerId) {
       createdAt: r.createdAt || 0,
       closedAt: r.closedAt || null,
       claimedTag: r.claimedTag || null,
+      closedByTag: r.closedByTag || null,
+      closedVia: r.closedVia || null,
       rating: ratingOf(r.channelId),
       channelId: r.channelId || null,
     });

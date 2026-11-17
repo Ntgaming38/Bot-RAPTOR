@@ -139,7 +139,7 @@ module.exports = {
       const lines = h.entries.map((e) => {
         const when = e.createdAt ? `<t:${Math.floor(e.createdAt / 1000)}:d>` : '?';
         const st = e.status === 'open' ? '🟢 đang mở' : '🔒 đã đóng';
-        const extra = [e.claimedTag ? `xử lý: ${e.claimedTag}` : '', e.rating ? `⭐${e.rating}/5` : ''].filter(Boolean).join(' • ');
+        const extra = [e.claimedTag ? `xử lý: ${e.claimedTag}` : '', e.closedVia === 'channel-delete' ? `🗑️ đóng do xóa kênh${e.closedByTag ? ` bởi ${e.closedByTag}` : ''}` : '', e.rating ? `⭐${e.rating}/5` : ''].filter(Boolean).join(' • ');
         return `**#${e.number ?? '?'}** • ${e.typeLabel} • ${st} • ${when}${extra ? ` • ${extra}` : ''}`;
       });
       return interaction.editReply({

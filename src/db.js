@@ -315,6 +315,7 @@ const closedTicketSchema = new mongoose.Schema({
   claimedBy: String,
   claimedTag: String,
   auto: { type: Boolean, default: false },
+  closedVia: String,
 });
 const ClosedTicket = mongoose.models.ClosedTicket || mongoose.model('ClosedTicket', closedTicketSchema);
 

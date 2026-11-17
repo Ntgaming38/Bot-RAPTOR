@@ -165,6 +165,27 @@ async function findOpenTicketByOwner(guildId, ownerId) {
   return null;
 }
 
+// Như findOpenTicketByOwner nhưng TỰ CHỮA hồ sơ ma: nếu kênh của ticket "đang mở"
+// không còn tồn tại trên Discord (bị xóa tay, hoặc bị bản bot cũ đóng kênh mà
+// không dọn hồ sơ — vụ Render 2026-11-18) thì xóa hồ sơ treo rồi coi như không
+// có ticket, để chủ ticket mở được ticket mới. Chỉ dọn khi Discord trả lỗi
+// 10003 Unknown Channel — lỗi mạng thoáng qua thì giữ nguyên hồ sơ.
+async function resolveOpenTicket(guild, ownerId) {
+  const found = await findOpenTicketByOwner(guild?.id, ownerId);
+  if (!found || !guild) return found;
+  const [channelId] = found;
+  let ch = guild.channels?.cache?.get(channelId) || null;
+  if (!ch) {
+    if (typeof guild.channels?.fetch !== 'function') return found; // không kiểm chứng được → giữ hồ sơ
+    ch = await guild.channels.fetch(channelId).catch((e) => (e?.code === 10003 ? null : 'unknown'));
+    if (ch === 'unknown') return found; // không chắc chắn → không dọn
+  }
+  if (ch) return found;
+  await removeTicket(channelId);
+  console.warn(`[ticket] dọn hồ sơ ma: kênh ${channelId} không còn, ticket của ${ownerId} được mở khóa.`);
+  return null;
+}
+
 // ===== PANEL 1 NÚT "Mở Ticket" (kiểu tickets.bot trong hình) =====
 // Member chỉ cần bấm nút → điền lý do → dùng ngay.
 function setupComponents() {
@@ -267,7 +288,7 @@ async function handleSelect(interaction) {
   const types = getTypes(await getT(interaction.guildId));
   const type = types.find(t => t.id === typeId) || types[0];
 
-  const existing = await findOpenTicketByOwner(interaction.guildId, interaction.user.id);
+  const existing = await resolveOpenTicket(interaction.guild, interaction.user.id);
   if (existing) {
     return interaction.reply({ content: `⚠️ Bạn đã có ticket mở: <#${existing[0]}>`, ephemeral: true });
   }
@@ -306,7 +327,7 @@ async function createTicket(interaction, type, reason) {
   }
   // Kiểm tra trùng NGAY TRƯỚC khi tạo (bước chọn loại/nút bấm kiểm tra sớm có
   // thể bị lách bằng cách mở 2 form rồi submit cả hai — audit H2).
-  const dup = await findOpenTicketByOwner(interaction.guildId, interaction.user.id);
+  const dup = await resolveOpenTicket(interaction.guild, interaction.user.id);
   if (dup) {
     return interaction.editReply({ content: `⚠️ Bạn đã có ticket mở: <#${dup[0]}>` });
   }
@@ -366,7 +387,7 @@ async function createTicket(interaction, type, reason) {
 
 // Tương thích nút cũ
 async function handleCreate(interaction) {
-  const existing = await findOpenTicketByOwner(interaction.guildId, interaction.user.id);
+  const existing = await resolveOpenTicket(interaction.guild, interaction.user.id);
   if (existing) {
     return interaction.reply({ content: `⚠️ Bạn đã có ticket mở: <#${existing[0]}>`, ephemeral: true });
   }
@@ -600,5 +621,5 @@ module.exports = {
   handleSelect, handleModal, handleCreate, handleClose, handleClaim,
   handleTranscript, handleRate, handleAdd, handleRemove, handleRename,
   isTicketChannel, generateTranscript, fetchAllMessages, lockPanelChannel, createPanelChannel,
-  load, save, getTicket, putTicket, patchTicket, removeTicket, listTickets, listTicketsByOwner, findOpenTicketByOwner, getT, canManageTicket,
+  load, save, getTicket, putTicket, patchTicket, removeTicket, listTickets, listTicketsByOwner, findOpenTicketByOwner, resolveOpenTicket, getT, canManageTicket,
 };
