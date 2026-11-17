@@ -1568,7 +1568,15 @@ function mount(app) {
     res.send(views.home(req.session.user));
   });
   app.get('/dashboard/logo.jpg', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', '..', 'assets', 'raptor-logo.jpg'));
+    // Logo nhung trong code (utils/logoData.js, base64) — ban 2026-11-18.
+    try {
+      const buf = Buffer.from(require('../utils/logoData'), 'base64');
+      res.set('Content-Type', 'image/jpeg');
+      res.set('Cache-Control', 'public, max-age=3600');
+      return res.send(buf);
+    } catch {
+      return res.sendFile(path.join(__dirname, '..', '..', 'assets', 'raptor-logo.jpg'));
+    }
   });
   app.get('/dashboard/:gid', (req, res) => {
     if (!req.session?.user) return res.redirect('/dashboard');

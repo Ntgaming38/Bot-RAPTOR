@@ -4,8 +4,11 @@ const config = require('../config');
 const { embed } = require('./embeds');
 
 const RAINBOW_FILE = path.join(__dirname, '..', '..', 'assets', 'rainbow.png');
-const LOGO_FILE = path.join(__dirname, '..', '..', 'assets', 'raptor-logo.jpg');
 const LOGO_NAME = 'raptor-logo.jpg';
+// Logo RAPTOR nhung trong code (base64) — cung nguon voi logo dashboard.
+function logoBuffer() {
+  try { return Buffer.from(require('./logoData'), 'base64'); } catch { return null; }
+}
 
 // 1st, 2nd, 3rd... như trong hình (185th)
 function ordinal(n) {
@@ -29,7 +32,7 @@ async function buildWelcome(member, s) {
   let thumb = customThumb;
   let useLogo = false;
   if (!thumb) {
-    if (fs.existsSync(LOGO_FILE)) {
+    if (logoBuffer()) {
       thumb = `attachment://${LOGO_NAME}`;
       useLogo = true;
     } else {
@@ -84,7 +87,7 @@ async function buildWelcome(member, s) {
 
   // Ảnh dưới embed: link banner riêng > card tự vẽ (avatar + cầu vồng) > gạch cầu vồng
   const files = [];
-  if (useLogo) files.push({ attachment: LOGO_FILE, name: LOGO_NAME });
+  if (useLogo) files.push({ attachment: logoBuffer(), name: LOGO_NAME });
   const banner = s?.bannerUrl || null;
   const rainbow = s?.bannerRainbow ?? true;
   const cardOn = s?.cardEnabled ?? true;
