@@ -582,7 +582,7 @@ function guild(gid, user) {
 <div><label>Volume mặc định khi bắt đầu phát (trống = 100)</label><input id="u-defvol" type="number" min="0" max="100" placeholder="100"></div>
 <p class="mut">Tự làm mới mỗi 10 giây. Thêm bài mới thì dùng lệnh <b>/play</b> trong Discord.</p></div>
 <div id="p-ai" class="card" style="display:none"><h2>AI Chat — trò chuyện với RAPTOR</h2>
-<p class="mut">Member tag <b>@RAPTOR</b> hoặc chat trong kênh riêng là bot trả lời bằng AI (Gemini miễn phí). API key đặt ở Environment của Botkeep (biến <b>AI_API_KEY</b>), không nhập tại đây.</p>
+<p class="mut">AI chỉ trò chuyện trong <b>kênh riêng</b> được chọn bên dưới — nhắn trong kênh đó là bot trả lời bằng AI (Gemini miễn phí), tag ở kênh khác bot sẽ im lặng. Chưa chọn kênh riêng thì bot trả lời khi được tag <b>@RAPTOR</b> ở bất kỳ kênh nào. API key đặt ở Environment của Botkeep (biến <b>AI_API_KEY</b>), không nhập tại đây.</p>
 <label class="chk"><input type="checkbox" id="ai-on"> Bật AI Chat</label>
 <div id="ai-keystate" class="mut" style="margin:8px 0"></div>
 <div><label>Kênh chat riêng (để trống = chỉ trả lời khi được tag)</label><select id="ai-channel"></select></div>

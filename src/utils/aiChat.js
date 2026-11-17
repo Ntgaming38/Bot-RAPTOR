@@ -1,4 +1,7 @@
-// AI Chat: member tag @RAPTOR hoặc chat trong kênh chỉ định là bot trả lời bằng
+// AI Chat: bot CHỈ trò chuyện trong kênh được chỉ định (aiChatCfg.channelId) —
+// nhắn trong kênh đó là bot trả lời, tag @RAPTOR ở kênh khác bot im lặng
+// (sư phụ chốt 2026-11-17). Server nào CHƯA chỉ định kênh thì giữ cách cũ:
+// tag @RAPTOR ở đâu bot cũng trả lời, để tính năng không chết hẳn.
 // Gemini qua endpoint tương thích OpenAI (đổi nhà cung cấp chỉ cần env).
 //   AI_API_KEY  — khóa bí mật, CHỈ đặt ở Environment của Botkeep (không qua chat)
 //   AI_BASE_URL — mặc định endpoint Gemini; trỏ OpenAI/OpenRouter/Groq cũng chạy
@@ -273,8 +276,10 @@ async function maybeReply(message, st) {
   const botId = message.client?.user?.id;
   if (!botId) return false;
   const mentioned = message.mentions?.users?.has(botId);
-  const inChatChannel = cfg.channelId && message.channelId === cfg.channelId;
-  if (!mentioned && !inChatChannel) return false;
+  const inChatChannel = !!cfg.channelId && message.channelId === cfg.channelId;
+  // Nhốt AI trong kênh chỉ định: có kênh chỉ định → chỉ trả lời trong kênh đó.
+  // Chưa chỉ định → trả lời khi được tag (cách cũ).
+  if (cfg.channelId ? !inChatChannel : !mentioned) return false;
 
   const text = String(message.content || '')
     .replace(new RegExp(`<@!?${botId}>`, 'g'), '')

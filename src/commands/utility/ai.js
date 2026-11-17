@@ -14,13 +14,13 @@ module.exports = {
   group: 'utility',
   data: new SlashCommandBuilder()
     .setName('ai')
-    .setDescription('AI Chat — bot trả lời khi được tag @RAPTOR (chỉ Admin)')
+    .setDescription('AI Chat — bot chỉ trò chuyện trong kênh được chỉ định (chỉ Admin)')
     .addSubcommand((s) => s.setName('status').setDescription('Xem trạng thái AI Chat'))
     .addSubcommand((s) => s.setName('on').setDescription('Bật AI Chat cho server này'))
     .addSubcommand((s) => s.setName('off').setDescription('Tắt AI Chat'))
     .addSubcommand((s) => s
       .setName('channel')
-      .setDescription('Chọn kênh chat riêng với bot (không chọn = chỉ trả lời khi được tag)')
+      .setDescription('Chọn kênh chat riêng — AI CHỈ trả lời trong kênh này (bỏ trống = gỡ, quay về chế độ tag)')
       .addChannelOption((o) => o.setName('channel').setDescription('Kênh text (để trống = gỡ kênh riêng)').addChannelTypes(ChannelType.GuildText)))
     .addSubcommand((s) => s
       .setName('persona')
@@ -48,14 +48,14 @@ module.exports = {
     if (sub === 'on' || sub === 'off') {
       await gs.saveGuildSettings(interaction.guildId, { aiChatCfg: { ...cfg, enabled: sub === 'on', persona: st.aiChatCfg?.persona || null, model: st.aiChatCfg?.model || null } });
       return interaction.editReply({ embeds: [successEmbed(sub === 'on'
-        ? `Đã bật AI Chat. ${aiChat.keyConfigured() ? 'Tag @RAPTOR hoặc chat trong kênh riêng để trò chuyện.' : '⚠️ Nhưng chưa có API key (AI_API_KEY) nên bot chưa trả lời được.'}`
+        ? `Đã bật AI Chat. ${aiChat.keyConfigured() ? (cfg.channelId ? 'AI chỉ trò chuyện trong kênh chat riêng đã đặt.' : 'Tag @RAPTOR để trò chuyện — hoặc đặt kênh riêng bằng /ai channel để nhốt AI vào một kênh.') : '⚠️ Nhưng chưa có API key (AI_API_KEY) nên bot chưa trả lời được.'}`
         : 'Đã tắt AI Chat.')] });
     }
     if (sub === 'channel') {
       const ch = interaction.options.getChannel('channel');
       await gs.saveGuildSettings(interaction.guildId, { aiChatCfg: { ...(st.aiChatCfg || {}), channelId: ch ? ch.id : null } });
       return interaction.editReply({ embeds: [successEmbed(ch
-        ? `Đã đặt ${ch} làm kênh chat riêng — cứ nhắn trong kênh này là bot trả lời, khỏi cần tag.`
+        ? `Đã đặt ${ch} làm kênh chat riêng — cứ nhắn trong kênh này là bot trả lời, khỏi cần tag. AI sẽ CHỈ trả lời trong kênh này, tag ở kênh khác bot sẽ im lặng.`
         : 'Đã gỡ kênh chat riêng — bot chỉ trả lời khi được tag @RAPTOR.')] });
     }
     if (sub === 'persona') {
