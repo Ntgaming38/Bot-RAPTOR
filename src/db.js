@@ -350,6 +350,20 @@ const customCommandSchema = new mongoose.Schema({
 customCommandSchema.index({ guildId: 1, name: 1 }, { unique: true });
 const CustomCommand = mongoose.models.CustomCommand || mongoose.model('CustomCommand', customCommandSchema);
 
+// === Key đổi biệt danh bot theo server (chủ bot cấp, server nhập key mới
+// được đặt biệt danh cho bot trong server đó — quyết định 2026-11-18) ===
+// Chỉ lưu HASH sha256 của key, không lưu key gốc. guildId null = chưa server
+// nào nhận; key gắn vào đúng 1 server khi nhập lần đầu.
+const renameKeySchema = new mongoose.Schema({
+  keyHash: { type: String, required: true, unique: true, index: true },
+  guildId: { type: String, default: null, index: true },
+  note: { type: String, default: '' },
+  createdBy: { type: String, default: null },
+  createdAt: { type: Number, default: Date.now },
+  redeemedAt: { type: Number, default: null },
+});
+const RenameKey = mongoose.models.RenameKey || mongoose.model('RenameKey', renameKeySchema);
+
 // === Hoạt động gần đây (cho thẻ Overview trên dashboard) ===
 const activityEventSchema = new mongoose.Schema({
   guildId: { type: String, required: true, index: true },
@@ -445,4 +459,4 @@ const socialProfileSchema = new mongoose.Schema({
 socialProfileSchema.index({ guildId: 1, userId: 1 }, { unique: true });
 const SocialProfile = mongoose.models.SocialProfile || mongoose.model('SocialProfile', socialProfileSchema);
 
-module.exports = { mongoose, connectDB, isMongo, storageMode, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings, GuildSettings, AnnounceSettings, StatsSettings, RolePanel, GoodbyeSettings, LogSettings, Warn, RoleBoard, TicketCounter, ClosedTicket, TicketBlacklist, TempRole, ActivityEvent, Reminder, MusicQueue, InviteStat, QuestProgress, Playlist, FeedState, TempChannel, SocialProfile, CustomCommand };
+module.exports = { mongoose, connectDB, isMongo, storageMode, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings, GuildSettings, AnnounceSettings, StatsSettings, RolePanel, GoodbyeSettings, LogSettings, Warn, RoleBoard, TicketCounter, ClosedTicket, TicketBlacklist, TempRole, ActivityEvent, Reminder, MusicQueue, InviteStat, QuestProgress, Playlist, FeedState, TempChannel, SocialProfile, CustomCommand, RenameKey };

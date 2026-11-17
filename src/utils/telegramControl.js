@@ -264,6 +264,30 @@ async function start(client) {
     } else if (cmd === 'cancel') {
       pendingSay.delete(chatId);
       await send(chatId, 'Đã hủy.');
+    } else if (cmd === 'key') {
+      // Cấp key đổi biệt danh bot cho 1 server (chủ bot nắm quyền cấp key)
+      const { key } = await require('./renameKeys').createKey({ createdBy: `telegram:${fromId}`, note: parsed.args || '' });
+      await send(chatId, `🔑 <b>Key đổi biệt danh mới</b>${parsed.args ? ` (ghi chú: ${esc(parsed.args)})` : ''}:\n<code>${key}</code>\nGửi key này cho admin của server đó — họ vào Dashboard → trang server → mục <b>Tên bot</b> → nhập key là đặt được biệt danh cho bot trong server của họ. Key chỉ gắn được vào đúng 1 server.`);
+    } else if (cmd === 'keys') {
+      const list = await require('./renameKeys').listKeys();
+      if (!list.length) {
+        await send(chatId, 'Chưa có key nào. Tạo bằng lệnh /key');
+      } else {
+        const lines = list.slice(0, 20).map((k) => (k.guildId
+          ? `🔗 <code>${k.guildId}</code>${k.note ? ` — ${esc(k.note)}` : ''}`
+          : `⏳ Chưa server nào nhận (mã ${k.hashPrefix}…)${k.note ? ` — ${esc(k.note)}` : ''}`));
+        await send(chatId, '🔑 <b>Key đổi biệt danh</b>\n' + lines.join('\n') + '\nHủy quyền của 1 server: /keyrevoke &lt;id server&gt;');
+      }
+    } else if (cmd === 'keyrevoke') {
+      const gid = (parsed.args || '').trim();
+      if (!gid) {
+        await send(chatId, 'Gõ: /keyrevoke &lt;id server&gt;');
+      } else {
+        const n = await require('./renameKeys').revokeGuild(gid);
+        await send(chatId, n
+          ? `✅ Đã hủy key của server <code>${esc(gid)}</code> — server mất quyền đổi biệt danh.`
+          : `Server <code>${esc(gid)}</code> không có key nào đang gắn.`);
+      }
     }
   };
 
