@@ -54,6 +54,71 @@ function sanitize(text) {
   return out;
 }
 
+// ── Dữ liệu server trực tiếp cho AI ─────────────────────────────────────────
+// AI Chat là mô hình ngôn ngữ thuần — không tự tra được dữ liệu Discord. Trước
+// đây hỏi "ai đang online" nó chỉ biết đáp "không có quyền xem". Nay mỗi lượt
+// gọi đều kèm một snapshot thật của server (đếm từ cache thành viên — cache này
+// được bảng trạng thái/stats làm ấm sẵn nên KHÔNG fetch thêm, tránh rate limit
+// opcode 8 như stats từng dính). Khi câu hỏi cần danh sách cụ thể thì kèm cả
+// tên người đang online / đang trong voice.
+const STATUS_LABEL = { online: 'đang online', idle: 'treo máy', dnd: 'bận', offline: 'offline' };
+const MAX_LIST_NAMES = 50;
+
+function cleanName(s) {
+  return String(s || '').replace(/[`@<>\n\r]/g, '').trim().slice(0, 40) || 'Không tên';
+}
+
+// Nhận diện câu hỏi cần DANH SÁCH tên (số đếm thì luôn kèm sẵn trong snapshot).
+function wantsMemberList(text) {
+  const t = String(text || '').toLowerCase();
+  if (/danh sách|liệt kê|\blist\b/.test(t)) return true;
+  if (/ai\s+(đang|nào)/.test(t)) return true;
+  if (/(online|voice|phòng thoại)/.test(t) && /(ai|nào|gồm|xem|đang|cho|kể|who)/.test(t)) return true;
+  return false;
+}
+
+function buildServerContext(guild, userText) {
+  try {
+    if (!guild || !guild.members || !guild.members.cache) return '';
+    const members = [...guild.members.cache.values()];
+    if (!members.length) return '';
+    const humans = members.filter((m) => !m.user?.bot);
+    const bots = members.length - humans.length;
+    const statusOf = (m) => m.presence?.status || 'offline';
+    const onlineHumans = humans.filter((m) => statusOf(m) !== 'offline');
+    const count = (s) => onlineHumans.filter((m) => statusOf(m) === s).length;
+    const inVoice = members.filter((m) => m.voice?.channelId);
+    const lines = [
+      `Server "${guild.name}": ${members.length} thành viên (${humans.length} người, ${bots} bot). `
+      + `Đang online ${onlineHumans.length} người (online ${count('online')}, treo máy ${count('idle')}, bận ${count('dnd')}), `
+      + `offline ${humans.length - onlineHumans.length} người. Đang trong kênh voice: ${inVoice.length} người.`,
+    ];
+    if (wantsMemberList(userText)) {
+      if (onlineHumans.length) {
+        const names = onlineHumans.slice(0, MAX_LIST_NAMES)
+          .map((m) => `${cleanName(m.displayName || m.user?.username)} (${STATUS_LABEL[statusOf(m)] || 'đang online'})`);
+        let line = `Danh sách người đang online: ${names.join(', ')}`;
+        if (onlineHumans.length > MAX_LIST_NAMES) line += `, và ${onlineHumans.length - MAX_LIST_NAMES} người nữa`;
+        lines.push(line + '.');
+      } else {
+        lines.push('Hiện không có ai online.');
+      }
+      if (inVoice.length) {
+        const vs = inVoice.slice(0, MAX_LIST_NAMES).map((m) => {
+          const ch = guild.channels?.cache?.get(m.voice.channelId);
+          return `${cleanName(m.displayName || m.user?.username)} (kênh ${cleanName(ch?.name || 'voice')})`;
+        });
+        lines.push(`Đang trong voice: ${vs.join(', ')}.`);
+      }
+    }
+    return '[DỮ LIỆU THẬT CỦA SERVER — lấy trực tiếp từ Discord ngay lúc này. Khi được hỏi về server '
+      + '(ai đang online, bao nhiêu thành viên, ai trong voice...), hãy dùng dữ liệu này để trả lời cụ thể; '
+      + `đừng nói là bạn không có quyền xem.]\n${lines.join('\n')}`;
+  } catch {
+    return '';
+  }
+}
+
 function getHistory(key) {
   const h = history.get(key);
   if (!h) return [];
@@ -69,8 +134,9 @@ function pushHistory(key, userTurn, assistantText) {
   history.set(key, { turns, lastAt: Date.now() });
 }
 
-async function callModel(cfg, turns) {
-  const messages = [{ role: 'system', content: cfg.persona }, ...turns];
+async function callModel(cfg, turns, serverContext) {
+  const system = serverContext ? `${cfg.persona}\n\n${serverContext}` : cfg.persona;
+  const messages = [{ role: 'system', content: system }, ...turns];
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 60_000);
   const post = (payload) => fetch(`${baseUrl()}/chat/completions`, {
@@ -149,7 +215,7 @@ async function maybeReply(message, st) {
     const userTurn = { role: 'user', content: `${name}: ${text}` };
     // Chỉ gửi 10 lượt gần nhất cho model (RAM vẫn giữ 20) — bớt ngữ cảnh thừa, gọi nhanh hơn.
     const turns = [...getHistory(key), userTurn].slice(-10);
-    const raw = await callModel(cfg, turns);
+    const raw = await callModel(cfg, turns, buildServerContext(message.guild, text));
     const answer = sanitize(raw);
     if (!answer) return false;
     await message.reply({ content: answer, allowedMentions: { parse: [], repliedUser: true } });
@@ -176,5 +242,6 @@ async function maybeReply(message, st) {
 
 module.exports = {
   maybeReply, cfgOf, keyConfigured, baseUrl, envModel, sanitize,
+  buildServerContext, wantsMemberList,
   DEFAULT_PERSONA, DEFAULT_MODEL, DEFAULT_BASE_URL,
 };
