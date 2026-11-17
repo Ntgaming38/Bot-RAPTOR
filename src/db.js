@@ -300,6 +300,7 @@ const TicketCounter = mongoose.models.TicketCounter || mongoose.model('TicketCou
 
 const closedTicketSchema = new mongoose.Schema({
   guildId: { type: String, index: true },
+  channelId: String,
   number: Number,
   ownerId: String,
   ownerTag: String,

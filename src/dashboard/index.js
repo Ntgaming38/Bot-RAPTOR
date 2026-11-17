@@ -72,6 +72,16 @@ async function fetchImageBuffer(url) {
   return buf;
 }
 
+// Nhận diện ảnh qua chữ ký đầu file (không tin content-type người gửi)
+function sniffImage(buf) {
+  if (!buf || buf.length < 12) return false;
+  if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) return true; // PNG
+  if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return true; // JPEG
+  if (buf[0] === 0x47 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x38) return true; // GIF
+  if (buf.toString('ascii', 0, 4) === 'RIFF' && buf.toString('ascii', 8, 12) === 'WEBP') return true; // WebP
+  return false;
+}
+
 function friendlyDiscordError(e) {
   const msg = String(e?.message || e || '');
   if (e?.status === 429 || /rate limit/i.test(msg)) {
@@ -275,6 +285,36 @@ function mount(app) {
       avatarUrl: client.user.displayAvatarURL({ size: 128 }),
     });
   });
+
+  // Tải ảnh đại diện từ máy: body là file ảnh thô (không qua JSON base64)
+  app.put(
+    '/dashboard/api/bot/avatar',
+    require('express').raw({ type: () => true, limit: '8mb' }),
+    async (req, res) => {
+      const u = req.session?.user;
+      if (!u) return res.status(401).json({ error: 'login' });
+      if (!canEditBotProfile(u)) return res.status(403).json({ error: 'forbidden' });
+      if (!client?.user) return res.status(503).json({ error: 'bot-offline' });
+      const buf = req.body;
+      if (!Buffer.isBuffer(buf) || !buf.length) {
+        return res.status(400).json({ error: 'Chưa có dữ liệu ảnh.' });
+      }
+      if (!sniffImage(buf)) {
+        return res.status(400).json({ error: 'File không phải ảnh PNG/JPG/GIF/WebP.' });
+      }
+      try {
+        await client.user.setAvatar(buf);
+      } catch (e) {
+        return res.status(400).json({ error: friendlyDiscordError(e) });
+      }
+      console.log(`[dashboard] ${u.username} (${u.id}) đã tải ảnh đại diện mới cho bot qua dashboard.`);
+      res.json({ ok: true, avatarUrl: client.user.displayAvatarURL({ size: 128 }) });
+    },
+    (err, req, res, next) => {
+      if (err) return res.status(400).json({ error: 'Ảnh quá lớn (tối đa 8MB) hoặc dữ liệu hỏng.' });
+      return next();
+    }
+  );
 
   app.get('/dashboard/api/guilds/:gid/meta', guard, async (req, res) => {
     const guild = await client.guilds.fetch(req.params.gid).catch(() => null);
@@ -1390,4 +1430,4 @@ function mount(app) {
   console.log('📊 Dashboard: /dashboard (cần DISCORD_CLIENT_SECRET để login Discord)');
 }
 
-module.exports = { mount, setClient, canEditBotProfile, validateBotUsername };
+module.exports = { mount, setClient, canEditBotProfile, validateBotUsername, sniffImage };

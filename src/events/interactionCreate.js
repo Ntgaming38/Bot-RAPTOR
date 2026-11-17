@@ -147,6 +147,10 @@ module.exports = {
           await require('../utils/tickets').handleClaim(interaction);
           return;
         }
+        if (id === 'ticket-unclaim') {
+          await require('../utils/ticketsPro').handleUnclaim(interaction);
+          return;
+        }
         if (id === 'ticket-transcript' || id.startsWith('ticket-transcript')) {
           await require('../utils/tickets').handleTranscript(interaction);
           return;

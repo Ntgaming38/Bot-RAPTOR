@@ -34,6 +34,21 @@ function shape(doc) {
   };
 }
 
+// BXH credits giàu nhất server — cho AI Chat và các bề mặt tra cứu sau này.
+async function getTopCredits(guildId, limit = 10) {
+  if (useMongo()) {
+    const docs = await model().find({ guildId, credits: { $gt: 0 } }).sort({ credits: -1 }).limit(limit).lean();
+    return docs.map((d, i) => ({ rank: i + 1, userId: d.userId, credits: d.credits || 0 }));
+  }
+  const db = load();
+  return Object.entries(db[guildId] || {})
+    .map(([userId, p]) => ({ userId, credits: p.credits || 0 }))
+    .filter((x) => x.credits > 0)
+    .sort((a, b) => b.credits - a.credits)
+    .slice(0, limit)
+    .map((x, i) => ({ rank: i + 1, ...x }));
+}
+
 async function getProfile(guildId, userId) {
   if (useMongo()) {
     const doc = await model().findOne({ guildId, userId }).lean();
@@ -169,4 +184,4 @@ async function migrateJsonOnce() {
   }
 }
 
-module.exports = { getProfile, giveRep, claimDaily, addPoints, addCredits, migrateJsonOnce, DAILY_CREDITS, REP_COOLDOWN_MS };
+module.exports = { getProfile, getTopCredits, giveRep, claimDaily, addPoints, addCredits, migrateJsonOnce, DAILY_CREDITS, REP_COOLDOWN_MS };

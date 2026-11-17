@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { successEmbed, errorEmbed } = require('../../utils/embeds');
+const { embed, successEmbed, errorEmbed } = require('../../utils/embeds');
 const tickets = require('../../utils/tickets');
 
 module.exports = {
@@ -40,6 +40,8 @@ module.exports = {
       .addSubcommand(s => s.setName('remove').setDescription('Gỡ chặn')
         .addUserOption(o => o.setName('user').setDescription('Người cần gỡ').setRequired(true)))
       .addSubcommand(s => s.setName('list').setDescription('Xem danh sách chặn')))
+    .addSubcommand(s => s.setName('history').setDescription('Lịch sử ticket của 1 người (staff xem người khác, member xem chính mình)')
+      .addUserOption(o => o.setName('user').setDescription('Người cần xem').setRequired(true)))
     .addSubcommand(s => s.setName('stats').setDescription('Thống kê ticket/staff/đánh giá')),
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
@@ -122,6 +124,31 @@ module.exports = {
         }
       } catch {}
       return interaction.reply({ content: `⚡ Priority → **${pro.prioText(level)}**` });
+    }
+    if (sub === 'history') {
+      const user = interaction.options.getUser('user', true);
+      const isSelf = user.id === interaction.user.id;
+      if (!isSelf && !(await pro.isTicketStaff(interaction)) && !interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
+        return interaction.reply({ embeds: [errorEmbed('Chỉ staff mới xem được lịch sử ticket của người khác. Bạn xem của chính mình bằng cách chọn tên mình.')], ephemeral: true });
+      }
+      await interaction.deferReply({ ephemeral: true });
+      const h = await pro.ticketHistoryFor(interaction.guildId, user.id);
+      if (!h.entries.length) {
+        return interaction.editReply({ content: `📭 ${user.tag} chưa có ticket nào ở server này.` });
+      }
+      const lines = h.entries.map((e) => {
+        const when = e.createdAt ? `<t:${Math.floor(e.createdAt / 1000)}:d>` : '?';
+        const st = e.status === 'open' ? '🟢 đang mở' : '🔒 đã đóng';
+        const extra = [e.claimedTag ? `xử lý: ${e.claimedTag}` : '', e.rating ? `⭐${e.rating}/5` : ''].filter(Boolean).join(' • ');
+        return `**#${e.number ?? '?'}** • ${e.typeLabel} • ${st} • ${when}${extra ? ` • ${extra}` : ''}`;
+      });
+      return interaction.editReply({
+        embeds: [embed({
+          title: `🎫 Lịch sử ticket — ${user.tag}`,
+          description: `Tổng **${h.entries.length}** ticket gần nhất (${h.totalOpen} đang mở • ${h.totalClosed} đã đóng)\n\n${lines.join('\n')}`.slice(0, 4000),
+          footer: 'Chỉ người chạy lệnh thấy tin này',
+        })],
+      });
     }
     if (sub === 'lock') return pro.handleLock(interaction, true);
     if (sub === 'unlock') return pro.handleLock(interaction, false);

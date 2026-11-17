@@ -94,12 +94,24 @@ function buildCategory(client, userId, key) {
     len += l.length + 1;
   }
   flush();
+  // Trần cứng của Discord: tối đa 25 field VÀ tổng ký tự embed ≤ 6000 — vượt là
+  // API từ chối và người dùng chỉ thấy lỗi chung chung. Cắt field cuối + ghi chú
+  // khi danh sách lệnh của mục quá dài (phòng thủ cho khi số lệnh còn tăng).
+  const kept = fields.slice(0, 25);
+  let totalChars = `📖 Trợ giúp — ${cat.label}`.length + (cat.desc || '').length + 60;
+  for (const f of kept) totalChars += f.name.length + f.value.length;
+  let cut = false;
+  while (totalChars > 5900 && kept.length > 1) {
+    const dropped = kept.pop();
+    totalChars -= dropped.name.length + dropped.value.length;
+    cut = true;
+  }
   const embed = new EmbedBuilder()
     .setColor(0xd63031)
     .setTitle(`📖 Trợ giúp — ${cat.label}`)
     .setDescription(cat.desc)
-    .addFields(fields.slice(0, 25))
-    .setFooter({ text: 'Chọn mục khác trong menu bên dưới để chuyển mục, hoặc về Trang chủ.' });
+    .addFields(kept)
+    .setFooter({ text: cut ? 'Danh sách quá dài nên đã cắt bớt — gõ / rồi tên lệnh để xem trực tiếp trong Discord.' : 'Chọn mục khác trong menu bên dưới để chuyển mục, hoặc về Trang chủ.' });
   return { embeds: [embed], components: [menuRow(userId, cat.key)] };
 }
 
@@ -112,7 +124,12 @@ async function handleSelect(interaction) {
   const payload = value === 'home' || !CAT_KEYS.has(value)
     ? buildHome(interaction.client, interaction.user.id)
     : buildCategory(interaction.client, interaction.user.id, value);
-  await interaction.update(payload).catch(() => {});
+  try {
+    await interaction.update(payload);
+  } catch {
+    // Tin quá cũ / interaction hết hạn → gửi bản mới dạng ephemeral thay vì im lặng
+    await interaction.reply({ ...payload, ephemeral: true }).catch(() => {});
+  }
 }
 
 module.exports = { buildHome, buildCategory, handleSelect, CATEGORIES };

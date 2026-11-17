@@ -134,6 +134,21 @@ async function listTickets() {
   return load();
 }
 
+// Toàn bộ ticket (mở + đã lưu trữ) của một người trong một guild, mới nhất trước.
+// Mỗi record được gắn thêm channelId (bản JSON lấy từ khóa map, Mongo có sẵn field).
+async function listTicketsByOwner(guildId, ownerId) {
+  if (useMongo()) {
+    const { Ticket } = require('../db');
+    const docs = await Ticket.find({ guildId, ownerId }).sort({ createdAt: -1 }).limit(25).lean().catch(() => []);
+    return docs.map(stripDoc);
+  }
+  return Object.entries(load())
+    .filter(([, t]) => t.guildId === guildId && t.ownerId === ownerId)
+    .map(([channelId, t]) => ({ ...t, channelId }))
+    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+    .slice(0, 25);
+}
+
 // Ticket ĐANG MỞ của một người trong một guild → [channelId, record] | null.
 // Bản ghi đã đóng (closed) KHÔNG tính — trước đây ticket archive rồi vẫn chặn
 // chủ ticket mở ticket mới (audit H2).
@@ -215,6 +230,7 @@ function ticketRow(st) {
   if (st?.showClaim !== false) {
     row.addComponents(
       new ButtonBuilder().setCustomId('ticket-claim').setLabel('Nhận').setEmoji('✋').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId('ticket-unclaim').setLabel('Trả').setEmoji('↩️').setStyle(ButtonStyle.Secondary),
     );
   }
   if (st?.showTranscript !== false) {
@@ -367,21 +383,40 @@ async function handleCreate(interaction) {
 }
 
 // ===== TRANSCRIPT =====
+// Lấy TOÀN BỘ tin nhắn của kênh theo trang (Discord trả tối đa 100 tin/lần gọi).
+// Trước đây transcript chỉ lấy 100 tin đầu tiên nên ticket dài bị cụt (audit M11).
+// Trả về mảng theo thứ tự thời gian tăng dần + cờ truncated khi chạm trần max
+// (khi đó mảng chứa các tin GẦN NHẤT, các tin cũ hơn bị bỏ).
+async function fetchAllMessages(channel, max = 2000) {
+  const all = [];
+  let before;
+  let truncated = false;
+  while (all.length < max) {
+    const batch = await channel.messages.fetch({ limit: 100, ...(before ? { before } : {}) }).catch(() => null);
+    if (!batch || batch.size === 0) break;
+    const arr = [...batch.values()]; // thứ tự mới → cũ
+    all.push(...arr.slice(0, max - all.length));
+    if (arr.length < 100) break;
+    if (all.length >= max) { truncated = true; break; }
+    before = arr[arr.length - 1].id;
+  }
+  return { messages: all.reverse(), truncated };
+}
+
 async function generateTranscript(channel) {
-  const messages = await channel.messages.fetch({ limit: 100 }).catch(() => null);
-  const sorted = messages ? [...messages.values()].reverse() : [];
+  const { messages: sorted, truncated } = await fetchAllMessages(channel);
   const lines = sorted.map(m => {
     const time = new Date(m.createdTimestamp).toLocaleString('vi-VN');
     const attach = m.attachments.size ? ` [file: ${[...m.attachments.values()].map(a => a.url).join(', ')}]` : '';
     return `[${time}] ${m.author.tag}: ${m.content || '(embed/ảnh)'}${attach}`;
   });
-  const header = `TRANSCRIPT #${channel.name} (${channel.id})\nXuất lúc: ${new Date().toLocaleString('vi-VN')}\n${'='.repeat(50)}\n`;
+  const header = `TRANSCRIPT #${channel.name} (${channel.id})\nXuất lúc: ${new Date().toLocaleString('vi-VN')}\n${truncated ? `⚠️ Ticket quá dài — bản ghi chỉ gồm ${lines.length} tin nhắn gần nhất.\n` : ''}${'='.repeat(50)}\n`;
   const text = header + lines.join('\n');
   const dir = path.join(__dirname, '..', '..', 'data', 'transcripts');
   fs.mkdirSync(dir, { recursive: true });
   const file = path.join(dir, `${channel.name}-${Date.now()}.txt`);
   fs.writeFileSync(file, text);
-  return { file, count: lines.length };
+  return { file, count: lines.length, truncated };
 }
 
 async function handleTranscript(interaction) {
@@ -437,9 +472,21 @@ async function handleClaim(interaction) {
   if (!isStaff) {
     return interaction.reply({ embeds: [errorEmbed('Chỉ staff mới nhận ticket được.')], ephemeral: true });
   }
+  // Chống chiếm claim: đã có người khác nhận thì không giành — người đó phải
+  // bấm Trả (hoặc /ticket unclaim) trước (audit M13).
+  if (t.claimedBy && t.claimedBy !== interaction.user.id) {
+    return interaction.reply({ embeds: [errorEmbed(`Ticket này đã được <@${t.claimedBy}> nhận rồi. Muốn đổi người, người đó bấm **↩️ Trả** trước đã.`)], ephemeral: true });
+  }
   t.claimedBy = interaction.user.id;
   t.claimedTag = interaction.user.tag;
   await patchTicket(interaction.channelId, { claimedBy: t.claimedBy, claimedTag: t.claimedTag });
+  // Làm mới embed mở đầu cho khớp người nhận hiện tại
+  try {
+    if (t.openingMessageId) {
+      const msg = await interaction.channel.messages.fetch(t.openingMessageId).catch(() => null);
+      if (msg) await msg.edit({ embeds: [require('./ticketsPro').ticketInfoEmbed(t)] }).catch(() => {});
+    }
+  } catch {}
   await interaction.channel.setName(`${interaction.channel.name}-xuly`.slice(0, 90)).catch(() => {});
   await interaction.reply(`✋ ${interaction.user} đã nhận ticket này, <@${t.ownerId}> chờ chút nhé!`);
 }
@@ -552,6 +599,6 @@ module.exports = {
   TICKET_TYPES, setupComponents, setupSelectComponents, setupEmbed, setupRow, ticketRow, ratingRow,
   handleSelect, handleModal, handleCreate, handleClose, handleClaim,
   handleTranscript, handleRate, handleAdd, handleRemove, handleRename,
-  isTicketChannel, generateTranscript, lockPanelChannel, createPanelChannel,
-  load, save, getTicket, putTicket, patchTicket, removeTicket, listTickets, findOpenTicketByOwner, getT, canManageTicket,
+  isTicketChannel, generateTranscript, fetchAllMessages, lockPanelChannel, createPanelChannel,
+  load, save, getTicket, putTicket, patchTicket, removeTicket, listTickets, listTicketsByOwner, findOpenTicketByOwner, getT, canManageTicket,
 };
