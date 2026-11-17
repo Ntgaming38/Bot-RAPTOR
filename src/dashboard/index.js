@@ -53,29 +53,69 @@ function canManage(g) {
 // BOT_OWNER_ID trong env (nếu có) thắng; không thì lấy chủ ứng dụng qua API.
 // Chưa xác định được chủ bot (API lỗi) -> tạm dùng luật cũ (admin server
 // chính GUILD_ID) để chủ bot không bao giờ bị khóa ngoài dashboard.
-let cachedOwnerId = null;
+let cachedOwnerIds = null;
+let ownerLogged = false;
+
+// Gom moi ID "co tham quyen chu bot" tu cac nguon: env BOT_OWNER_ID, chu
+// ung dung Discord (User thi lay id, Team thi lay ownerId), chu server
+// chinh (guild.ownerId). Nguoi dung khop BAT KY id nao trong danh sach
+// nay deu la chu bot — vi chu bot co the tao ung dung bang 1 tai khoan
+// Discord nhung dang nhap dashboard bang tai khoan khac (vu 2026-11-18:
+// chi dua vao chu ung dung thi dashboard khong nhan chu bot).
+function collectOwnerIds({ envId, appOwner, guildOwnerId } = {}) {
+  const out = [];
+  const push = (v) => { if (v && !out.includes(String(v))) out.push(String(v)); };
+  push(envId);
+  push(appOwner?.ownerId || appOwner?.id || null);
+  push(guildOwnerId);
+  return out;
+}
+
 async function botOwnerId() {
+  const ids = await botOwnerIds();
+  return ids[0] || null;
+}
+
+async function botOwnerIds() {
   const envId = String(process.env.BOT_OWNER_ID || '').trim();
-  if (envId) return envId;
-  if (cachedOwnerId) return cachedOwnerId;
+  if (envId) return [envId];
+  if (cachedOwnerIds) return cachedOwnerIds;
+  let appOwner = null;
   try {
-    if (!client?.application) return null;
-    if (!client.application.owner) await client.application.fetch();
-    const o = client.application.owner;
-    cachedOwnerId = o?.ownerId || o?.id || null; // app thuộc Team: owner là Team, có ownerId
+    if (client?.application) {
+      if (!client.application.owner) await client.application.fetch().catch(() => null);
+      appOwner = client.application.owner || null;
+    }
   } catch {}
-  return cachedOwnerId;
+  let guildOwnerId = null;
+  try {
+    if (config.guildId && client?.guilds) {
+      const g = client.guilds.cache.get(config.guildId)
+        || (await client.guilds.fetch(config.guildId).catch(() => null));
+      guildOwnerId = g?.ownerId || null;
+    }
+  } catch {}
+  const ids = collectOwnerIds({ appOwner, guildOwnerId });
+  if (ids.length) {
+    cachedOwnerIds = ids;
+    if (!ownerLogged) {
+      ownerLogged = true;
+      console.log(`[dashboard] Chu bot (ID hop le): ${ids.join(', ')}.`);
+    }
+  }
+  return ids;
 }
 
 async function isBotOwner(u) {
   if (!u?.id) return false;
-  const oid = await botOwnerId();
-  return !!oid && String(oid) === String(u.id);
+  const ids = await botOwnerIds();
+  return ids.includes(String(u.id));
 }
 
 function canEditBotProfile(u, ownerId) {
   if (!u) return false;
-  if (ownerId) return String(u.id) === String(ownerId);
+  const ids = Array.isArray(ownerId) ? ownerId.map(String) : (ownerId ? [String(ownerId)] : []);
+  if (ids.length) return ids.includes(String(u.id));
   if (!Array.isArray(u.guilds) || !u.guilds.length) return false;
   if (config.guildId) return u.guilds.some((g) => g.id === config.guildId);
   return true;
@@ -248,7 +288,7 @@ function mount(app) {
         username: client.user.username,
         tag: client.user.tag,
         avatarUrl: client.user.displayAvatarURL({ size: 128 }),
-        canEdit: canEditBotProfile(u, await botOwnerId()),
+        canEdit: canEditBotProfile(u, await botOwnerIds()),
         isOwner: await isBotOwner(u),
       } : null,
     });
@@ -263,14 +303,14 @@ function mount(app) {
       username: client.user.username,
       tag: client.user.tag,
       avatarUrl: client.user.displayAvatarURL({ size: 128 }),
-      canEdit: canEditBotProfile(u, await botOwnerId()),
+      canEdit: canEditBotProfile(u, await botOwnerIds()),
     });
   });
 
   app.put('/dashboard/api/bot/profile', async (req, res) => {
     const u = req.session?.user;
     if (!u) return res.status(401).json({ error: 'login' });
-    if (!canEditBotProfile(u, await botOwnerId())) return res.status(403).json({ error: 'forbidden' });
+    if (!canEditBotProfile(u, await botOwnerIds())) return res.status(403).json({ error: 'forbidden' });
     if (!client?.user) return res.status(503).json({ error: 'bot-offline' });
     const b = req.body || {};
     const changed = [];
@@ -319,7 +359,7 @@ function mount(app) {
     async (req, res) => {
       const u = req.session?.user;
       if (!u) return res.status(401).json({ error: 'login' });
-      if (!canEditBotProfile(u, await botOwnerId())) return res.status(403).json({ error: 'forbidden' });
+      if (!canEditBotProfile(u, await botOwnerIds())) return res.status(403).json({ error: 'forbidden' });
       if (!client?.user) return res.status(503).json({ error: 'bot-offline' });
       const buf = req.body;
       if (!Buffer.isBuffer(buf) || !buf.length) {
@@ -1548,4 +1588,4 @@ function mount(app) {
   console.log('📊 Dashboard: /dashboard (cần DISCORD_CLIENT_SECRET để login Discord)');
 }
 
-module.exports = { mount, setClient, canEditBotProfile, validateBotUsername, sniffImage, botOwnerId, isBotOwner };
+module.exports = { mount, setClient, canEditBotProfile, validateBotUsername, sniffImage, botOwnerId, botOwnerIds, isBotOwner, collectOwnerIds };
