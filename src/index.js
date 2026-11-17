@@ -117,6 +117,10 @@ async function main() {
     }
   }
 
+  // Tự đăng ký lệnh slash nếu bộ lệnh thay đổi so với lần deploy trước —
+  // chạy nền, không chặn boot; hỏng cũng không làm sập bot.
+  require('./deploy-commands').deployIfChanged(commands).catch(() => {});
+
   // === PLAYER NHẠC (load SAU login để không chặn handshake Discord) ===
   const player = new Player(client, {
     skipFFmpeg: false,

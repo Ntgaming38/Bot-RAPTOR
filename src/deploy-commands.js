@@ -1,5 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
+const crypto = require('node:crypto');
 const { REST, Routes } = require('discord.js');
 const config = require('./config');
 
@@ -79,9 +80,58 @@ async function clearGuildCommands() {
   console.log(`🧹 Đã xóa toàn bộ lệnh guild ${config.guildId} (để tránh trùng sau khi lên global).`);
 }
 
+// === TỰ ĐĂNG KÝ LỆNH KHI KHỞI ĐỘNG ===
+// Trước đây lệnh slash chỉ được đăng ký khi chạy tay file này, nên mọi lệnh
+// thêm sau lần chạy tay cuối đều "vô hình" trên Discord (điển hình: /ai và
+// /stats board bị thiếu). Nay bot tự đăng ký lúc boot — nhưng CHỈ khi bộ lệnh
+// thay đổi: hash của bộ lệnh được lưu ở data/deployed-commands.json, trùng
+// hash thì bỏ qua để không đốt giới hạn API của Discord mỗi lần restart.
+// Hàm này KHÔNG bao giờ ném lỗi: đăng ký hỏng thì bot vẫn chạy, lần boot sau
+// hash vẫn lệch nên sẽ tự thử lại.
+const HASH_FILE = path.join(__dirname, '..', 'data', 'deployed-commands.json');
+
+function commandsHash(scope, body) {
+  return crypto.createHash('sha256').update(JSON.stringify({ scope, body })).digest('hex');
+}
+
+async function deployIfChanged(loaded, opts = {}) {
+  try {
+    if (!config.token || !config.clientId) {
+      console.warn('[deploy] Thiếu DISCORD_TOKEN/CLIENT_ID — bỏ qua tự đăng ký lệnh.');
+      return { deployed: false, reason: 'no-config' };
+    }
+    const commands = loaded || (await loadCommands());
+    const body = commands.map((c) => c.data.toJSON());
+    const scope = config.guildId ? `guild:${config.guildId}` : 'global';
+    const hash = commandsHash(scope, body);
+    const hashFile = opts.hashFile || HASH_FILE;
+    let prev = null;
+    try { prev = JSON.parse(fs.readFileSync(hashFile, 'utf8')).hash; } catch {}
+    if (prev === hash && !opts.force) {
+      console.log('⏭️ [deploy] Bộ lệnh slash không đổi — bỏ qua đăng ký lại.');
+      return { deployed: false, reason: 'unchanged', hash };
+    }
+    const rest = opts.rest || new REST({ version: '10' }).setToken(config.token);
+    if (config.guildId) {
+      await rest.put(Routes.applicationGuildCommands(config.clientId, config.guildId), { body });
+    } else {
+      await rest.put(Routes.applicationCommands(config.clientId), { body });
+    }
+    try {
+      fs.mkdirSync(path.dirname(hashFile), { recursive: true });
+      fs.writeFileSync(hashFile, JSON.stringify({ hash, scope, count: body.length, at: new Date().toISOString() }, null, 2));
+    } catch {}
+    console.log(`✅ [deploy] Đã tự đăng ký ${body.length} lệnh slash (${scope}).`);
+    return { deployed: true, hash };
+  } catch (err) {
+    console.error('[deploy] Tự đăng ký lệnh thất bại (bot vẫn chạy, sẽ thử lại ở lần boot sau):', err?.message || err);
+    return { deployed: false, reason: 'error' };
+  }
+}
+
 if (require.main === module) {
   if (process.argv.includes('--clear-guild')) clearGuildCommands().catch(e => console.error('❌ Xóa lệnh guild thất bại:', e));
   else deploy();
 }
 
-module.exports = { loadCommands, deploy, clearGuildCommands };
+module.exports = { loadCommands, deploy, clearGuildCommands, deployIfChanged, commandsHash };
