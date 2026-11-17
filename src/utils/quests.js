@@ -49,7 +49,46 @@ async function saveProgress(guildId, userId, row) {
   writeJsonAtomic(FILE, db);
 }
 
-async function bump(guildId, userId, field, amount = 1) {
+// GĐ1 — đường Mongo nguyên tử: cộng tiến độ bằng $inc/$set trong một thao tác,
+// nhận thưởng bằng update CÓ ĐIỀU KIỆN (chỉ ai lật được rewarded.<id> từ
+// chưa-có sang true mới được cộng credits) -> 2 bump song song không trả
+// thưởng 2 lần, không mất lượt cộng.
+async function bumpMongo(guildId, userId, field, amount) {
+  const { QuestProgress } = require('../db');
+  const day = dayKey();
+  const key = { guildId, userId, day };
+  const update = field === 'daily' ? { $set: { daily: true } } : { $inc: { [field]: amount } };
+  const doc = await QuestProgress.findOneAndUpdate(key, update, { upsert: true, new: true });
+  const row = { chat: doc?.chat || 0, voice: doc?.voice || 0, daily: !!doc?.daily, rewarded: doc?.rewarded || {} };
+  let completed = null;
+  for (const def of DEFS) {
+    const cur = def.id === 'daily' ? (row.daily ? 1 : 0) : (row[def.id] || 0);
+    if (cur >= def.target && !row.rewarded[def.id]) {
+      const claim = await QuestProgress.updateOne(
+        { ...key, [`rewarded.${def.id}`]: { $ne: true } },
+        { $set: { [`rewarded.${def.id}`]: true } },
+      );
+      if (claim?.modifiedCount) {
+        row.rewarded[def.id] = true;
+        const balance = await require('./social').addCredits(guildId, userId, def.reward);
+        completed = { ...def, balance };
+      }
+    }
+  }
+  return { row, completed };
+}
+
+// Đường JSON: khóa theo (guild,user,ngày) để các bump song song xếp hàng,
+// tránh đọc-ghi đè nhau như trước.
+const bumpLocks = new Map();
+function withBumpLock(lockKey, fn) {
+  const prev = bumpLocks.get(lockKey) || Promise.resolve();
+  const run = prev.then(fn, fn);
+  bumpLocks.set(lockKey, run.catch(() => {}));
+  return run;
+}
+
+async function bumpJson(guildId, userId, field, amount) {
   const row = await getProgress(guildId, userId);
   if (field === 'daily') row.daily = true;
   else row[field] = Math.min(9999, (row[field] || 0) + amount);
@@ -64,6 +103,11 @@ async function bump(guildId, userId, field, amount = 1) {
   }
   await saveProgress(guildId, userId, row);
   return { row, completed };
+}
+
+async function bump(guildId, userId, field, amount = 1) {
+  if (useMongo()) return bumpMongo(guildId, userId, field, amount);
+  return withBumpLock(`${guildId}:${userId}:${dayKey()}`, () => bumpJson(guildId, userId, field, amount));
 }
 
 const bumpChat = (g, u) => bump(g, u, 'chat', 1);

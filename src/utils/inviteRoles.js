@@ -46,10 +46,14 @@ function onInviteDelete(invite) {
 async function bumpStat(guildId, inviterId, code) {
   if (useMongo()) {
     const { InviteStat } = require('../db');
-    const doc = await InviteStat.findOne({ guildId, userId: inviterId }).lean().catch(() => null);
-    const byCode = { ...(doc?.byCode || {}) };
-    byCode[code] = (byCode[code] || 0) + 1;
-    await InviteStat.updateOne({ guildId, userId: inviterId }, { $set: { byCode }, $inc: { total: 1 } }, { upsert: true });
+    // GĐ1: $inc thẳng vào byCode.<code> — nguyên tử, bỏ đọc-ghi cả object.
+    // Mã mời Discord không chứa dấu chấm; vẫn lọc để an toàn với dot-path.
+    const safeCode = String(code).replace(/\./g, '');
+    await InviteStat.updateOne(
+      { guildId, userId: inviterId },
+      { $inc: { total: 1, [`byCode.${safeCode}`]: 1 } },
+      { upsert: true },
+    );
     return;
   }
   const db = loadAll();

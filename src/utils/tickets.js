@@ -328,6 +328,11 @@ async function createTicket(interaction, type, reason) {
   };
   await putTicket(channel.id, record);
   require('./activity').record(interaction.guildId, 'ticket', `@${interaction.user.tag} mở ticket #${number} (${type.label})`).catch(() => {});
+  // Báo chủ bot qua Telegram (nếu đã bật bot điều khiển) — lỗi gửi không ảnh hưởng tạo ticket.
+  try {
+    const ctl = require('./telegramControl');
+    ctl.notify(`🎫 <b>Ticket mới #${number}</b> — ${ctl.esc(type.label)}\n👤 ${ctl.esc(interaction.user.tag)}\n📝 ${ctl.esc(String(reason || '').slice(0, 300)) || '(không ghi lý do)'}`).catch(() => {});
+  } catch {}
 
   const opening = await channel.send({
     content: `${interaction.user} ${st.ticketStaffRoleId ? `<@&${st.ticketStaffRoleId}>` : ''}`,

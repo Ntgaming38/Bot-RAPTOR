@@ -67,6 +67,7 @@ const levelSchema = new mongoose.Schema({
   lastMsg: { type: Number, default: 0 },
 }, { timestamps: false });
 levelSchema.index({ guildId: 1, userId: 1 }, { unique: true });
+levelSchema.index({ guildId: 1, level: -1, xp: -1 });
 const Level = mongoose.models.Level || mongoose.model('Level', levelSchema);
 
 // === Giveaway ===
@@ -83,6 +84,7 @@ const giveawaySchema = new mongoose.Schema({
   hostId: String,
   hostTag: String,
 });
+giveawaySchema.index({ messageId: 1 });
 const Giveaway = mongoose.models.Giveaway || mongoose.model('Giveaway', giveawaySchema);
 
 // === Ticket ===
@@ -276,6 +278,7 @@ const tempRoleSchema = new mongoose.Schema({
   byTag: String,
 });
 tempRoleSchema.index({ expiresAt: 1 });
+tempRoleSchema.index({ guildId: 1, userId: 1, roleId: 1 }, { unique: true });
 const TempRole = mongoose.models.TempRole || mongoose.model('TempRole', tempRoleSchema);
 
 // === Log kiểu ProBot: kênh + bật/tắt từng loại ===

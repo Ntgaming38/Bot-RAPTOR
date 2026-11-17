@@ -32,6 +32,33 @@ function getUser(db, guildId, userId) {
   return db[guildId][userId];
 }
 
+// Chuẩn hóa level sau khi XP đã được $inc (GĐ1 — nguyên tử hóa):
+// tính lại (xp, level) từ bản ghi vừa đọc rồi ghi CÓ ĐIỀU KIỆN (chỉ ghi khi
+// xp/level còn đúng như vừa đọc). Tiến trình khác chen vào -> modifiedCount=0
+// -> đọc lại tính lại, tối đa 5 vòng. Trả về { leveled, level, xp }.
+async function normalizeLevels(Level, guildId, userId) {
+  for (let i = 0; i < 5; i++) {
+    const doc = await Level.findOne({ guildId, userId });
+    if (!doc) return null;
+    let xp = doc.xp || 0;
+    let level = doc.level || 0;
+    let leveled = false;
+    while (xp >= xpNeeded(level)) {
+      xp -= xpNeeded(level);
+      level += 1;
+      leveled = true;
+    }
+    if (!leveled) return { leveled: false, level: doc.level || 0, xp: doc.xp || 0 };
+    const r = await Level.updateOne(
+      { guildId, userId, xp: doc.xp, level: doc.level },
+      { $set: { xp, level } },
+    );
+    if (r?.modifiedCount) return { leveled: true, level, xp };
+  }
+  const doc = await Level.findOne({ guildId, userId });
+  return doc ? { leveled: true, level: doc.level || 0, xp: doc.xp || 0 } : null;
+}
+
 // Cộng XP khi nhắn tin. Trả về { leveled, level, xp } hoặc null nếu đang cooldown
 async function addXp(guildId, userId) {
   const st = await require('./guildSettings').getGuildSettings(guildId).catch(() => null);
@@ -41,20 +68,24 @@ async function addXp(guildId, userId) {
   if (useMongo()) {
     const { Level } = require('../db');
     const now = Date.now();
-    let doc = await Level.findOne({ guildId, userId });
-    if (!doc) doc = new Level({ guildId, userId, xp: 0, level: 0, lastMsg: 0 });
-    if (now - (doc.lastMsg || 0) < cooldownMs) return null;
-    doc.lastMsg = now;
     const gain = Math.floor(Math.random() * (xpMax - xpMin + 1)) + xpMin;
-    doc.xp += gain;
-    let leveled = false;
-    while (doc.xp >= xpNeeded(doc.level)) {
-      doc.xp -= xpNeeded(doc.level);
-      doc.level += 1;
-      leveled = true;
+    // Nhận cooldown + cộng XP trong MỘT thao tác nguyên tử: filter chỉ khớp
+    // khi đã qua cooldown (hoặc chưa có lastMsg). Đang cooldown mà upsert cố
+    // tạo bản ghi mới sẽ đụng unique (guildId,userId) -> mã 11000 -> coi như cooldown.
+    let updated = null;
+    try {
+      updated = await Level.findOneAndUpdate(
+        { guildId, userId, $or: [{ lastMsg: { $lte: now - cooldownMs } }, { lastMsg: { $exists: false } }] },
+        { $inc: { xp: gain }, $set: { lastMsg: now }, $setOnInsert: { guildId, userId, level: 0 } },
+        { upsert: true, new: true },
+      );
+    } catch (e) {
+      if (e?.code === 11000) return null;
+      throw e;
     }
-    await doc.save();
-    return { leveled, level: doc.level, xp: doc.xp, gain };
+    if (!updated) return null;
+    const norm = await normalizeLevels(Level, guildId, userId);
+    return { leveled: !!norm?.leveled, level: norm?.level ?? updated.level ?? 0, xp: norm?.xp ?? updated.xp ?? 0, gain };
   }
   const db = load();
   const u = getUser(db, guildId, userId);
@@ -77,10 +108,15 @@ async function addXp(guildId, userId) {
 async function getRank(guildId, userId) {
   if (useMongo()) {
     const { Level } = require('../db');
-    const all = await Level.find({ guildId }).sort({ level: -1, xp: -1 }).lean();
-    const idx = all.findIndex(d => d.userId === userId);
-    const me = all[idx] || { xp: 0, level: 0 };
-    return { rank: idx >= 0 ? idx + 1 : null, total: all.length, xp: me.xp || 0, level: me.level || 0, needed: xpNeeded(me.level || 0) };
+    // GĐ1: đếm số người đứng trên bằng countDocuments — không tải cả bảng nữa.
+    const me = await Level.findOne({ guildId, userId });
+    const total = await Level.countDocuments({ guildId });
+    if (!me) return { rank: null, total, xp: 0, level: 0, needed: xpNeeded(0) };
+    const ahead = await Level.countDocuments({
+      guildId,
+      $or: [{ level: { $gt: me.level || 0 } }, { level: me.level || 0, xp: { $gt: me.xp || 0 } }],
+    });
+    return { rank: ahead + 1, total, xp: me.xp || 0, level: me.level || 0, needed: xpNeeded(me.level || 0) };
   }
   const db = load();
   const guild = db[guildId] || {};
@@ -114,17 +150,13 @@ async function addXpAmount(guildId, userId, gain) {
   if (gain <= 0) return null;
   if (useMongo()) {
     const { Level } = require('../db');
-    let doc = await Level.findOne({ guildId, userId });
-    if (!doc) doc = new Level({ guildId, userId, xp: 0, level: 0, lastMsg: 0 });
-    doc.xp += gain;
-    let leveled = false;
-    while (doc.xp >= xpNeeded(doc.level)) {
-      doc.xp -= xpNeeded(doc.level);
-      doc.level += 1;
-      leveled = true;
-    }
-    await doc.save();
-    return { leveled, level: doc.level, xp: doc.xp, gain };
+    const updated = await Level.findOneAndUpdate(
+      { guildId, userId },
+      { $inc: { xp: gain }, $setOnInsert: { guildId, userId, level: 0, lastMsg: 0 } },
+      { upsert: true, new: true },
+    );
+    const norm = await normalizeLevels(Level, guildId, userId);
+    return { leveled: !!norm?.leveled, level: norm?.level ?? updated?.level ?? 0, xp: norm?.xp ?? updated?.xp ?? 0, gain };
   }
   const db = load();
   const u = getUser(db, guildId, userId);
@@ -143,14 +175,17 @@ async function addXpAmount(guildId, userId, gain) {
 async function setUserXp(guildId, userId, patch) {
   if (useMongo()) {
     const { Level } = require('../db');
-    let doc = await Level.findOne({ guildId, userId });
-    if (!doc) doc = new Level({ guildId, userId, xp: 0, level: 0, lastMsg: 0 });
-    if (patch.level !== undefined) doc.level = Math.max(0, Math.floor(patch.level));
-    if (patch.xp !== undefined) doc.xp = Math.max(0, Math.floor(patch.xp));
+    const cur = await Level.findOne({ guildId, userId });
+    const level = patch.level !== undefined ? Math.max(0, Math.floor(patch.level)) : (cur?.level || 0);
+    let xp = patch.xp !== undefined ? Math.max(0, Math.floor(patch.xp)) : (cur?.xp || 0);
     // XP không được vượt ngưỡng của level hiện tại
-    const cap = xpNeeded(doc.level) - 1;
-    if (doc.xp > cap) doc.xp = cap;
-    await doc.save();
+    const cap = xpNeeded(level) - 1;
+    if (xp > cap) xp = cap;
+    const doc = await Level.findOneAndUpdate(
+      { guildId, userId },
+      { $set: { level, xp }, $setOnInsert: { guildId, userId, lastMsg: 0 } },
+      { upsert: true, new: true },
+    );
     return { level: doc.level, xp: doc.xp };
   }
   const db = load();

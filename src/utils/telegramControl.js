@@ -9,8 +9,26 @@
 // Lệnh: /status /online /toggle /say + menu nút bấm (inline keyboard).
 // ============================================================
 
+const fs = require('node:fs');
+const path = require('node:path');
 const gs = require('./guildSettings');
 const config = require('../config');
+
+// Nhịp tim ghi xuống đĩa mỗi phút: lần boot sau đọc lại sẽ biết bot đã
+// gián đoạn bao lâu (để báo "vừa quay lại sau ~X" thay vì tin online thường).
+const STATE_FILE = path.join(__dirname, '..', '..', 'data', 'telegram-state.json');
+function readLastBeat() {
+  try {
+    const j = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
+    return Number(j?.lastBeat) || 0;
+  } catch { return 0; }
+}
+function writeBeat() {
+  try {
+    fs.mkdirSync(path.dirname(STATE_FILE), { recursive: true });
+    fs.writeFileSync(STATE_FILE, JSON.stringify({ lastBeat: Date.now() }));
+  } catch {}
+}
 
 const TOGGLES = [
   { key: 'leveling', label: 'Leveling — XP khi chat' },
@@ -301,10 +319,22 @@ async function start(client) {
 
   // Vòng long polling — lỗi mạng thì nghỉ 5s thử lại, không bao giờ làm sập bot.
   (async () => {
+    const lastBeat = readLastBeat();
+    const gapMs = Date.now() - lastBeat;
+    writeBeat();
+    const beatTimer = setInterval(writeBeat, 60 * 1000);
+    beatTimer.unref?.();
     try {
       const me = await tg(token, 'getMe', {}, 15000);
       console.log(`[telegram] Bot điều khiển @${me.username} đã bật${ownerId ? '' : ' (chế độ ghép nối — chưa có TELEGRAM_OWNER_ID)'}.`);
-      if (ownerId) await send(ownerId, '🟢 RAPTOR đã online — gõ /menu để điều khiển.');
+      if (ownerId) {
+        if (lastBeat && gapMs > 30 * 60 * 1000) {
+          const gap = gapMs >= 3600000 ? `~${Math.round(gapMs / 360000) / 10} giờ` : `~${Math.round(gapMs / 60000)} phút`;
+          await send(ownerId, `🔴 <b>RAPTOR vừa quay lại</b> — lần hoạt động cuối cách đây ${gap}. Bot đã online trở lại, gõ /menu để kiểm tra.`);
+        } else {
+          await send(ownerId, '🟢 RAPTOR đã online — gõ /menu để điều khiển.');
+        }
+      }
     } catch (e) {
       console.warn('[telegram] Không kết nối được Telegram:', e.message);
     }
@@ -347,6 +377,6 @@ async function notify(text) {
 }
 
 module.exports = {
-  start, stop, notify,
-  _test: { isOwner, parseCommand, toggleState, togglePatch, fmtUptime, TOGGLES },
+  start, stop, notify, esc,
+  _test: { isOwner, parseCommand, toggleState, togglePatch, fmtUptime, TOGGLES, readLastBeat },
 };
