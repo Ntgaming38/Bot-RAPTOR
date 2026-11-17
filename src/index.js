@@ -121,6 +121,10 @@ async function main() {
   // chạy nền, không chặn boot; hỏng cũng không làm sập bot.
   require('./deploy-commands').deployIfChanged(commands).catch(() => {});
 
+  // Bot Telegram điều khiển từ xa (chỉ chủ bot) — chạy nền; chưa đặt
+  // TELEGRAM_BOT_TOKEN thì module tự tắt, không ảnh hưởng bot Discord.
+  require('./utils/telegramControl').start(client).catch(() => {});
+
   // === PLAYER NHẠC (load SAU login để không chặn handshake Discord) ===
   const player = new Player(client, {
     skipFFmpeg: false,
