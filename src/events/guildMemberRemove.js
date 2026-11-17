@@ -35,6 +35,11 @@ module.exports = {
       console.warn('[goodbye] không tìm thấy kênh', channelId);
       return;
     }
+    // Chống trùng: sự kiện rời bị phát 2 lần trong <90s thì chỉ gửi 1 tin.
+    if (require('../utils/dedupe').recently(`bye:${member.guild.id}:${member.id}`)) {
+      console.log(`[goodbye] bỏ qua bản trùng cho ${member.user.tag} (sự kiện lặp trong 90s)`);
+      return;
+    }
     const { buildGoodbye } = require('../utils/goodbyeSettings');
     await ch.send({ embeds: [buildGoodbye(member, s)] }).catch((e) => console.warn('[goodbye] gửi lỗi:', e?.message));
   },

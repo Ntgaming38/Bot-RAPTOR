@@ -43,6 +43,11 @@ module.exports = {
       return;
     }
 
+    // Chống trùng: sự kiện vào bị phát 2 lần trong <90s thì chỉ chào 1 lần.
+    if (require('../utils/dedupe').recently(`hi:${member.guild.id}:${member.id}`)) {
+      console.log(`[welcome] bỏ qua bản trùng cho ${member.user.tag} (sự kiện lặp trong 90s)`);
+      return;
+    }
     try {
       const { embed: em, files, components } = await buildWelcome(member, s);
       const msg = await welcomeCh.send({ embeds: [em], files, components });
