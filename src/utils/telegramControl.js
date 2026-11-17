@@ -264,29 +264,34 @@ async function start(client) {
     } else if (cmd === 'cancel') {
       pendingSay.delete(chatId);
       await send(chatId, 'Đã hủy.');
-    } else if (cmd === 'key') {
-      // Cấp key đổi biệt danh bot cho 1 server (chủ bot nắm quyền cấp key)
-      const { key } = await require('./renameKeys').createKey({ createdBy: `telegram:${fromId}`, note: parsed.args || '' });
-      await send(chatId, `🔑 <b>Key đổi biệt danh mới</b>${parsed.args ? ` (ghi chú: ${esc(parsed.args)})` : ''}:\n<code>${key}</code>\nGửi key này cho admin của server đó — họ vào Dashboard → trang server → mục <b>Tên bot</b> → nhập key là đặt được biệt danh cho bot trong server của họ. Key chỉ gắn được vào đúng 1 server.`);
-    } else if (cmd === 'keys') {
-      const list = await require('./renameKeys').listKeys();
-      if (!list.length) {
-        await send(chatId, 'Chưa có key nào. Tạo bằng lệnh /key');
+    } else if (cmd === 'grant') {
+      // Cấp quyền đổi biệt danh bot cho 1 NGƯỜI (theo ID Discord của họ)
+      const parts = (parsed.args || '').trim().split(/\s+/).filter(Boolean);
+      const uid = parts[0] || '';
+      const note = parts.slice(1).join(' ');
+      if (!require('./renameGrants').validateUserId(uid)) {
+        await send(chatId, 'Gõ: /grant &lt;ID Discord của người được cấp&gt; [ghi chú]\nID là dãy 17–20 số — trong Discord: bật Chế độ nhà phát triển rồi chuột phải vào người đó → Sao chép ID người dùng.');
       } else {
-        const lines = list.slice(0, 20).map((k) => (k.guildId
-          ? `🔗 <code>${k.guildId}</code>${k.note ? ` — ${esc(k.note)}` : ''}`
-          : `⏳ Chưa server nào nhận (mã ${k.hashPrefix}…)${k.note ? ` — ${esc(k.note)}` : ''}`));
-        await send(chatId, '🔑 <b>Key đổi biệt danh</b>\n' + lines.join('\n') + '\nHủy quyền của 1 server: /keyrevoke &lt;id server&gt;');
+        await require('./renameGrants').grantUser(uid, { note, grantedBy: `telegram:${fromId}` });
+        await send(chatId, `🔑 Đã cấp quyền đổi biệt danh cho user <code>${esc(uid)}</code>${note ? ` (ghi chú: ${esc(note)})` : ''}.\nNgười đó đăng nhập Dashboard → mở trang server → mục <b>Tên bot</b> là đặt được biệt danh cho bot. Chỉ tài khoản này đổi được — admin khác cùng server thì không.`);
       }
-    } else if (cmd === 'keyrevoke') {
-      const gid = (parsed.args || '').trim();
-      if (!gid) {
-        await send(chatId, 'Gõ: /keyrevoke &lt;id server&gt;');
+    } else if (cmd === 'grants') {
+      const list = await require('./renameGrants').listGrants();
+      if (!list.length) {
+        await send(chatId, 'Chưa cấp quyền cho ai. Cấp bằng lệnh /grant &lt;ID Discord&gt;');
       } else {
-        const n = await require('./renameKeys').revokeGuild(gid);
+        const lines = list.slice(0, 20).map((g) => `👤 <code>${g.userId}</code>${g.note ? ` — ${esc(g.note)}` : ''}`);
+        await send(chatId, '🔑 <b>Người được cấp quyền đổi biệt danh</b>\n' + lines.join('\n') + '\nThu hồi: /grantrevoke &lt;ID Discord&gt;');
+      }
+    } else if (cmd === 'grantrevoke') {
+      const uid = (parsed.args || '').trim();
+      if (!uid) {
+        await send(chatId, 'Gõ: /grantrevoke &lt;ID Discord&gt;');
+      } else {
+        const n = await require('./renameGrants').revokeUser(uid);
         await send(chatId, n
-          ? `✅ Đã hủy key của server <code>${esc(gid)}</code> — server mất quyền đổi biệt danh.`
-          : `Server <code>${esc(gid)}</code> không có key nào đang gắn.`);
+          ? `✅ Đã thu hồi quyền đổi biệt danh của user <code>${esc(uid)}</code>.`
+          : `User <code>${esc(uid)}</code> chưa được cấp quyền nào.`);
       }
     }
   };

@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const session = require('express-session');
 const config = require('../config');
 const views = require('./views');
-const renameKeys = require('../utils/renameKeys');
+const renameGrants = require('../utils/renameGrants');
 
 const API = 'https://discord.com/api/v10';
 const MANAGE_GUILD = 0x20n;
@@ -48,8 +48,9 @@ function canManage(g) {
 
 // Tên/ảnh của bot là TOÀN CỤC (đổi 1 lần, áp dụng mọi server) nên quyền đổi
 // thuộc về CHỦ BOT (chủ sở hữu ứng dụng Discord) — quyết định 2026-11-18:
-// chủ bot nắm quyền như cầm key; admin các server chỉ đổi được BIỆT DANH
-// của bot trong server mình khi được cấp key (xem utils/renameKeys).
+// chủ bot nắm quyền cấp phép; admin các server chỉ đổi được BIỆT DANH
+// của bot khi chính tài khoản của họ được chủ bot cấp quyền theo ID
+// Discord (xem utils/renameGrants — quyền theo người, không theo server).
 // BOT_OWNER_ID trong env (nếu có) thắng; không thì lấy chủ ứng dụng qua API.
 // Chưa xác định được chủ bot (API lỗi) -> tạm dùng luật cũ (admin server
 // chính GUILD_ID) để chủ bot không bao giờ bị khóa ngoài dashboard.
@@ -382,43 +383,33 @@ function mount(app) {
     }
   );
 
-  // --- Biệt danh bot theo server + key đổi tên (chủ bot cấp key) ---
+  // --- Biệt danh bot theo server + quyền đổi tên theo NGƯỜI DÙNG ---
+  // Chủ bot cấp quyền cho một ID Discord cụ thể (utils/renameGrants):
+  // chỉ đúng tài khoản đó mới đặt được biệt danh bot — trong mọi server
+  // mà họ mở được trang này. Admin khác cùng server không có quyền.
   app.get('/dashboard/api/guilds/:gid/botnick', guard, async (req, res) => {
     const gid = req.params.gid;
     if (!client?.user) return res.status(503).json({ error: 'bot-offline' });
     const guild = await client.guilds.fetch(gid).catch(() => null);
     if (!guild) return res.status(404).json({ error: 'bot-not-in-guild' });
     const owner = await isBotOwner(req.session.user);
-    const keyRec = await renameKeys.getKeyForGuild(gid);
+    const granted = owner ? false : await renameGrants.hasGrant(req.session.user.id);
     res.json({
       username: client.user.username,
       nickname: guild.members.me?.nickname || null,
       isOwner: owner,
-      hasKey: !!keyRec,
-      canEdit: owner || !!keyRec,
+      granted,
+      canEdit: owner || granted,
+      myId: req.session.user.id,
     });
-  });
-
-  app.post('/dashboard/api/guilds/:gid/botnick/redeem', guard, async (req, res) => {
-    const r = await renameKeys.redeemKey(req.params.gid, (req.body || {}).key);
-    if (!r.ok) {
-      const msgs = {
-        invalid: 'Key không đúng — kiểm tra lại key chủ bot đã cấp.',
-        used: 'Key này đã được dùng cho server khác rồi.',
-        'guild-has-key': 'Server đã có key đang gắn — chủ bot phải hủy key cũ trước khi nhập key mới.',
-      };
-      return res.status(400).json({ error: msgs[r.error] || 'Key không hợp lệ.' });
-    }
-    console.log(`[dashboard] ${req.session.user.username} (${req.session.user.id}) đã nhập key đổi tên cho server ${req.params.gid}.`);
-    return res.json({ ok: true });
   });
 
   app.put('/dashboard/api/guilds/:gid/botnick', guard, async (req, res) => {
     const gid = req.params.gid;
     const u = req.session.user;
     const owner = await isBotOwner(u);
-    if (!owner && !(await renameKeys.hasAccess(gid))) {
-      return res.status(403).json({ error: 'Server chưa có key đổi tên — liên hệ chủ bot để được cấp key.' });
+    if (!owner && !(await renameGrants.hasGrant(u.id))) {
+      return res.status(403).json({ error: 'Tài khoản của bạn chưa được chủ bot cấp quyền đổi biệt danh.' });
     }
     if (!client?.user) return res.status(503).json({ error: 'bot-offline' });
     const guild = await client.guilds.fetch(gid).catch(() => null);
@@ -426,8 +417,8 @@ function mount(app) {
     const raw = (req.body || {}).nickname;
     let name = null;
     if (raw !== null && raw !== undefined && String(raw).trim() !== '') {
-      name = renameKeys.validateNickname(raw);
-      if (!name) return res.status(400).json({ error: 'Biệt danh phải từ 1–32 ký tự.' });
+      name = renameGrants.validateNickname(raw);
+      if (name === undefined) return res.status(400).json({ error: 'Biệt danh phải từ 1–32 ký tự.' });
     }
     try {
       await guild.members.me.setNickname(name);
@@ -437,11 +428,11 @@ function mount(app) {
       }
       return res.status(400).json({ error: friendlyDiscordError(e) });
     }
-    console.log(`[dashboard] ${u.username} (${u.id}) đã ${name ? `đặt biệt danh "${name}"` : 'gỡ biệt danh'} cho bot trong server ${gid}${owner ? ' (chủ bot)' : ' (bằng key)'}.`);
+    console.log(`[dashboard] ${u.username} (${u.id}) đã ${name ? `đặt biệt danh "${name}"` : 'gỡ biệt danh'} cho bot trong server ${gid}${owner ? ' (chủ bot)' : ' (được cấp quyền)'}.`);
     return res.json({ ok: true, nickname: name });
   });
 
-  // --- Quản lý key đổi tên — chỉ chủ bot ---
+  // --- Cấp quyền đổi tên theo người dùng — chỉ chủ bot ---
   async function requireOwner(req, res) {
     const u = req.session?.user;
     if (!u) { res.status(401).json({ error: 'login' }); return null; }
@@ -449,28 +440,27 @@ function mount(app) {
     return u;
   }
 
-  app.get('/dashboard/api/owner/keys', async (req, res) => {
+  app.get('/dashboard/api/owner/grants', async (req, res) => {
     if (!(await requireOwner(req, res))) return;
-    const list = await renameKeys.listKeys();
-    res.json(list.map((k) => ({
-      ...k,
-      guildName: k.guildId ? client?.guilds?.cache?.get(k.guildId)?.name || null : null,
-    })));
+    const list = await renameGrants.listGrants();
+    res.json(list);
   });
 
-  app.post('/dashboard/api/owner/keys', async (req, res) => {
+  app.post('/dashboard/api/owner/grants', async (req, res) => {
     const u = await requireOwner(req, res);
     if (!u) return;
-    const { key, record } = await renameKeys.createKey({ createdBy: u.id, note: (req.body || {}).note || '' });
-    console.log(`[dashboard] Chủ bot ${u.username} (${u.id}) đã tạo key đổi tên mới${record.note ? ` (ghi chú: ${record.note})` : ''}.`);
-    res.json({ ok: true, key, record });
+    const body = req.body || {};
+    const r = await renameGrants.grantUser(body.userId, { note: body.note || '', grantedBy: u.id });
+    if (!r.ok) return res.status(400).json({ error: 'ID Discord không hợp lệ — ID là dãy 17–20 chữ số (bật Developer Mode trong Discord, chuột phải vào người dùng → Sao chép ID người dùng).' });
+    console.log(`[dashboard] Chủ bot ${u.username} (${u.id}) đã cấp quyền đổi biệt danh cho user ${r.userId}${body.note ? ` (ghi chú: ${body.note})` : ''}.`);
+    res.json({ ok: true, userId: r.userId });
   });
 
-  app.delete('/dashboard/api/owner/keys/:gid', async (req, res) => {
+  app.delete('/dashboard/api/owner/grants/:uid', async (req, res) => {
     const u = await requireOwner(req, res);
     if (!u) return;
-    const removed = await renameKeys.revokeGuild(req.params.gid);
-    if (removed) console.log(`[dashboard] Chủ bot ${u.username} (${u.id}) đã hủy key đổi tên của server ${req.params.gid}.`);
+    const removed = await renameGrants.revokeUser(req.params.uid);
+    if (removed) console.log(`[dashboard] Chủ bot ${u.username} (${u.id}) đã thu hồi quyền đổi biệt danh của user ${req.params.uid}.`);
     res.json({ ok: true, removed });
   });
 

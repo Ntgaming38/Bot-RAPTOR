@@ -364,6 +364,17 @@ const renameKeySchema = new mongoose.Schema({
 });
 const RenameKey = mongoose.models.RenameKey || mongoose.model('RenameKey', renameKeySchema);
 
+// Quyen doi biet danh bot cap theo ID NGUOI DUNG Discord (chu bot cap —
+// thay the key theo server tu 2026-11-18: quyen di theo nguoi, chi dung
+// tai khoan duoc cap moi doi duoc, admin khac cung server khong co quyen).
+const renameGrantSchema = new mongoose.Schema({
+  userId: { type: String, unique: true },
+  note: String,
+  grantedBy: String,
+  createdAt: { type: Date, default: Date.now },
+});
+const RenameGrant = mongoose.models.RenameGrant || mongoose.model('RenameGrant', renameGrantSchema);
+
 // === Hoạt động gần đây (cho thẻ Overview trên dashboard) ===
 const activityEventSchema = new mongoose.Schema({
   guildId: { type: String, required: true, index: true },
@@ -459,4 +470,4 @@ const socialProfileSchema = new mongoose.Schema({
 socialProfileSchema.index({ guildId: 1, userId: 1 }, { unique: true });
 const SocialProfile = mongoose.models.SocialProfile || mongoose.model('SocialProfile', socialProfileSchema);
 
-module.exports = { mongoose, connectDB, isMongo, storageMode, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings, GuildSettings, AnnounceSettings, StatsSettings, RolePanel, GoodbyeSettings, LogSettings, Warn, RoleBoard, TicketCounter, ClosedTicket, TicketBlacklist, TempRole, ActivityEvent, Reminder, MusicQueue, InviteStat, QuestProgress, Playlist, FeedState, TempChannel, SocialProfile, CustomCommand, RenameKey };
+module.exports = { mongoose, connectDB, isMongo, storageMode, Level, Giveaway, Ticket, TicketRating, WelcomeSettings, LeaderboardSettings, GuildSettings, AnnounceSettings, StatsSettings, RolePanel, GoodbyeSettings, LogSettings, Warn, RoleBoard, TicketCounter, ClosedTicket, TicketBlacklist, TempRole, ActivityEvent, Reminder, MusicQueue, InviteStat, QuestProgress, Playlist, FeedState, TempChannel, SocialProfile, CustomCommand, RenameKey, RenameGrant };
