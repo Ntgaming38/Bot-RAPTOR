@@ -77,7 +77,85 @@ function wantsMemberList(text) {
   return false;
 }
 
-function buildServerContext(guild, userText) {
+// ── Danh mục server (kênh/role CÔNG KHAI) + luật server ────────────────────
+// Chỉ đưa vào ngữ cảnh những kênh @everyone xem được — kênh riêng của staff
+// (ARK private, kênh nội bộ...) không được lộ qua câu trả lời AI cho member.
+const CH_TYPE = { TEXT: 0, VOICE: 2, CATEGORY: 4, ANNOUNCEMENT: 5, STAGE: 13, FORUM: 15 };
+const rulesCache = new Map(); // guildId -> { text, at }
+const RULES_TTL_MS = 30 * 60_000;
+const MAX_RULES_CHARS = 2500;
+
+function visibleToEveryone(guild, channel) {
+  try {
+    const everyone = guild.roles?.everyone;
+    if (!everyone || typeof channel.permissionsFor !== 'function') return true;
+    const p = channel.permissionsFor(everyone);
+    return !p || p.has('ViewChannel');
+  } catch {
+    return false;
+  }
+}
+
+function buildDirectoryContext(guild) {
+  try {
+    const roles = [...(guild.roles?.cache?.values() || [])]
+      .filter((r) => r.id !== guild.id && !r.managed)
+      .sort((a, b) => (b.members?.size || 0) - (a.members?.size || 0))
+      .slice(0, 30)
+      .map((r) => `${cleanName(r.name)} (${r.members?.size || 0} người)`);
+    const chans = [...(guild.channels?.cache?.values() || [])];
+    const cats = new Map(chans.filter((c) => c.type === CH_TYPE.CATEGORY).map((c) => [c.id, c]));
+    const visible = chans
+      .filter((c) => c.type !== CH_TYPE.CATEGORY && visibleToEveryone(guild, c))
+      .sort((a, b) => (a.position || 0) - (b.position || 0));
+    const byCat = new Map();
+    for (const c of visible) {
+      const key = c.parentId && cats.has(c.parentId) ? cleanName(cats.get(c.parentId).name) : 'Không mục';
+      if (!byCat.has(key)) byCat.set(key, []);
+      const isVoice = c.type === CH_TYPE.VOICE || c.type === CH_TYPE.STAGE;
+      const topic = !isVoice && c.topic ? ` — ${String(c.topic).replace(/[`@<>\n\r]/g, '').trim().slice(0, 80)}` : '';
+      byCat.get(key).push(`${isVoice ? '🔊' : '#'}${cleanName(c.name)}${topic}`);
+    }
+    const lines = [];
+    if (roles.length) lines.push(`Các role trong server: ${roles.join(', ')}.`);
+    for (const [cat, items] of byCat) lines.push(`Kênh thuộc mục "${cat}": ${items.join(', ')}.`);
+    return lines.join('\n');
+  } catch {
+    return '';
+  }
+}
+
+// Nhận diện câu hỏi về luật/nội quy — chỉ khi đó mới tải nội dung kênh luật.
+function wantsRules(text) {
+  return /(luật|nội quy|quy định|\brules?\b|cấm|vi phạm|bị phạt|xử phạt|được phép|không được)/i.test(String(text || ''));
+}
+
+async function getRulesContext(guild) {
+  const cached = rulesCache.get(guild.id);
+  if (cached && Date.now() - cached.at < RULES_TTL_MS) return cached.text;
+  let text = '';
+  try {
+    const ch = [...(guild.channels?.cache?.values() || [])]
+      .find((c) => (c.type === CH_TYPE.TEXT || c.type === CH_TYPE.ANNOUNCEMENT)
+        && /(rule|luật|luat|nội[-_ ]?quy|noi[-_ ]?quy)/i.test(c.name || '')
+        && visibleToEveryone(guild, c));
+    if (ch && typeof ch.messages?.fetch === 'function') {
+      const msgs = await ch.messages.fetch({ limit: 10 });
+      const parts = [...msgs.values()]
+        .sort((a, b) => (a.createdTimestamp || 0) - (b.createdTimestamp || 0))
+        .map((m) => String(m.content || m.embeds?.[0]?.description || '').trim())
+        .filter(Boolean);
+      text = parts.join('\n').slice(0, MAX_RULES_CHARS);
+      if (text) text = `Nội dung kênh luật (#${cleanName(ch.name)}):\n${text}`;
+    }
+  } catch {
+    text = '';
+  }
+  rulesCache.set(guild.id, { text, at: Date.now() });
+  return text;
+}
+
+async function buildServerContext(guild, userText) {
   try {
     if (!guild || !guild.members || !guild.members.cache) return '';
     const members = [...guild.members.cache.values()];
@@ -111,8 +189,15 @@ function buildServerContext(guild, userText) {
         lines.push(`Đang trong voice: ${vs.join(', ')}.`);
       }
     }
+    const dir = buildDirectoryContext(guild);
+    if (dir) lines.push(dir);
+    if (wantsRules(userText)) {
+      const rules = await getRulesContext(guild);
+      if (rules) lines.push(rules);
+    }
     return '[DỮ LIỆU THẬT CỦA SERVER — lấy trực tiếp từ Discord ngay lúc này. Khi được hỏi về server '
-      + '(ai đang online, bao nhiêu thành viên, ai trong voice...), hãy dùng dữ liệu này để trả lời cụ thể; '
+      + '(ai đang online, bao nhiêu thành viên, ai trong voice, kênh nào dùng để làm gì, role nào, luật server...), '
+      + 'hãy dùng dữ liệu này để trả lời cụ thể; '
       + `đừng nói là bạn không có quyền xem.]\n${lines.join('\n')}`;
   } catch {
     return '';
@@ -215,7 +300,7 @@ async function maybeReply(message, st) {
     const userTurn = { role: 'user', content: `${name}: ${text}` };
     // Chỉ gửi 10 lượt gần nhất cho model (RAM vẫn giữ 20) — bớt ngữ cảnh thừa, gọi nhanh hơn.
     const turns = [...getHistory(key), userTurn].slice(-10);
-    const raw = await callModel(cfg, turns, buildServerContext(message.guild, text));
+    const raw = await callModel(cfg, turns, await buildServerContext(message.guild, text));
     const answer = sanitize(raw);
     if (!answer) return false;
     await message.reply({ content: answer, allowedMentions: { parse: [], repliedUser: true } });
@@ -242,6 +327,6 @@ async function maybeReply(message, st) {
 
 module.exports = {
   maybeReply, cfgOf, keyConfigured, baseUrl, envModel, sanitize,
-  buildServerContext, wantsMemberList,
+  buildServerContext, wantsMemberList, buildDirectoryContext, wantsRules, getRulesContext,
   DEFAULT_PERSONA, DEFAULT_MODEL, DEFAULT_BASE_URL,
 };
